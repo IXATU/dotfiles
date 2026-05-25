@@ -2,40 +2,162 @@
 
 Este archivo contiene las últimas 5 releases. Para el historial completo, consulta los archivos en el directorio `releases/`.
 
-## [v2026.05.09_2340] - 2026-05-09
+## [v2026.05.25_0800] - 2026-05-25
 
 ## Changes
 ### Added
-- 2026-05-09 23:32 [220534e](https://github.com/jesuserro/dotfiles/commit/220534e) feat(chezmoi): enhance Obsidian MCP integration and configuration management (Cursor Agent)
-  - Added `obsidian_vault_path` to `.chezmoi.toml` for dynamic vault path management, allowing overrides in user-specific configurations.
-  - Updated various documentation files, including `README.md`, `CHEZMOI.md`, and `MCP_QUICKREF.md`, to reflect the new vault path configuration and its usage in MCP templates.
-  - Modified MCP templates to utilize the new `ai.obsidian_vault_path` variable, ensuring consistent path management across different environments.
-- 2026-05-09 23:17 [bcb8d5f](https://github.com/jesuserro/dotfiles/commit/bcb8d5f) feat(install): introduce ai-mcp-governance target for comprehensive MCP validation (Cursor Agent)
-  - Added `ai-mcp-governance` target in `install.mk` to orchestrate non-mutating checks for MCP governance, combining validation, rendering, and drift reporting in a single command.
-  - Updated `README.md`, `MCP_QUICKREF.md`, and `MCP_TAXONOMY.md` with instructions on using the new governance target, emphasizing its role in ensuring repository coherence.
-  - Enhanced `bin/validate-mcp-governance` script to perform the governance checks, ensuring alignment with the canonical MCP manifest.
-- 2026-05-09 23:11 [7c3338c](https://github.com/jesuserro/dotfiles/commit/7c3338c) feat(install): add ai-mcp-generate target for productive MCP template management (Cursor Agent)
-  - Introduced `ai-mcp-generate` target in `install.mk` to facilitate planning and productive generation of MCP templates, allowing for validation, rendering, and drift checks before applying changes.
-  - Updated `README.md`, `MCP_QUICKREF.md`, and `MCP_TAXONOMY.md` with detailed instructions on using the new target, emphasizing its role in managing MCP configurations.
-  - Enhanced `generate-mcp-configs.py` to support both dry-run and productive template generation, including backup functionality.
-- 2026-05-09 23:04 [5645380](https://github.com/jesuserro/dotfiles/commit/5645380) feat(install): add ai-mcp-render and ai-mcp-drift targets for MCP configuration management (Cursor Agent)
-  - Introduced `ai-mcp-render` target in `install.mk` to perform a dry-run rendering of MCP configurations, writing outputs to `build/mcps/` without modifying existing templates.
-  - Added `ai-mcp-drift` target to compare rendered configurations against current templates, generating a drift report and indicating unexpected changes.
-  - Updated `README.md` and `MCP_QUICKREF.md` with usage instructions for the new targets, emphasizing their roles in validating MCP configurations.
-- 2026-05-09 22:54 [9f0ccbb](https://github.com/jesuserro/dotfiles/commit/9f0ccbb) feat(install): add ai-mcp-validate target for MCP manifest validation (Cursor Agent)
-  - Introduced `ai-mcp-validate` target in `install.mk` to validate the canonical MCP manifest located at `ai/assets/mcps/MANIFEST.yaml` using a Python script.
-  - Updated `README.md` and `MCP_QUICKREF.md` to include instructions for the new validation target and its significance in ensuring MCP configuration integrity.
-  - Enhanced documentation in `MCP_TAXONOMY.md` and `adr/0001-mcp-governance.md` to reflect the new canonical intent for MCPs and the validation process.
-- 2026-05-09 22:45 [a3d356c](https://github.com/jesuserro/dotfiles/commit/a3d356c) feat(install): add ai-cursor-check target for non-mutating readiness check (Cursor Agent)
-  - Introduced `ai-cursor-check` target in `install.mk` to verify the alignment of Cursor MCPs, skills, and AI commands with repository templates without making system modifications.
-  - Updated `README.md` to include usage instructions for the new target and its purpose in ensuring system readiness.
-  - Enhanced `MCP_QUICKREF.md` with details on how to perform the readiness check and its implications for the installation process.
+- 2026-05-24 11:49 [4f90437](https://github.com/IXATU/dotfiles/commit/4f90437) feat(update): skip unnecessary installations when the latest version is already installed (Cursor Agent)
+  - Introduced functions to normalize tool version extraction and check installed versions for actionlint and osv-scanner.
+  - Updated installation logic to provide informative logging on version checks and updates for npm tools.
+  - Enhanced the update process to skip unnecessary installations when the latest version is already installed, improving efficiency.
+- 2026-05-24 00:23 [5b8ebf1](https://github.com/IXATU/dotfiles/commit/5b8ebf1) feat(excalidraw): enhance Docker configuration and path handling for Excalidraw MCP (Cursor Agent)
+  - Updated Docker run commands to include the `EXCALIDRAW_EXPORT_DIR` environment variable and bind mount for scoped workspace access.
+  - Modified documentation and skills to specify the use of internal container paths for file operations, avoiding WSL paths.
+  - Enhanced validation scripts to ensure proper configuration of the Excalidraw MCP, including checks for workspace mount and export directory.
+- 2026-05-23 22:09 [244e3e5](https://github.com/IXATU/dotfiles/commit/244e3e5) feat(update-scripts): enhance Windows update logging and argument handling (Cursor Agent)
+  - Refactored PowerShell script to use native process handling for improved logging and encoding consistency.
+  - Introduced new functions for joining arguments and determining encoding types, enhancing script flexibility.
+  - Updated WSL and WinGet command invocations to utilize the new logging functions, ensuring UTF-8 and Unicode compatibility.
+- 2026-05-23 17:59 [0a35334](https://github.com/IXATU/dotfiles/commit/0a35334) feat(ai-cursor-check): enhance Excalidraw configuration validation and logging (Cursor Agent)
+  - Introduced a new function to check Excalidraw configurations across Cursor, Codex, and OpenCode environments, ensuring proper Docker runtime setup.
+  - Updated the ai-cursor-check script to log detailed messages for missing or misconfigured Excalidraw entries.
+  - Refactored existing checks to improve clarity and maintainability.
+- 2026-05-23 12:43 [e692234](https://github.com/IXATU/dotfiles/commit/e692234) feat(tooling): add agent validation and security tooling installation (Cursor Agent)
+  - Introduced new scripts for installing agent validation and security tools, including `@ast-grep/cli`, `actionlint`, and `osv-scanner`, with checksum verification for GitHub releases.
+  - Updated `install.mk` to include a new target for installing agent tools.
+  - Enhanced documentation in `SYSTEM_DEPENDENCIES.md` and `UPS.md` to reflect the new installation process and tools.
+- 2026-05-18 09:46 [01f679e](https://github.com/IXATU/dotfiles/commit/01f679e) feat(fonts): add MesloLGS NF font installation and verification (Jesús Erro)
+  - Introduced a new `install-fonts` target to install MesloLGS NF fonts for Powerlevel10k on Linux/WSL.
+  - Updated `install.mk` to include the new target and added relevant documentation in `INSTALL.md` and `dotfiles-install.md`.
+  - Enhanced `install-verify.sh` to check for the availability of MesloLGS NF and provide warnings if not installed.
+- 2026-05-17 10:46 [4630ec9](https://github.com/IXATU/dotfiles/commit/4630ec9) feat(powerlevel10k): introduce compact prompt segments with icon support (Cursor Agent)
+  - Added a new function to create compact prompt segments that utilize icons or fallback to text.
+  - Updated existing prompt functions for GitHub owner, upstream owner, and Python virtual environment to leverage the new compact segment functionality.
+  - Enhanced the git author prompt to conditionally display an icon based on user preference for a more visually appealing terminal experience.
+- 2026-05-17 10:28 [f783985](https://github.com/IXATU/dotfiles/commit/f783985) feat(powerlevel10k): enhance prompt with upstream owner and Python virtual environment support (Cursor Agent)
+  - Added new prompt segments for displaying the upstream GitHub owner and the active Python virtual environment.
+  - Refactored functions to cache and retrieve GitHub owner information from both origin and upstream remotes.
+  - Improved the git author prompt to differentiate between agent-like authors and standard authors, enhancing visibility in the terminal.
+- 2026-05-17 10:20 [b4ef759](https://github.com/IXATU/dotfiles/commit/b4ef759) feat(powerlevel10k): add GitHub owner and author prompts to configuration (Cursor Agent)
+  - Introduced new prompt elements for displaying the GitHub owner and effective git author in the Powerlevel10k configuration.
+  - Implemented functions to parse and cache GitHub owner from the repository's origin URL and to compactly display the git author's identity.
+  - Enhanced the prompt with additional segments for better visibility of GitHub-related information in the terminal.
+- 2026-05-16 18:02 [3de5f38](https://github.com/IXATU/dotfiles/commit/3de5f38) feat(powerlevel10k): regenerate configuration with updated prompt elements (Cursor Agent)
+  - Generated a new Powerlevel10k configuration using the configuration wizard, enhancing the prompt with a comprehensive list of segments for both left and right prompts.
+  - Removed outdated comments and added instructions for customization and usage.
+  - Improved compatibility checks for Zsh versions and streamlined the configuration process.
 
 ### Fixed
-- 2026-05-09 23:40 [e12e21b](https://github.com/jesuserro/dotfiles/commit/e12e21b) fix(mcps): update CHEZMOI.md and tests for MCP launcher templates (Cursor Agent)
-  - Revised the entry for MCP launcher paths in `CHEZMOI.md` to reflect the new wildcard format for launcher templates.
-  - Added a new test target `bats-chezmoi-mcp-launchers` in `Makefile.tests` to validate the functionality of chezmoi MCP launcher templates.
-  - Updated the `test-bats-ci` target to include the new chezmoi launcher tests, ensuring comprehensive test coverage.
+- 2026-05-24 13:12 [a1e756f](https://github.com/IXATU/dotfiles/commit/a1e756f) fix(github actions): update actions in release workflow for improved functionality (Cursor Agent)
+  - Upgraded actions/checkout to v6 for enhanced performance and features.
+  - Updated actions/github-script to v8 to leverage the latest improvements.
+  - Changed softprops/action-gh-release to v3 to ensure compatibility with recent updates.
+- 2026-05-24 12:55 [2ec0f5c](https://github.com/IXATU/dotfiles/commit/2ec0f5c) fix(tests): enhance PowerShell runner tests for WSL compatibility (Cursor Agent)
+  - Updated the PowerShell native runner test to check for the availability of both `powershell.exe` and `wslpath`.
+  - Added conditions to skip tests if PowerShell is not runnable in the current WSL environment, improving test reliability and clarity.
+  - Ensured that the test output reflects the status of the PowerShell execution, enhancing feedback during testing.
+- 2026-05-24 12:49 [6a2363b](https://github.com/IXATU/dotfiles/commit/6a2363b) fix(github actions): update BATS test scripts and improve dotfiles directory handling (Cursor Agent)
+  - Updated GitHub Actions workflow to use actions/checkout@v6 for improved functionality.
+  - Modified BATS test scripts to ensure the DOTFILES_DIR environment variable is correctly set when running tests.
+  - Enhanced the get_dotfiles_dir function to better locate the dotfiles directory, improving test reliability.
+- 2026-05-24 12:28 [99f9a4e](https://github.com/IXATU/dotfiles/commit/99f9a4e) fix(agent-tools): add result file option for logging update-check warnings (Cursor Agent)
+  - Introduced a `--result-file` option in the `install-agent-tools.sh` script to log warnings during external tool updates.
+  - Implemented functions to record warnings for `actionlint` and `osv-scanner` when update checks fail, appending them to the specified result file.
+  - Enhanced the `update-wsl.sh` script to ingest results from the new result file, improving feedback on tool update statuses.
+- 2026-05-24 00:39 [c01521e](https://github.com/IXATU/dotfiles/commit/c01521e) fix(ai-cursor-check): improve path handling and validation for Docker bind mounts (Cursor Agent)
+  - Introduced a helper function to streamline path token addition, ensuring proper handling of paths starting with "/mnt/" and avoiding duplicates.
+  - Enhanced the collection of paths from MCP JSON configurations to improve validation for Docker bind mounts.
+  - Added tests to verify correct behavior for valid and missing Docker bind mount paths, ensuring accurate output messages for users.
+- 2026-05-23 23:40 [d2b6706](https://github.com/IXATU/dotfiles/commit/d2b6706) fix(excalidraw): update canvas server configuration to use port 3210 (Cursor Agent)
+  - Changed the canvas server URL from `http://host.docker.internal:3000` to `http://host.docker.internal:3210` across various configuration files and scripts.
+  - Updated Docker run commands to reflect the new port mapping (`3210:3000`), ensuring compatibility with Store ETL/Dagster.
+  - Enhanced validation in the `ai-cursor-check` script to flag legacy port usage and ensure proper configuration for ephemeral Docker runtime.
+- 2026-05-23 22:40 [a944c88](https://github.com/IXATU/dotfiles/commit/a944c88) fix(update-scripts): enhance Windows update process and argument handling (Cursor Agent)
+  - Added self-test functionality for native arguments in the PowerShell update script, improving validation of argument passing to child processes.
+  - Refactored argument handling to ensure proper serialization and logging, enhancing script robustness.
+  - Implemented cleanup of old update runs in the shell script, optimizing storage management for update directories.
+- 2026-05-18 10:17 [005d294](https://github.com/IXATU/dotfiles/commit/005d294) fix(powerlevel10k): optimize cache key handling and improve prompt functions (Jesús Erro)
+  - Refactored the cache key handling in the `_dotfiles_p10k_clear_git_prompt_cache` function to initialize arrays instead of unsetting them, enhancing clarity and performance.
+  - Updated conditional checks for cache keys to use a more readable syntax, improving code maintainability.
+  - Added a new test for Powerlevel10k cache key functionality to ensure proper behavior.
+- 2026-05-18 09:51 [7629be2](https://github.com/IXATU/dotfiles/commit/7629be2) fix(install-fonts): improve error handling during font installation (Jesús Erro)
+  - Enhanced the `download_font` function to include error handling when moving the downloaded font file, ensuring temporary files are removed on failure.
+  - Updated tests to verify that no temporary font files remain after installation attempts, improving the robustness of the font installation process.
+
+### Documentation
+- 2026-05-24 00:42 [6b0f3e3](https://github.com/IXATU/dotfiles/commit/6b0f3e3) docs(changelog): added changelog for refining Docker bind mount validation and path handling (Cursor Agent)
+  - Improved the path validation logic for Docker bind mounts, ensuring accurate handling of paths and preventing duplicates.
+  - Enhanced the collection process for paths from MCP JSON configurations to bolster validation accuracy.
+  - Added comprehensive tests to confirm the correct behavior of the updated validation logic, ensuring users receive clear output messages for both valid and missing paths.
+- 2026-05-23 12:48 [cdf1964](https://github.com/IXATU/dotfiles/commit/cdf1964) docs(changelog): added changelog for release streamline agent validation and security tool installation (Cursor Agent)
+  - Refactored installation scripts for agent validation and security tools to improve efficiency and clarity.
+  - Updated `install.mk` to optimize the installation process for agent tools.
+  - Revised documentation in `SYSTEM_DEPENDENCIES.md` and `UPS.md` to ensure accuracy regarding the installation steps.
+- 2026-05-16 20:36 [9074471](https://github.com/IXATU/dotfiles/commit/9074471) docs(STRUCTURE.md): update generated timestamp and add dotfiles-operations section (Cursor Agent)
+  - Updated the generated timestamp in STRUCTURE.md to reflect the latest changes.
+  - Added a new section for `dotfiles-operations`, including a reference to its corresponding SKILL.md file for improved documentation structure.
+- 2026-05-16 20:25 [9c9b200](https://github.com/IXATU/dotfiles/commit/9c9b200) docs(dotfiles): enhance dotfiles operations documentation and clarify installation processes (Cursor Agent)
+  - Added a new section on dotfiles operations in AGENT_WORKFLOW_FOR_AGENTS.md, detailing skills for installing, updating, and troubleshooting the dotfiles repository.
+  - Updated README.md to include the new `dotfiles-operations` skill and its purpose.
+  - Clarified the distinction between `make install` and `chezmoi apply` in the context of dotfiles management.
+- 2026-05-16 20:23 [b6d5c9c](https://github.com/IXATU/dotfiles/commit/b6d5c9c) docs(guideline): add OPERATIONS.md for operational guidance and update related documentation (Cursor Agent)
+  - Introduced OPERATIONS.md to provide comprehensive operational guidance post-bootstrap, covering secrets management, MCPs, and troubleshooting.
+  - Updated INSTALL.md to reference OPERATIONS.md for daily operations and clarified the distinction between `make install` and `chezmoi apply`.
+  - Enhanced README.md to include a section on operations, linking to OPERATIONS.md for better navigation.
+
+### Refactored
+- 2026-05-24 13:00 [70bab2e](https://github.com/IXATU/dotfiles/commit/70bab2e) refactor(tests): standardize formatting in common.bash and filesystem-launcher.bats (Cursor Agent)
+  - Reformatted code in common.bash and filesystem-launcher.bats for consistent indentation and readability.
+  - Ensured uniform spacing and alignment across functions to enhance maintainability.
+  - Improved clarity in test setup and assertions by aligning code structure, making it easier to follow and understand.
+- 2026-05-24 10:46 [99b2a91](https://github.com/IXATU/dotfiles/commit/99b2a91) refactor(update): implement tool snapshot functionality and enhance version normalization (Cursor Agent)
+  - Introduced a tool snapshot feature to track the installation status and version changes of various tools during the update process.
+  - Enhanced version normalization logic for specific tools, ensuring accurate version extraction and reporting.
+  - Updated the summary reporting to include concise tool snapshot information, improving clarity on tool status after updates.
+- 2026-05-24 10:19 [d40f955](https://github.com/IXATU/dotfiles/commit/d40f955) refactor(update): clarify Docker Desktop behavior during updates and enhance logging (Cursor Agent)
+  - Added documentation to specify that if Docker Desktop is off during `make update`, the process will report a `SKIP` status without counting as an incident.
+  - Updated logging in the update scripts to provide clearer messages when Docker is unavailable, guiding users to run `make excalidraw-update` once Docker is back online.
+  - Enhanced the logging functions to improve the clarity of status messages, ensuring users receive accurate feedback during the update process.
+- 2026-05-23 23:56 [1f5b716](https://github.com/IXATU/dotfiles/commit/1f5b716) refactor(excalidraw): rename MCP to excalidraw_canvas for clarity (Cursor Agent)
+  - Updated the MCP identifier from `excalidraw` to `excalidraw_canvas` across all relevant configuration files and documentation.
+  - Enhanced descriptions and usage instructions to specify the advanced editing capabilities of the `excalidraw_canvas` MCP.
+  - Adjusted validation scripts and tests to ensure proper recognition of the new MCP name and prevent ambiguity with simpler integrations.
+- 2026-05-23 17:36 [af09fa0](https://github.com/IXATU/dotfiles/commit/af09fa0) refactor(install-node-stack): improve error handling and cleanup in NodeSource configuration (Cursor Agent)
+  - Added a cleanup function to remove temporary files created during NodeSource key and repository setup.
+  - Enhanced error handling to ensure temporary files are deleted on failure at various stages of the installation process.
+  - Updated tests to validate the installation process, ensuring proper cleanup and handling of simulated failures for curl, gpg, and apt operations.
+- 2026-05-23 17:14 [3e2c349](https://github.com/IXATU/dotfiles/commit/3e2c349) refactor(dotfiles): transition from ups to make update for system maintenance (Cursor Agent)
+  - Replaced the `ups` alias with a new `make update` command for improved clarity and consistency in system maintenance tasks.
+  - Updated documentation across various files to reflect the new command structure, including changes in README.md, STRUCTURE.md, and AI skills documentation.
+  - Removed obsolete functions and variables related to the previous `ups` implementation from the aliases file.
+- 2026-05-23 11:43 [e074b31](https://github.com/IXATU/dotfiles/commit/e074b31) refactor(dotfiles): update chezmoi configuration and scripts (Cursor Agent)
+  - Removed hardcoded source path in .chezmoi.toml, allowing for machine-specific configurations.
+  - Updated data paths in .chezmoi.toml for better clarity and consistency.
+  - Cleaned up .chezmoiscripts by deleting obsolete linking script and enhancing error handling in secret generation script.
+- 2026-05-16 17:37 [1dcc3e6](https://github.com/IXATU/dotfiles/commit/1dcc3e6) refactor(rc): remove rcrc file and update documentation for install-verify (Cursor Agent)
+  - Deleted the `rcrc` file as it is no longer needed.
+  - Updated `README.md` and `INSTALL.md` to clarify the behavior of `make install-verify`, specifying that `chezmoi` and `sops` are treated as optional installations, emitting warnings instead of failures if missing.
+  - Modified `install-verify.sh` to implement opt-in checks for `chezmoi` and `sops`, ensuring they do not block the installation process.
+
+### Chores
+- 2026-05-23 17:30 [a2182e9](https://github.com/IXATU/dotfiles/commit/a2182e9) chore(dotfiles): update documentation and scripts for Node.js installation and GitNexus compatibility (Cursor Agent)
+  - Updated STRUCTURE.md with the latest generation timestamp.
+  - Revised MANIFEST.yaml to clarify the usage of Docker images for Excalidraw and the required environment variables for clients.
+  - Enhanced GUIA_MCP_AI.md and MCP_TAXONOMY.md to reflect the new installation method for GitNexus, emphasizing the use of `make update-wsl`.
+- 2026-05-23 11:58 [4e856a5](https://github.com/IXATU/dotfiles/commit/4e856a5) chore(dotfiles): update AI runtime and skills linking scripts (Cursor Agent)
+  - Updated the timestamp in STRUCTURE.md to reflect the latest generation time.
+  - Refactored .chezmoiscripts/run_after_10_setup_ai_runtime.sh.tmpl for improved readability and error handling.
+  - Enhanced .chezmoiscripts/run_after_11_link_ai_assets.sh.tmpl to include new symlink paths for Claude Code skills.
+- 2026-05-16 18:23 [1b8c4ee](https://github.com/IXATU/dotfiles/commit/1b8c4ee) chore(secrets): update PostgreSQL DSN and metadata in secrets.sops.yaml (Cursor Agent)
+  - Added encrypted PostgreSQL DSN to the secrets configuration.
+  - Updated last modified timestamp and MAC value for the SOPS configuration.
+  - Bumped version from 3.9.4 to 3.12.1.
+
+### Other
+- 2026-05-24 11:08 [45c3c2f](https://github.com/IXATU/dotfiles/commit/45c3c2f) enhance(logging): improve section formatting with icons and colors (Cursor Agent)
+  - Added functions to generate section IDs and icons for improved visual representation in logs.
+  - Updated the section function to support ANSI color codes and Unicode separators, enhancing readability.
+  - Introduced tests to validate the rendering of section headers in both color and plain modes, ensuring consistent output across different environments.
 
 
 ## [v2025.12.07_1051] - 2025-12-07
