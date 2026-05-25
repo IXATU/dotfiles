@@ -20,7 +20,7 @@ Layers describe *purpose*; default **activation** for global agents follows the 
 
 | Layer | Scope | Examples |
 |-------|-------|----------|
-| Core | All projects | docker, github, fetch, context7, excalidraw, playwright, filesystem, git, sequential-thinking |
+| Core | All projects | docker, github, fetch, context7, excalidraw_canvas, playwright, filesystem, git, sequential-thinking |
 | Knowledge/Semantic | All projects | gitnexus |
 | Domain | Optional vault path | obsidian |
 | Platform | Local services | dagster, loki, minio, prometheus, tempo, store_etl_ops |
@@ -32,7 +32,7 @@ Layers describe *purpose*; default **activation** for global agents follows the 
 |--------|-------|
 | **Type** | Knowledge/Semantic MCP |
 | **Scope** | Global (multi-repo) |
-| **Config Pattern** | `npx -y gitnexus@latest mcp` |
+| **Config Pattern** | `mcp-gitnexus-launcher` → binario local `gitnexus mcp` (sin npx en runtime) |
 | **Index Location** | `~/.gitnexus/` |
 | **CLI** | Installed via npm in `~/.local` |
 | **Wiki Output** | `docs/wiki/` (per project) |
@@ -41,7 +41,7 @@ Layers describe *purpose*; default **activation** for global agents follows the 
 ### GitNexus Helpers
 
 ```bash
-ups              # Updates GitNexus CLI
+make update      # Updates GitNexus CLI after validating Node >=22
 gnx-serve        # Start local server
 gnx-analyze-here # Analyze current repo
 gnx-map          # Analyze + serve
@@ -114,7 +114,7 @@ These are complementary, not interchangeable. Enable both for full Obsidian inte
 ## Docker MCP (WSL)
 
 - **Requires:** Docker Desktop **running** on Windows; invoke via `docker.exe mcp gateway run` from WSL.
-- **`ups` does not fix** a closed Desktop — open Docker Desktop first.
+- **`make update` does not fix** a closed Desktop — open Docker Desktop first.
 - Smoke: `docker.exe mcp version` · `docker.exe mcp gateway run --dry-run --verbose`
 
 ## Postgres MCP

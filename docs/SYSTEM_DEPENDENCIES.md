@@ -14,7 +14,7 @@ It does not try to export every package installed on a machine, and it avoids ca
 
 - `system/packages/common.yaml`: base Ubuntu/WSL packages installed through `apt`.
 - `system/packages/ubuntu.yaml`: Ubuntu/Debian-specific `apt` additions.
-- `system/packages/tooling.yaml`: important non-APT CLIs used by the repo or by `ups()`.
+- `system/packages/tooling.yaml`: important non-APT CLIs used by the repo or by `make update`.
 - `system/packages/wsl.yaml`: WSL-specific interop and Windows-side commands invoked from WSL.
 
 Each entry is intentionally small:
@@ -112,6 +112,11 @@ make deps-install DEPS_INSTALL_ARGS="--dry-run --include-optional"
 
 `deps-install` only installs `apt` inventories. It ignores non-APT tooling and Windows-side/WSL environment entries even if those files are present.
 
+For a full workstation bootstrap, use `make install`: it runs the APT baseline,
+the Node.js stack needed by npm-based CLIs, and `make install-agent-tools` so
+`@ast-grep/cli`, `actionlint` and `osv-scanner` are installed without a second
+manual command.
+
 ## What gets checked vs installed
 
 - Installed by `deps-install`: `common.yaml` and `ubuntu.yaml` entries with manager `apt`.
@@ -122,34 +127,72 @@ make deps-install DEPS_INSTALL_ARGS="--dry-run --include-optional"
 ## Current operational examples
 
 - APT baseline: `git`, `zsh`, `tmux`, `python3`, `python3-pip`, `bubblewrap`, `ripgrep`, `fd-find`, `age`.
-- APT test/lint tooling: `bats`, `shellcheck`, `shfmt` (required: true, see "Test/lint dependencies" below).
-- Non-APT tooling: `chezmoi`, `sops`, `uv`, `node`, `npm`, `corepack`, `pnpm`, `codex`, `gitnexus`, `opencode`, `docker`.
+- APT test/lint/security tooling: `bats`, `shellcheck`, `shfmt`, `yamllint`, `gitleaks` (required: true, see "Test/lint dependencies" below).
+- Non-APT tooling: `chezmoi`, `sops`, `uv`, `node`, `npm`, `corepack`, `pnpm`, `codex`, `gitnexus`, `@ast-grep/cli`, `actionlint`, `osv-scanner`, `opencode`, `docker`.
 - WSL/Windows-side: `wslpath`, `powershell.exe`, `wt.exe`.
 
 ## Test/lint dependencies (APT)
 
-`make test-fast` and `make test-lint` rely on three small CLIs that are intentionally part of the required APT baseline so a fresh machine can validate the repo without extra steps:
+`make test-fast` and `make test-lint` rely on small CLIs that are intentionally part of the required APT baseline so a fresh machine can validate the repo without extra steps:
 
 - `bats` — Bats test runner (Ubuntu APT pulls `parallel` and `sysstat` as transitive deps).
 - `shellcheck` — shell linter used by `lint-shellcheck`.
 - `shfmt` — shell formatter used by `lint-shfmt` / `fmt-shell`.
+- `yamllint` — YAML validator for inventories, workflows and visible YAML config.
+- `gitleaks` — working-tree secret scanner used by `make security-check`.
 
-A fail-fast preflight (`make test-deps-check`, also wired into `test-fast` / `test-bats` / `test`) verifies these three are in `PATH` before running anything, and prints `Run: make install SKIP_EXTERNAL=1` if any is missing. This avoids silent hangs or partial runs on fresh machines.
+A fail-fast preflight (`make test-deps-check`, also wired into `test-fast` / `test-bats` / `test`) verifies the core shell test tools are in `PATH` before running anything, and prints `Run: make install SKIP_EXTERNAL=1` if any is missing. This avoids silent hangs or partial runs on fresh machines.
+
+## Agent validation and security tooling
+
+Agents can run the repo checks without guessing tool commands:
+
+```bash
+make quality-check
+make security-check
+make agent-validate
+```
+
+What these cover:
+
+- `make quality-check`: `shellcheck`, `shfmt` in check mode, `yamllint`, and `actionlint -shellcheck=` when `.github/workflows/*.yml|*.yaml` exists. Inline workflow shell is not delegated to actionlint's ShellCheck integration because the repo already has a separate shell lint target and the release workflow embeds changelog text patterns that ShellCheck misparses.
+- `make security-check`: `gitleaks detect --no-git --redact` over the working tree and `osv-scanner scan source -r` when supported manifests/lockfiles exist.
+- `make agent-validate`: quality + security.
+
+Chezmoi templates are not passed raw to `shellcheck` or `shfmt`; those tools do not reliably parse Go template delimiters. The current shell validation covers real shell scripts, launchers and Bats tests. MCP/Chezmoi template syntax remains covered by the existing `chezmoi-templates`, `ai-mcp-render`, and `ai-mcp-drift` paths.
 
 ## Canonical external guidance
 
 - `chezmoi`: `make install-chezmoi` (preferred, idempotent, no sudo, drops the binary at `~/.local/bin/chezmoi`). Direct fallback: `sh -c "$(curl -fsLS get.chezmoi.io)" -- -b "$HOME/.local/bin"` or download from https://github.com/twpayne/chezmoi/releases.
 - `sops`: `make install-sops` (preferred, idempotent, no sudo, sha256-verified, pinned version). Direct fallback: download the matching `sops-vX.Y.Z.linux.<arch>` binary from https://github.com/getsops/sops/releases and drop it at `~/.local/bin/sops`. Not in Ubuntu APT repos.
 - `uv`: `make install-uv` (preferred, idempotent, never edits rc files). Direct fallback: `curl -LsSf https://astral.sh/uv/install.sh | sh`
-- `node` / `npm`: install together through your preferred WSL/Ubuntu Node distribution
+- `node` / `npm`: install together with `make install-node-stack` (NodeSource 24.x, Node `>=22` for GitNexus)
 - `azure-cli`: `make install-azure-cli` (opt-in, Debian/Ubuntu/WSL via Microsoft's official Azure CLI repository). It is not part of `make install`; `az login` remains manual.
-- `corepack`: `corepack enable`
+- `corepack`: ships with the Node stack; validate with `corepack --version`
 - `pnpm`: `corepack prepare pnpm@latest --activate`
 - `codex`: `npm install -g --prefix="$HOME/.npm-global" @openai/codex@latest`
 - `gitnexus`: `npm install -g --prefix="$HOME/.npm-global" gitnexus@latest`
+- `@ast-grep/cli`: `make install-agent-tools` or `npm install -g --prefix="$HOME/.npm-global" @ast-grep/cli@latest`
+- `actionlint`: `make install-agent-tools` (official `rhysd/actionlint` GitHub release, checksum verified)
+- `osv-scanner`: `make install-agent-tools` (official `google/osv-scanner` GitHub release, checksum verified)
 - `opencode`: `curl -fsSL https://opencode.ai/install | bash -s -- --no-modify-path`
 - `docker`: manual workstation decision on WSL; the repo does not enforce one installer path
 - `wt.exe` / `powershell.exe`: Windows-host capabilities used from WSL, not Linux install targets
+
+## External version policy
+
+Agent tools that are outside APT follow the repo's existing floating-tooling
+policy:
+
+- npm tools use `@latest` in the user npm prefix (`@ast-grep/cli@latest`).
+- GitHub Release tools resolve the latest official release at install/update
+  time and verify the release checksum before installing (`actionlint`,
+  `osv-scanner`).
+- `make update` uses the same policy to refresh them.
+
+The inventory records the install channel, not a pinned version. A fully pinned
+external-tool lock would require a broader inventory schema change, so it stays
+out of this small dependency-layer extension.
 
 ## How to extend the inventory
 
@@ -214,9 +257,9 @@ Reglas de la Fase 1C:
 
 ### Excepciones explícitas
 
-- **Runtime AI** (`~/.config/ai/runtime/.venv`): se mantiene intencionalmente con `python3 -m venv` + `pip install -r requirements.txt` por compatibilidad con `.chezmoiscripts/run_after_10_setup_ai_runtime.sh.tmpl` y la sección correspondiente de `ups`. Migrarlo a `uv` queda como tarea separada.
+- **Runtime AI** (`~/.config/ai/runtime/.venv`): se sincroniza con `uv` desde `.chezmoiscripts/run_after_10_setup_ai_runtime.sh.tmpl` usando `uv venv` y `uv pip install -r` solo cuando cambia el hash de `ai/runtime/mcp/requirements.txt` o el venv falta/está incompleto. Si `uv` no está en `PATH`, el hook avisa y no modifica el entorno.
 - **`zsh/30-python.zsh`** (alias `pip='pip3'`, `pyreq()`): no se toca en esta fase para evitar regresiones en sesiones interactivas.
 
-### Cómo lo trata `ups`
+### Cómo lo trata `make update`
 
-`ups` actualiza `uv` con `uv self update` **solo si ya existe** y vive en `$HOME/.local/bin/uv` (instalación oficial). Si falta, sólo informa y sugiere `make install-uv`. Si está en otra ruta (`apt`, `brew`...), informa para que lo actualice su gestor. Nunca lo instala desde `ups`.
+`make update` actualiza `uv` con `uv self update` **solo si ya existe** y vive en `$HOME/.local/bin/uv` (instalación oficial). Si falta, sólo informa y sugiere `make install-uv`. Si está en otra ruta (`apt`, `brew`...), informa para que lo actualice su gestor. Nunca lo instala desde `make update`.

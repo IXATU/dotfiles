@@ -16,8 +16,8 @@ En este proyecto conviven dos mecanismos para aplicar cambios. Resumen:
 
 | Mecanismo | Qué hace | Cuándo usarlo |
 |-----------|----------|----------------|
-| **`chezmoi --source=$HOME/dotfiles apply`** (alias: `make install-dotfiles DOTFILES_APPLY=1`) | Aplica las plantillas, archivos y symlinks que Chezmoi gestiona desde el repo a tu HOME: `~/.cursor/mcp.json`, `~/.codex/config.toml`, `~/.config/ai/`, secretos generados, y los symlinks `~/.zshrc`, `~/.p10k.zsh`, `~/.aliases`. | Cuando has editado en el repo lo que Chezmoi controla. No hace falta ejecutarlo solo por haber corrido `ups` (que solo actualiza código/deps de los servidores MCP). |
-| **`source ~/.zshrc`** | Recarga en la **sesión actual** de la terminal el contenido de `~/.zshrc`: aliases, funciones (como `ups`), PATH, etc. No escribe archivos. | Después de `chezmoi apply` o de `ups` para que la shell use los nuevos aliases/funciones. |
+| **`chezmoi --source=$HOME/dotfiles apply`** (alias: `make install-dotfiles DOTFILES_APPLY=1`) | Aplica las plantillas, archivos y symlinks que Chezmoi gestiona desde el repo a tu HOME: `~/.cursor/mcp.json`, `~/.codex/config.toml`, `~/.config/ai/`, secretos generados, y los symlinks `~/.zshrc`, `~/.p10k.zsh`, `~/.aliases`. | Cuando has editado en el repo lo que Chezmoi controla. No hace falta ejecutarlo solo por haber corrido `make update` (que actualiza sistema/deps/imágenes). |
+| **`source ~/.zshrc`** | Recarga en la **sesión actual** de la terminal el contenido de `~/.zshrc`: aliases, PATH, etc. No escribe archivos. | Después de `chezmoi apply` o de `make update` si cambió PATH. |
 | **`chezmoi --source=$HOME/dotfiles apply ~/.cursor/mcp.json ~/.config/opencode/opencode.json ~/.codex/config.toml`** | Propaga solo las configs MCP renderizadas de Cursor, OpenCode y Codex. | Úsalo tras cambios de plantillas MCP como el launcher de GitNexus. Mantiene el arranque estable con binarios/launchers locales en vez de `npx ...@latest` en runtime. |
 
 Flujo típico tras un `git pull`: `chezmoi --source=$HOME/dotfiles apply` (si hay cambios en lo que Chezmoi gestiona) y `source ~/.zshrc` para la sesión actual.
@@ -36,7 +36,7 @@ Flujo típico tras un `git pull`: `chezmoi --source=$HOME/dotfiles apply` (si ha
 | `~/.local/share/chezmoi/bin/mcp-*-launcher` | `dot_local/share/chezmoi/bin/executable_mcp-*-launcher.tmpl` (`filesystem`, `git`, `gitnexus`, `postgres`) |
 | `~/.zshrc` | `symlink_dot_zshrc.tmpl` → `$HOME/dotfiles/zshrc` |
 | `~/.p10k.zsh` | `symlink_dot_p10k.zsh.tmpl` → `$HOME/dotfiles/powerlevel10k/p10k.zsh` |
-| `~/.aliases` | `symlink_dot_aliases.tmpl` → `$HOME/dotfiles/aliases` (carga la función `ups`) |
+| `~/.aliases` | `symlink_dot_aliases.tmpl` → `$HOME/dotfiles/aliases` |
 
 ### Backup seguro de RC files
 
@@ -83,11 +83,11 @@ chezmoi --source=$HOME/dotfiles status
 chezmoi --source=$HOME/dotfiles apply
 ```
 
-O configurar el source por defecto en `~/.config/chezmoi/chezmoi.toml`:
+El repo **no** fija `[source].path` en `.chezmoi.toml` (portabilidad). Configura el clone en `~/.config/chezmoi/chezmoi.toml` si quieres omitir `--source`:
 
 ```toml
 [source]
-    path = "/home/jesus/dotfiles"
+    path = "/home/TU_USUARIO/dotfiles"
 ```
 
 Luego:
@@ -214,28 +214,44 @@ El script `.chezmoiscripts/run_after_00_gen_secrets.sh.tmpl` se ejecuta tras `ap
 
 Requiere: `sops`, `yq` o `python3` con PyYAML.
 
+**Modo estricto (opt-in):** `MCP_SECRETS_STRICT=1 chezmoi apply` falla si existe `secrets.sops.yaml` cifrado pero no se puede generar `~/.config/mcp-secrets.env` (sin `sops`, descifrado fallido o sin `yq`/PyYAML). Por defecto el hook es permisivo para máquinas sin Age/SOPS aún configurados.
+
+**Artefactos SOPS temporales:** no versionar `secrets.sops.yaml.new` ni `*.sops.yaml.bak` (ver `.gitignore`).
+
+---
+
+## Runtime Python MCP (`uv`)
+
+El hook `run_after_10_setup_ai_runtime.sh.tmpl` sincroniza `~/.config/ai/runtime/.venv` con **`uv`** (no `pip install -r` en cada apply). Requiere `uv` en PATH (`make install-uv`). Solo reinstala cuando cambia el hash de `ai/runtime/mcp/requirements.txt`.
+
+---
+
+## PostgreSQL MCP y DSN en argv
+
+El launcher `mcp-postgres-launcher` usa `@modelcontextprotocol/server-postgres` **v0.6.x**, que solo acepta la URL de conexión como **argumento CLI** (sin variable de entorno oficial). El DSN puede aparecer en listados de procesos (`ps`). No hay alternativa soportada sin cambiar de servidor MCP.
+
 ---
 
 ## MCPs globales vs proyecto Store ETL
 
-- **Global** (`~/.cursor/mcp.json`): excalidraw, context7, docker, github, fetch. Cualquier repo solo ve estos.
-- **Store ETL** (`~/.config/store-etl/` o `.cursor/mcp.json`): postgres, trino, dagster, minio, tempo, loki, prometheus, store_etl_ops. Solo al abrir Cursor en ese proyecto.
+- **Global (dotfiles):** `~/.cursor/mcp.json` incluye todos los MCP del `MANIFEST.yaml` (incl. `store_etl_ops` como wrapper operativo del repo dotfiles).
+- **Proyecto store-etl:** la configuración Cursor **`.cursor/mcp.json` del repositorio `store-etl`** es responsabilidad de ese proyecto (no se materializa desde dotfiles; el hook `run_after_10_link_store_etl_mcp` fue retirado). Los secretos legacy `~/.config/store-etl/secrets.env` siguen generándose solo como compatibilidad desde SOPS.
 
 ---
 
 ## Validación
 
 1. `chezmoi --source=$HOME/dotfiles apply`
-2. Abrir Cursor en otro repo → solo MCP global.
-3. Abrir Cursor en store-etl → MCPs específicos del proyecto.
-4. Comprobar: GitHub MCP, Postgres MCP, MinIO MCP, Dagster.
+2. `make ai-cursor-check` (y `MCP_SECRETS_STRICT=1` tras rotación de secretos).
+3. Abrir Cursor en un repo genérico → MCPs globales.
+4. Para stack store-etl: usar el `mcp.json` del proyecto `store-etl`.
 
 ---
 
 ## No hacer
 
 - No reintroducir RCM/rcup en el flujo activo (ni en docs de máquina nueva, ni en targets, ni en inventario APT). Chezmoi es el único gestor activo.
-- No depender de `rcup` para que `~/.zshrc`, Powerlevel10k o `ups` funcionen.
+- No depender de `rcup` para que `~/.zshrc` o Powerlevel10k funcionen.
 - Postgres: npx. Trino: `~/.config/ai/runtime/.venv` (trino-mcp). Docker: aún en `~/.codex/mcp/docker` si existe.
 
 ---

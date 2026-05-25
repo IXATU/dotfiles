@@ -10,7 +10,7 @@
 
 This repo integrates multiple MCP (Model Context Protocol) servers across different AI clients (OpenCode, Cursor, Codex). The current implementation includes:
 
-- **Core Workstation MCPs**: `docker`, `github`, `fetch`, `context7`, `excalidraw`, `playwright`, `filesystem`, `git`, `sequential-thinking`
+- **Core Workstation MCPs**: `docker`, `github`, `fetch`, `context7`, `excalidraw_canvas`, `playwright`, `filesystem`, `git`, `sequential-thinking`
 - **Knowledge/Semantic MCPs**: `gitnexus`
 - **Platform Specialized MCPs**: `dagster`, `loki`, `minio`, `prometheus`, `tempo`, `store_etl_ops`
 - **Database MCPs**: `postgres`, `trino`
@@ -99,7 +99,7 @@ trino MCP:
 
 ### Neutral
 
-- **Project-specific configs**: Optional stack configs (e.g. `dot_config/store-etl/`) complement global templates; global parity is defined in **`MANIFEST.yaml`**
+- **Project-specific configs**: Optional stack configs live in their own project repositories (for example, `store-etl/.cursor/mcp.json`). Dotfiles owns only global workstation templates and shared launchers; global parity is defined in **`MANIFEST.yaml`**.
 - **GitNexus**: MCP global de conocimiento estructural. Su índice vive en `~/.gitnexus/` y es multi-repo. La wiki generada se направляет a `docs/wiki/` por convención.
 
 ---
@@ -124,7 +124,7 @@ The separation **runtime (shared) vs connection profile (sensitive / per-project
 - Taxonomía: `docs/MCP_TAXONOMY.md`
 - Operational guide: `docs/OPENCODE.md`
 - Agent instructions: `dot_config/opencode/AGENTS.md.tmpl`
-- Implementation: `dot_config/store-etl/store-etl.mcp.json.tmpl`
+- Implementation: project-local MCP files, outside this dotfiles repository
 - GitNexus integration: ADR `0002-gitnexus-mcp.md`
 
 ---

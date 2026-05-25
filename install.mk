@@ -27,7 +27,7 @@ export DOTFILES_APPLY
 # Optional passthrough to the declarative APT installer (same as deps-install).
 DEPS_INSTALL_ARGS ?=
 
-.PHONY: install-check install-apt install-external install-dotfiles install-verify install install-zsh-stack install-fonts install-uv install-sops install-chezmoi install-node-stack install-azure-cli install-mcp-github install-mcp-excalidraw set-default-shell-zsh ai-cursor-check ai-mcp-validate ai-mcp-render ai-mcp-drift ai-mcp-governance ai-mcp-generate
+.PHONY: install-check install-apt install-external install-dotfiles install-verify install install-zsh-stack install-fonts install-uv install-sops install-chezmoi install-node-stack install-azure-cli install-agent-tools install-mcp-github set-default-shell-zsh ai-cursor-check ai-mcp-validate ai-mcp-render ai-mcp-drift ai-mcp-governance ai-mcp-generate
 
 install-check:
 	@bash $(DOTFILES_DIR)/scripts/install-check.sh
@@ -84,12 +84,10 @@ install-sops:
 install-chezmoi:
 	@bash $(DOTFILES_DIR)/scripts/install-chezmoi.sh
 
-# Optional, opt-in installer for the Node.js stack (nodejs + npm) via APT.
-# Intentionally NOT part of `make install`: several MCPs require npx at runtime
-# (context7, sequential-thinking, obsidian, playwright, docker, the filesystem
-# launcher), but workstations may legitimately defer Node until needed. Uses
-# stock Ubuntu/Debian packages only; NodeSource/NVM/FNM are out of scope here.
-# Supports DRY_RUN=1 and is idempotent.
+# Installer for the Node.js stack via the NodeSource 24.x APT repository.
+# Node >=22 is required by current AI tooling such as GitNexus; Node 24 is the
+# current LTS baseline for this workstation policy. Supports DRY_RUN=1 and is
+# idempotent.
 install-node-stack:
 	@bash $(DOTFILES_DIR)/scripts/install-node-stack.sh
 
@@ -100,6 +98,14 @@ install-node-stack:
 install-azure-cli:
 	@bash $(DOTFILES_DIR)/scripts/install-azure-cli.sh
 
+# Optional, opt-in installer for non-APT validation/security CLIs useful to
+# agents. APT-backed peers (shellcheck, shfmt, yamllint, gitleaks) are handled
+# by deps-install/install-apt. This target installs @ast-grep/cli via the user
+# npm prefix and actionlint/osv-scanner from official GitHub releases with
+# checksum verification. Supports DRY_RUN=1.
+install-agent-tools:
+	@bash $(DOTFILES_DIR)/scripts/install-agent-tools.sh $(if $(filter 1 true yes on,$(DRY_RUN)),--dry-run,)
+
 # Optional, opt-in materializer for the GitHub MCP wrapper at
 # ~/.local/bin/codex-mcp-github. The wrapper sources ~/.secrets/codex.env at
 # runtime so the GitHub token never ends up inside mcp.json. Intentionally NOT
@@ -108,15 +114,6 @@ install-azure-cli:
 # Supports DRY_RUN=1 and is idempotent.
 install-mcp-github:
 	@bash $(DOTFILES_DIR)/scripts/install-mcp-github.sh
-
-# Optional, opt-in materializer for the Excalidraw MCP under
-# ~/mcp-servers/excalidraw-mcp (yctimlin/mcp_excalidraw). Clones or updates the
-# repo, runs `npm install` and the project's build script, then validates that
-# dist/index.js exists. Intentionally NOT part of `make install`: the build
-# pulls dependencies from npm and may take minutes on a fresh machine.
-# Supports DRY_RUN=1 and is idempotent.
-install-mcp-excalidraw:
-	@bash $(DOTFILES_DIR)/scripts/install-mcp-excalidraw.sh
 
 # Non-mutating readiness: Cursor MCPs, skills, AI commands (no chezmoi apply).
 ai-cursor-check:
@@ -142,4 +139,4 @@ ai-mcp-governance:
 ai-mcp-generate:
 	@python3 $(DOTFILES_DIR)/scripts/generate-mcp-configs.py generate $(if $(filter 1 true yes on,$(APPLY)),--apply,)
 
-install: install-check install-apt install-external install-dotfiles install-verify
+install: install-check install-apt install-node-stack install-agent-tools install-external install-dotfiles install-verify

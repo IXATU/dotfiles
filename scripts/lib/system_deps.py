@@ -58,19 +58,19 @@ def _action_for_package(package):
             "command": "make install-uv",
         },
         "node": {
-            "kind": "manual",
-            "summary": "Install Node.js with your preferred WSL/Ubuntu method so that node and npm are both available.",
-            "command": "Use your preferred Node installer for WSL/Ubuntu (for example nvm or NodeSource).",
+            "kind": "installer",
+            "summary": "Install Node.js >=22 for GitNexus and AI tooling through the repo's NodeSource 24.x helper.",
+            "command": "make install-node-stack",
         },
         "npm": {
-            "kind": "manual",
-            "summary": "npm should arrive with Node.js; reconcile Node first if npm is missing.",
-            "command": "Use your preferred Node installer for WSL/Ubuntu (for example nvm or NodeSource).",
+            "kind": "installer",
+            "summary": "npm should arrive with Node.js; reconcile Node first through the repo's NodeSource 24.x helper.",
+            "command": "make install-node-stack",
         },
         "corepack": {
-            "kind": "manual",
-            "summary": "Enable Corepack after Node.js is installed.",
-            "command": "corepack enable",
+            "kind": "installer",
+            "summary": "Corepack should arrive with the Node.js stack; validate after running the Node installer.",
+            "command": "make install-node-stack && corepack --version",
         },
         "pnpm": {
             "kind": "manual",
@@ -92,9 +92,29 @@ def _action_for_package(package):
             "summary": "Install GitNexus CLI in the user npm prefix used by this repo.",
             "command": 'npm install -g --prefix="$HOME/.npm-global" gitnexus@latest',
         },
+        "ast-grep": {
+            "kind": "installer",
+            "summary": "Install ast-grep CLI in the user npm prefix used by this repo.",
+            "command": 'npm install -g --prefix="$HOME/.npm-global" @ast-grep/cli@latest',
+        },
+        "@ast-grep/cli": {
+            "kind": "installer",
+            "summary": "Install ast-grep CLI in the user npm prefix used by this repo.",
+            "command": 'npm install -g --prefix="$HOME/.npm-global" @ast-grep/cli@latest',
+        },
+        "actionlint": {
+            "kind": "installer",
+            "summary": "Install actionlint from the official GitHub release with checksum verification.",
+            "command": "make install-agent-tools",
+        },
+        "osv-scanner": {
+            "kind": "installer",
+            "summary": "Install OSV-Scanner from the official GitHub release with checksum verification.",
+            "command": "make install-agent-tools",
+        },
         "opencode": {
             "kind": "installer",
-            "summary": "Install or refresh OpenCode with the official installer used by ups().",
+            "summary": "Install or refresh OpenCode with the official installer used by make update.",
             "command": "curl -fsSL https://opencode.ai/install | bash -s -- --no-modify-path",
         },
         "docker": {
@@ -124,12 +144,12 @@ def _action_for_package(package):
         },
         "powershell.exe": {
             "kind": "windows",
-            "summary": "Optional Windows-side capability used by ups() for winget from WSL.",
+            "summary": "Optional Windows-side capability used by make update for WinGet from WSL.",
             "command": "Install or repair PowerShell on the Windows host if you need that flow.",
         },
         "wt.exe": {
             "kind": "windows",
-            "summary": "Optional Windows-side capability used by ups() to open a winget tab.",
+            "summary": "Optional Windows-side capability used by make update to open a Windows update tab.",
             "command": "Install or repair Windows Terminal on the Windows host if you need that flow.",
         },
     }
@@ -143,6 +163,12 @@ def _action_for_package(package):
             "kind": "installer",
             "summary": "Install this CLI in the user npm prefix used by the repo.",
             "command": f'npm install -g --prefix="$HOME/.npm-global" {package_name}',
+        }
+    if install_method == "github-release":
+        return {
+            "kind": "installer",
+            "summary": "Install this CLI from its official GitHub release with checksum verification.",
+            "command": "make install-agent-tools",
         }
     if install_method == "curl":
         return {
