@@ -20,7 +20,7 @@ Layers describe *purpose*; default **activation** for global agents follows the 
 
 | Layer | Scope | Examples |
 |-------|-------|----------|
-| Core | All projects | docker, github, fetch, context7, excalidraw, playwright, filesystem, git, sequential-thinking |
+| Core | All projects | docker, github, fetch, context7, excalidraw_canvas, playwright, filesystem, git, sequential-thinking |
 | Knowledge/Semantic | All projects | gitnexus |
 | Domain | Optional vault path | obsidian |
 | Platform | Local services | dagster, loki, minio, prometheus, tempo, store_etl_ops |
@@ -32,7 +32,7 @@ Layers describe *purpose*; default **activation** for global agents follows the 
 |--------|-------|
 | **Type** | Knowledge/Semantic MCP |
 | **Scope** | Global (multi-repo) |
-| **Config Pattern** | `npx -y gitnexus@latest mcp` |
+| **Config Pattern** | `mcp-gitnexus-launcher` → binario local `gitnexus mcp` (sin npx en runtime) |
 | **Index Location** | `~/.gitnexus/` |
 | **CLI** | Installed via npm in `~/.local` |
 | **Wiki Output** | `docs/wiki/` (per project) |
@@ -41,7 +41,7 @@ Layers describe *purpose*; default **activation** for global agents follows the 
 ### GitNexus Helpers
 
 ```bash
-ups              # Updates GitNexus CLI
+make update      # Updates GitNexus CLI after validating Node >=22
 gnx-serve        # Start local server
 gnx-analyze-here # Analyze current repo
 gnx-map          # Analyze + serve
@@ -111,9 +111,24 @@ This MCP is from the official MCP repository. It provides cognitive support for 
 
 These are complementary, not interchangeable. Enable both for full Obsidian integration.
 
+## Docker MCP (WSL)
+
+- **Requires:** Docker Desktop **running** on Windows; invoke via `docker.exe mcp gateway run` from WSL.
+- **`make update` does not fix** a closed Desktop — open Docker Desktop first.
+- Smoke: `docker.exe mcp version` · `docker.exe mcp gateway run --dry-run --verbose`
+
+## Postgres MCP
+
+- **Requires:** non-empty `mcp.postgres_dsn` in `secrets.sops.yaml` → `export POSTGRES_DSN=...` in `~/.config/mcp-secrets.env` (generated; do not edit by hand).
+- **`POSTGRES_DSN not set` in Cursor** usually means empty/missing secret, not a stopped container.
+- Verify without printing value: `grep -E '^export POSTGRES_DSN=.' ~/.config/mcp-secrets.env`
+- Fix: `sops secrets.sops.yaml` → `chezmoi apply -i scripts`
+
 ## Anti-Patterns
 
 - ❌ Hardcoded production secrets in repo files or in `MANIFEST.yaml` (only paths / `keys_hint`)
+- ❌ Editing `~/.config/mcp-secrets.env` manually
+- ❌ `sops -d` to stdout
 - ❌ Silently omitting an MCP from a surface without a documented `reason`
 - ❌ Client-named secrets for new work (prefer neutral `mcp-secrets.env` / documented paths)
 

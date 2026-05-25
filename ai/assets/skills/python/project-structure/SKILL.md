@@ -234,7 +234,7 @@ This dotfiles repo follows a transversal **uv-first / pip-fallback** policy for 
 ### Explicit exceptions (do NOT migrate)
 
 - `pip`, `pipx`, `python3-pip` stay installed as base system fallback.
-- The AI runtime venv at `~/.config/ai/runtime/.venv` keeps using `python3 -m venv` + `pip install -r requirements.txt`. The chezmoi script `.chezmoiscripts/run_after_10_setup_ai_runtime.sh.tmpl` and the corresponding `ups` block must NOT be migrated to `uv` without an explicit, separate task.
+- The AI runtime venv at `~/.config/ai/runtime/.venv` is managed by Chezmoi with `uv venv` + `uv pip install -r` and a requirements hash stamp. Keep that architecture unless a separate task changes the runtime contract.
 - `zsh/30-python.zsh` (alias `pip='pip3'`, `pyreq()`) is intentional legacy; do not change without an explicit task.
 
 ### Installing uv
@@ -246,4 +246,4 @@ Use `make install-uv` from the dotfiles root (idempotent, never edits rc files).
 - `sql-style`: For database code in Python
 - `data-contracts`: For API contracts
 - `dotfiles-bootstrap-install`: For `make install-uv` and the broader install flow
-- `dotfiles-ups-workflow`: For how `ups` updates `uv` prudently
+- `dotfiles-update-workflow`: For how `make update` updates `uv` prudently

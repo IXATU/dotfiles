@@ -52,7 +52,7 @@ vim ai/runtime/mcp/requirements.txt
 
 **MCP global (Cursor):** editar `dot_cursor/mcp.json.tmpl`
 
-**MCP store-etl (Cursor):** editar `private_dot_config/store-etl/store-etl.mcp.json.tmpl`
+**MCP store-etl (Cursor):** gestionar `.cursor/mcp.json` en el repositorio **store-etl** (no en dotfiles). Dotfiles publica MCPs globales y `store_etl_ops`; ver [CHEZMOI.md](CHEZMOI.md).
 
 **Codex:** editar `dot_codex/config.toml.tmpl`
 
@@ -92,7 +92,7 @@ rm -rf ai/assets/skills/nombre-skill/.git
 chezmoi --source=$HOME/dotfiles apply
 ```
 
-El script `run_after_11_link_ai_assets` publica el hub canónico de skills en `~/.config/ai/skills/` y expone ese mismo canon en `~/.cursor/skills-cursor/`, `~/.codex/skills/` y `~/.config/opencode/skills/`.
+El script `run_after_11_link_ai_assets` publica el hub canónico de skills en `~/.config/ai/skills/` y expone ese mismo canon en `~/.claude/skills/`, `~/.cursor/skills-cursor/`, `~/.codex/skills/` y `~/.config/opencode/skills/`.
 
 ---
 
@@ -121,13 +121,13 @@ chezmoi --source=$HOME/dotfiles apply
 
 ---
 
-## 7. Actualización de MCPs con `ups`
+## 7. Actualización de MCPs con `make update`
 
-El alias `ups` incluye una sección que actualiza los servidores MCP:
+`make update` incluye una sección que actualiza runtimes MCP sin aplicar plantillas Chezmoi:
 
-| MCP / Origen | Qué hace `ups` |
+| MCP / Origen | Qué hace `make update` |
 |--------------|----------------|
-| **excalidraw** | `~/mcp-servers/excalidraw-mcp` — `git pull` + `pnpm install` + `pnpm run build` |
+| **excalidraw_canvas** | `make excalidraw-update` — pull de `ghcr.io/yctimlin/mcp_excalidraw` y canvas; no arranca canvas |
 | **docker** | Docker Desktop MCP Gateway oficial: `docker.exe mcp gateway run` desde WSL |
 | **postgres** (npm) | `~/.config/mcp/servers/*/` — `npm update` en cada directorio con `package.json` (solo si existe) |
 | **fetch** | `uv tool install mcp-server-fetch` (instala o actualiza) |
@@ -135,8 +135,9 @@ El alias `ups` incluye una sección que actualiza los servidores MCP:
 | **git** | `uvx mcp-server-git` — se actualiza al ejecutarse |
 | **sequential-thinking** | `npx -y @modelcontextprotocol/server-sequential-thinking` (obtiene latest al ejecutar) |
 | **obsidian** | `npx -y @bitbonsai/mcpvault` + ruta del vault desde Chezmoi `ai.obsidian_vault_path` (ver [CHEZMOI.md](./CHEZMOI.md); plantillas vía `make ai-mcp-generate APPLY=1`) |
-| **dagster, minio, tempo, loki, prometheus, store_etl_ops** | `pip install -r requirements.txt -U` en `~/.config/ai/runtime/.venv` |
-| **context7, github, gitnexus (MCP)** | Usan `npx` — obtienen la última versión al ejecutarse |
+| **dagster, minio, tempo, loki, prometheus, store_etl_ops** | Venv `~/.config/ai/runtime/.venv` (Chezmoi + `uv`; `make install-uv`) |
+| **context7, sequential-thinking, obsidian** | Usan `npx` — obtienen la última versión al ejecutarse |
+| **gitnexus (MCP)** | Usa `mcp-gitnexus-launcher`; el CLI se mantiene con Node `>=22` durante `make update-wsl` |
 
 ### Docker MCP en WSL
 
@@ -156,6 +157,40 @@ timeout 8s docker.exe mcp gateway run
 El runtime `npx -y @0xshariq/docker-mcp-server` queda como legacy descartado:
 imprime ayuda y termina, por lo que Cursor lo interpreta como conexión cerrada.
 
-**gitnexus CLI** se actualiza por separado: `npm install -g --prefix=~/.npm-global gitnexus@latest`
+**Requisito operativo:** Docker Desktop en Windows debe estar **en ejecución**. `make update` actualiza otros MCPs pero no sustituye tener Desktop abierto.
 
-Tras ejecutar `ups`, aplica los cambios del shell con: `source ~/.zshrc`
+### Postgres MCP
+
+- Lee `POSTGRES_DSN` desde `~/.config/mcp-secrets.env` (generado por Chezmoi desde SOPS).
+- Si Cursor muestra **`POSTGRES_DSN not set`**, suele ser `mcp.postgres_dsn` **vacío** en `secrets.sops.yaml`, no Postgres caído.
+- Verificar sin imprimir el valor: `grep -E '^export POSTGRES_DSN=.' ~/.config/mcp-secrets.env`
+- Flujo: `sops secrets.sops.yaml` → `chezmoi apply -i scripts`. No editar el `.env` a mano.
+
+**gitnexus CLI** se actualiza dentro de `make update-wsl`, siempre que Node cumpla `>=22`. Si `make update-check` avisa de Node incompatible, ejecuta primero `make install-node-stack`.
+
+Tras ejecutar `make update`, aplica los cambios del shell con: `source ~/.zshrc` si cambió PATH.
+
+### Excalidraw: rutas y formatos para agentes
+
+| Propósito | Formato |
+|-----------|---------|
+| Dibujo nativo Obsidian | `.excalidraw.md` |
+| Sidecar interoperable para agentes | `.excalidraw` |
+| Salida documental preferida | `.svg` |
+
+El MCP `excalidraw_canvas` monta solo `/mnt/c/Users/jesus/Documents/vault_trabajo/excalidraw` dentro del contenedor como `/workspace/excalidraw` y publica `EXCALIDRAW_EXPORT_DIR=/workspace/excalidraw`.
+
+No llames `import_scene`, `export_scene` ni `export_to_image` con rutas WSL `/mnt/c/...`. Usa rutas internas del contenedor, por ejemplo:
+
+```text
+/workspace/excalidraw/mcp-test/drawing-input.excalidraw
+/workspace/excalidraw/mcp-test/drawing-canvas-modified.excalidraw
+/workspace/excalidraw/mcp-test/drawing-canvas-modified.svg
+```
+
+Reglas de seguridad:
+
+- Importa el sidecar `.excalidraw`, no el `.excalidraw.md`.
+- Exporta primero a un archivo nuevo salvo petición expresa de sobrescritura.
+- No modifiques archivos fuera de `/workspace/excalidraw`.
+- Para SVG o capturas, el canvas debe estar abierto en `http://127.0.0.1:3210`.

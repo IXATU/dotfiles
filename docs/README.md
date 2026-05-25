@@ -1,12 +1,16 @@
 # Documentación dotfiles
 
+## Operaciones
+
+- **[OPERATIONS.md](OPERATIONS.md)** — Guía operativa principal: modelo mental (bootstrap / Chezmoi / update), máquina nueva o existente, secretos, MCPs, validaciones y chuleta de comandos.
+
 ## Instalación
 
-- **[INSTALL.md](INSTALL.md)** — Instalación paso a paso (clonar, Age, SOPS, apply).
+- **[INSTALL.md](INSTALL.md)** — Bootstrap e instalación inicial (clonar, Age, SOPS, `DOTFILES_APPLY=1`). No duplica toda la guía operativa; enlaza a OPERATIONS.
 
 ## Comandos
 
-- **[UPS.md](UPS.md)** — Comando `ups`: actualización integral (APT, npm, Oh My Zsh, MCPs).
+- **[UPDATE.md](UPDATE.md)** — `make update`: actualización diaria integral (Windows, WSL, Node, OpenCode, MCPs Docker).
 - **[COMMANDS_ARCHITECTURE.md](COMMANDS_ARCHITECTURE.md)** — Sistema de commands globales para IA (sos, etc.).
 - **[AI_PROMPTS_SYSTEM.md](AI_PROMPTS_SYSTEM.md)** — Sistema `ai-prompt`: prompts canónicos externos, contrato público, ejemplos y límites.
 - **[VAULT_PROJECT_WIKI_FLOW.md](VAULT_PROJECT_WIKI_FLOW.md)** — Flujo para decidir cuándo capturar conocimiento destilado en `vault_trabajo/projects/<project>/knowledge/...`.

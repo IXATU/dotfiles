@@ -15,6 +15,7 @@ ai/assets/skills/           <- Source of truth (here)
 ~/.config/ai/skills/        <- Symlinked via chezmoi
 ~/.config/opencode/skills/  <- Surface for OpenCode
 ~/.cursor/skills-cursor/    <- Surface for Cursor
+~/.claude/skills/           <- Surface for Claude Code
 ~/.codex/skills/           <- Surface for Codex
 ```
 
@@ -57,6 +58,7 @@ Visible skill names follow semantic origin, not just repository location:
 
 - `docs/adr-writer/` - `Dotfiles ADR Writer`
 - `docs/plans-and-notepads-naming/` - `Dotfiles Plans and Notepads Naming`
+- `docs/excalidraw-publishing/` - `Dotfiles Excalidraw Publishing`
 
 ### ETL
 
@@ -79,6 +81,7 @@ Visible skill names follow semantic origin, not just repository location:
 ### Ops
 
 - `ops/ai-prompt-consumer/` - `Vault AI Prompt Consumer`
+- `ops/dotfiles-operations/` - `Dotfiles operations` (Chezmoi, secrets, update vs apply; daily ops)
 - `ops/dotfiles-install/` - `Dotfiles bootstrap install`
 - `ops/dotfiles-skill-registration/` - `Dotfiles Skill Registration`
 - `ops/vault-development-acceleration/` - `Vault Development Acceleration`
@@ -90,7 +93,8 @@ Visible skill names follow semantic origin, not just repository location:
 - `ops/vault-write-commit-message/` - `Vault Write Commit Message`
 - `ops/mcp-governance/` - `Dotfiles MCP Governance`
 - `ops/system-dependencies/` - `Dotfiles System Dependencies`
-- `ops/system-updates/` - `Dotfiles UPS Workflow`
+- `ops/system-updates/` - `Dotfiles Update Workflow`
+- `ops/excalidraw-mcp-operations/` - `Dotfiles Excalidraw MCP Operations`
 - `ops/playwright-ui-validation/` - `Dotfiles Playwright UI Validation`
 - `ops/wsl2-local-tools/` - `Dotfiles WSL2 Local Tools`
 - `ops/agent-workflow/` - `Dotfiles Agent Workflow`
