@@ -40,11 +40,13 @@ flowchart LR
 | Solo recargar aliases/PATH en la sesión | `source ~/.zshrc` |
 | Editar token GitHub, DSN Postgres, MinIO | `sops secrets.sops.yaml` → `chezmoi apply -i scripts` |
 | Actualizar Windows/WSL, APT, npm, OMZ, MCPs | `make update` |
+| Diagnosticar readiness para agentes IA | `make ai-doctor` |
 | Validar Cursor/MCP/skills en HOME | `make ai-cursor-check` |
 | Validar MANIFEST ↔ plantillas en repo | `make ai-mcp-governance` |
 | Regenerar plantillas MCP desde MANIFEST | `make ai-mcp-generate APPLY=1` → `chezmoi apply` |
 
 `make install` **no** ejecuta `chezmoi apply` por defecto. Son pasos distintos.
+`make ai-doctor` es read-only: agrega checks existentes y escanea secretos del repo con `gitleaks`.
 
 ---
 
@@ -68,11 +70,14 @@ Detalle: [docs/INSTALL.md](docs/INSTALL.md) · operación diaria: [docs/OPERATIO
 
 ```bash
 cd ~/dotfiles && git pull
+make chezmoi-drift-report
 chezmoi --source="$HOME/dotfiles" status
-chezmoi --source="$HOME/dotfiles" apply
+# apply acotado solo si hace falta — ver docs/OPERATIONS_CHEATSHEET.md
 source ~/.zshrc
-# opcional: make update
+make update-check && make update   # humano; opcional
 ```
+
+Detalle: [docs/OPERATIONS_CHEATSHEET.md](docs/OPERATIONS_CHEATSHEET.md).
 
 ---
 
@@ -80,7 +85,8 @@ source ~/.zshrc
 
 | Doc | Contenido |
 |-----|-----------|
-| **[docs/OPERATIONS.md](docs/OPERATIONS.md)** | Guía operativa principal (flujos, secretos, MCPs, riesgos, chuleta) |
+| **[docs/OPERATIONS_CHEATSHEET.md](docs/OPERATIONS_CHEATSHEET.md)** | Chuleta diaria casa/oficina, drift Chezmoi, apply acotado, agentes |
+| **[docs/OPERATIONS.md](docs/OPERATIONS.md)** | Guía operativa principal (flujos, secretos, MCPs, riesgos) |
 | [docs/INSTALL.md](docs/INSTALL.md) | Bootstrap e instalación inicial |
 | [docs/CHEZMOI.md](docs/CHEZMOI.md) | Chezmoi, SOPS, symlinks RC, scripts, `ZSH_RC_APPLY` |
 | [docs/SECRETS_EXAMPLES.md](docs/SECRETS_EXAMPLES.md) | Ejemplos de secretos (GitHub, Postgres, MinIO) |
@@ -101,7 +107,9 @@ dotfiles/
 ```
 
 ```bash
+make help        # targets by risk (read-only vs human/mutating)
 make test-fast
+make ai-doctor
 ```
 
 Ver [docs/TESTING.md](docs/TESTING.md) · árbol: [STRUCTURE.md](STRUCTURE.md).

@@ -7,7 +7,7 @@ setup() {
 	GEN="${DOTFILES_DIR}/scripts/generate-mcp-configs.py"
 	BUILD_MCPS="${DOTFILES_DIR}/build/mcps"
 	TMPL_CURSOR="${DOTFILES_DIR}/dot_cursor/mcp.json.tmpl"
-	TMPL_CODEX="${DOTFILES_DIR}/dot_codex/config.toml.tmpl"
+	TMPL_CODEX="${DOTFILES_DIR}/dot_codex/private_config.toml.tmpl"
 	TMPL_OPENCODE="${DOTFILES_DIR}/dot_config/opencode/opencode.json.tmpl"
 }
 
@@ -67,12 +67,12 @@ _sum() {
 	grep -q 'EXCALIDRAW_EXPORT_DIR=/workspace/excalidraw' "${BUILD_MCPS}/dot_cursor/mcp.json.tmpl"
 	grep -q 'EXCALIDRAW_EXPORT_DIR=/workspace/excalidraw' "${BUILD_MCPS}/dot_codex/mcp_servers.toml.tmpl"
 	grep -q 'EXCALIDRAW_EXPORT_DIR=/workspace/excalidraw' "${BUILD_MCPS}/dot_config/opencode/opencode.json.tmpl"
-	grep -q '/mnt/c/Users/jesus/Documents/vault_trabajo/excalidraw:/workspace/excalidraw' "${BUILD_MCPS}/dot_cursor/mcp.json.tmpl"
-	grep -q '/mnt/c/Users/jesus/Documents/vault_trabajo/excalidraw:/workspace/excalidraw' "${BUILD_MCPS}/dot_codex/mcp_servers.toml.tmpl"
-	grep -q '/mnt/c/Users/jesus/Documents/vault_trabajo/excalidraw:/workspace/excalidraw' "${BUILD_MCPS}/dot_config/opencode/opencode.json.tmpl"
-	run ! grep -q '/mnt/c/Users/jesus/Documents/vault_trabajo:/workspace/excalidraw' "${BUILD_MCPS}/dot_cursor/mcp.json.tmpl"
-	run ! grep -q '/mnt/c/Users/jesus/Documents/vault_trabajo:/workspace/excalidraw' "${BUILD_MCPS}/dot_codex/mcp_servers.toml.tmpl"
-	run ! grep -q '/mnt/c/Users/jesus/Documents/vault_trabajo:/workspace/excalidraw' "${BUILD_MCPS}/dot_config/opencode/opencode.json.tmpl"
+	grep -q '{{ \$excalidrawWorkspaceHost }}:/workspace/excalidraw' "${BUILD_MCPS}/dot_cursor/mcp.json.tmpl"
+	grep -q '{{ \$excalidrawWorkspaceHost }}:/workspace/excalidraw' "${BUILD_MCPS}/dot_codex/mcp_servers.toml.tmpl"
+	grep -q '{{ \$excalidrawWorkspaceHost }}:/workspace/excalidraw' "${BUILD_MCPS}/dot_config/opencode/opencode.json.tmpl"
+	assert_file_not_contains "${BUILD_MCPS}/dot_cursor/mcp.json.tmpl" '/mnt/c/Users/jesus/Documents/vault_trabajo:/workspace/excalidraw'
+	assert_file_not_contains "${BUILD_MCPS}/dot_codex/mcp_servers.toml.tmpl" '/mnt/c/Users/jesus/Documents/vault_trabajo:/workspace/excalidraw'
+	assert_file_not_contains "${BUILD_MCPS}/dot_config/opencode/opencode.json.tmpl" '/mnt/c/Users/jesus/Documents/vault_trabajo:/workspace/excalidraw'
 }
 
 @test "rendered MCP configs use Chezmoi ai.obsidian_vault_path for Obsidian" {
@@ -84,6 +84,17 @@ _sum() {
 	grep -q '{{ \.ai\.obsidian_vault_path }}' "${BUILD_MCPS}/dot_cursor/mcp.json.tmpl"
 	grep -q '{{ \.ai\.obsidian_vault_path }}' "${BUILD_MCPS}/dot_codex/mcp_servers.toml.tmpl"
 	grep -q '{{ \.ai\.obsidian_vault_path }}' "${BUILD_MCPS}/dot_config/opencode/opencode.json.tmpl"
+}
+
+@test "rendered MCP configs use Chezmoi excalidraw workspace variable for Excalidraw" {
+	if ! python3 -c "import yaml" 2>/dev/null; then
+		skip "PyYAML not installed"
+	fi
+	run make -C "${DOTFILES_DIR}" ai-mcp-render
+	[[ "${status}" -eq 0 ]]
+	grep -q '{{ \$excalidrawWorkspaceHost }}' "${BUILD_MCPS}/dot_cursor/mcp.json.tmpl"
+	grep -q '{{ \$excalidrawWorkspaceHost }}' "${BUILD_MCPS}/dot_codex/mcp_servers.toml.tmpl"
+	grep -q '{{ \$excalidrawWorkspaceHost }}' "${BUILD_MCPS}/dot_config/opencode/opencode.json.tmpl"
 }
 
 @test "make ai-mcp-drift exits 0 with intentional parity only" {
@@ -108,25 +119,25 @@ _sum() {
 	grep -q '"mcp"' "${BUILD_MCPS}/dot_cursor/mcp.json.tmpl"
 	grep -q '"gateway"' "${BUILD_MCPS}/dot_cursor/mcp.json.tmpl"
 	grep -q '"run"' "${BUILD_MCPS}/dot_cursor/mcp.json.tmpl"
-	run ! grep -q '@0xshariq/docker-mcp-server' "${BUILD_MCPS}/dot_cursor/mcp.json.tmpl"
-	run ! grep -q '\.codex/mcp/docker/node_modules' "${BUILD_MCPS}/dot_cursor/mcp.json.tmpl"
+	assert_file_not_contains "${BUILD_MCPS}/dot_cursor/mcp.json.tmpl" '@0xshariq/docker-mcp-server'
+	assert_file_not_matches "${BUILD_MCPS}/dot_cursor/mcp.json.tmpl" '\.codex/mcp/docker/node_modules'
 	grep -q 'command = "docker.exe"' "${BUILD_MCPS}/dot_codex/mcp_servers.toml.tmpl"
 	grep -q 'args = \["mcp", "gateway", "run"\]' "${BUILD_MCPS}/dot_codex/mcp_servers.toml.tmpl"
-	run ! grep -q '@0xshariq/docker-mcp-server' "${BUILD_MCPS}/dot_codex/mcp_servers.toml.tmpl"
-	run ! grep -q '\.codex/mcp/docker/node_modules' "${BUILD_MCPS}/dot_codex/mcp_servers.toml.tmpl"
+	assert_file_not_contains "${BUILD_MCPS}/dot_codex/mcp_servers.toml.tmpl" '@0xshariq/docker-mcp-server'
+	assert_file_not_matches "${BUILD_MCPS}/dot_codex/mcp_servers.toml.tmpl" '\.codex/mcp/docker/node_modules'
 	grep -q '"docker.exe"' "${BUILD_MCPS}/dot_config/opencode/opencode.json.tmpl"
 	grep -q '"gateway"' "${BUILD_MCPS}/dot_config/opencode/opencode.json.tmpl"
-	run ! grep -q '@0xshariq/docker-mcp-server' "${BUILD_MCPS}/dot_config/opencode/opencode.json.tmpl"
-	run ! grep -q '\.codex/mcp/docker/node_modules' "${BUILD_MCPS}/dot_config/opencode/opencode.json.tmpl"
+	assert_file_not_contains "${BUILD_MCPS}/dot_config/opencode/opencode.json.tmpl" '@0xshariq/docker-mcp-server'
+	assert_file_not_matches "${BUILD_MCPS}/dot_config/opencode/opencode.json.tmpl" '\.codex/mcp/docker/node_modules'
 }
 
 @test "productive Chezmoi templates also use Docker Desktop Gateway via docker.exe" {
-	run ! grep -q '\.codex/mcp/docker/node_modules' "${TMPL_CURSOR}"
-	run ! grep -q '\.codex/mcp/docker/node_modules' "${TMPL_CODEX}"
-	run ! grep -q '\.codex/mcp/docker/node_modules' "${TMPL_OPENCODE}"
-	run ! grep -q '@0xshariq/docker-mcp-server' "${TMPL_CURSOR}"
-	run ! grep -q '@0xshariq/docker-mcp-server' "${TMPL_CODEX}"
-	run ! grep -q '@0xshariq/docker-mcp-server' "${TMPL_OPENCODE}"
+	assert_file_not_matches "${TMPL_CURSOR}" '\.codex/mcp/docker/node_modules'
+	assert_file_not_matches "${TMPL_CODEX}" '\.codex/mcp/docker/node_modules'
+	assert_file_not_matches "${TMPL_OPENCODE}" '\.codex/mcp/docker/node_modules'
+	assert_file_not_contains "${TMPL_CURSOR}" '@0xshariq/docker-mcp-server'
+	assert_file_not_contains "${TMPL_CODEX}" '@0xshariq/docker-mcp-server'
+	assert_file_not_contains "${TMPL_OPENCODE}" '@0xshariq/docker-mcp-server'
 	grep -q '"command": "docker.exe"' "${TMPL_CURSOR}"
 	grep -q 'command = "docker.exe"' "${TMPL_CODEX}"
 	grep -q '"docker.exe"' "${TMPL_OPENCODE}"
@@ -171,11 +182,11 @@ full = (root / 'dot_codex' / 'config.toml.tmpl').read_text(encoding='utf-8')
 frag = '[mcp_servers.__probe_merge__]\ncommand = \"true\"\nenabled = true\n'
 out = g['merge_codex_productive'](full, frag)
 import tomllib
-tomllib.loads(out)
+tomllib.loads(g['strip_chezmoi_template_preamble'](out))
 assert 'model =' in out
 assert '[plugins.' in out
 assert '__probe_merge__' in out
-assert 'excalidraw' not in out
+assert 'excalidrawWorkspaceHost' in out
 "
 	[[ "${status}" -eq 0 ]]
 }

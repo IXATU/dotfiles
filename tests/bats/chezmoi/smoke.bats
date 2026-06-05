@@ -41,6 +41,27 @@ teardown() {
 	[[ -f "$DOTFILES_DIR/.chezmoiscripts/run_after_14_link_prompt_launchers.sh.tmpl" ]]
 }
 
+@test "run_after_15_link_tmux_dotfiles exists and publishes bin/tmux-dotfiles" {
+	local tmpl="$DOTFILES_DIR/.chezmoiscripts/run_after_15_link_tmux_dotfiles.sh.tmpl"
+	[[ -f "$tmpl" ]]
+	grep -q 'ln -sf' "$tmpl"
+	grep -q 'bin/tmux-dotfiles' "$tmpl"
+	grep -q '\.local/bin' "$tmpl"
+	grep -q 'LOCAL_BIN}/tmux-dotfiles' "$tmpl"
+}
+
+@test "symlink_dot_tmux.conf points to repo tmux.conf" {
+	local tmpl="$DOTFILES_DIR/symlink_dot_tmux.conf.tmpl"
+	[[ -f "$tmpl" ]]
+	grep -q '{{ .chezmoi.homeDir }}/dotfiles/tmux.conf' "$tmpl"
+}
+
+@test "run_before_00 backup hook covers tmux.conf" {
+	local tmpl="$DOTFILES_DIR/.chezmoiscripts/run_before_00_backup_rc_files.sh.tmpl"
+	grep -q '.tmux.conf' "$tmpl"
+	grep -q 'tmux.conf' "$tmpl"
+}
+
 @test "run_after_13 git-ai: template and lib use ln -sf and ~/.local/bin" {
 	local tmpl="$DOTFILES_DIR/.chezmoiscripts/run_after_13_link_git_ai_wrapper.sh.tmpl"
 	local lib="$DOTFILES_DIR/scripts/lib/git-ai-common.sh"
@@ -131,7 +152,7 @@ json.loads(content)
 " 2>/dev/null || skip "Template contains complex chezmoi syntax"
 }
 
-@test "dot_codex/config.toml.tmpl has valid toml structure" {
+@test "dot_codex/private_config.toml.tmpl has valid toml structure" {
 	skip_if_command_missing "python3"
 
 	python3 -c "
@@ -144,7 +165,7 @@ except ImportError:
     except ImportError:
         skip('toml parser not available')
 
-with open('$DOTFILES_DIR/dot_codex/config.toml.tmpl', 'r') as f:
+with open('$DOTFILES_DIR/dot_codex/private_config.toml.tmpl', 'r') as f:
     content = f.read()
 
 # Remove chezmoi template syntax
@@ -167,11 +188,11 @@ tomllib.loads(content)
 }
 
 @test "Codex MCP config has filesystem defined" {
-	grep -q "filesystem" "$DOTFILES_DIR/dot_codex/config.toml.tmpl"
+	grep -q "filesystem" "$DOTFILES_DIR/dot_codex/private_config.toml.tmpl"
 }
 
 @test "Codex MCP config has sequential-thinking defined" {
-	grep -q "sequential-thinking" "$DOTFILES_DIR/dot_codex/config.toml.tmpl"
+	grep -q "sequential-thinking" "$DOTFILES_DIR/dot_codex/private_config.toml.tmpl"
 }
 
 @test "secrets script uses sops" {
@@ -194,8 +215,8 @@ tomllib.loads(content)
 }
 
 @test "docs do not present store-etl secrets as canonical" {
-	! grep -Rni "Secreto can[oó]nico:.*store-etl/secrets.env" \
-		"$DOTFILES_DIR/docs" "$DOTFILES_DIR/codex" 2>/dev/null
+	assert_tree_not_matches "Secreto can[oó]nico:.*store-etl/secrets.env" \
+		"$DOTFILES_DIR/docs" "$DOTFILES_DIR/codex"
 }
 
 @test "ai runtime script uses venv" {
@@ -215,7 +236,7 @@ tomllib.loads(content)
 	grep -q 'NPM_CONFIG_PREFIX="\${NPM_CONFIG_PREFIX:-\$HOME/.npm-global}"' "$DOTFILES_DIR/scripts/install-gitnexus.sh"
 	run grep -q 'local_prefix="\$HOME/.local"' "$DOTFILES_DIR/scripts/update/update-wsl.sh"
 	[[ "${status}" -ne 0 ]]
-	! grep -q 'local_prefix="\$HOME/.local"' "$DOTFILES_DIR/scripts/install-gitnexus.sh"
+	assert_file_not_contains "$DOTFILES_DIR/scripts/install-gitnexus.sh" 'local_prefix="\$HOME/.local"'
 }
 
 @test "make update summary reports warnings honestly" {
@@ -224,7 +245,13 @@ tomllib.loads(content)
 }
 
 @test "make update validates Node before GitNexus" {
-	grep -q 'ensure_node_runtime' "$DOTFILES_DIR/scripts/update/update-wsl.sh"
+	grep -q 'source "${SCRIPT_DIR}/lib/node_runtime.sh"' "$DOTFILES_DIR/scripts/update/update-wsl.sh"
+	grep -q 'node_runtime_probe' "$DOTFILES_DIR/scripts/update/update-wsl.sh"
 	grep -q '"gitnexus"' "$DOTFILES_DIR/scripts/update/update-wsl.sh"
-	grep -q 'below required >=22' "$DOTFILES_DIR/scripts/update/update-wsl.sh"
+	grep -q 'below required >=' "$DOTFILES_DIR/scripts/update/lib/node_runtime.sh"
+	awk '
+		/node_runtime_probe/ { node_probe = NR }
+		/update_global_npm_tool_if_needed "WSL" "GitNexus CLI"/ { gitnexus_update = NR }
+		END { exit !(node_probe && gitnexus_update && node_probe < gitnexus_update) }
+	' "$DOTFILES_DIR/scripts/update/update-wsl.sh"
 }

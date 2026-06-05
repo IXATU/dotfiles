@@ -112,21 +112,24 @@ make deps-install DEPS_INSTALL_ARGS="--dry-run --include-optional"
 
 `deps-install` only installs `apt` inventories. It ignores non-APT tooling and Windows-side/WSL environment entries even if those files are present.
 
-For a full workstation bootstrap, use `make install`: it runs the APT baseline,
-the Node.js stack needed by npm-based CLIs, and `make install-agent-tools` so
-`@ast-grep/cli`, `actionlint` and `osv-scanner` are installed without a second
-manual command.
+For a baseline workstation bootstrap, use `make install`: it runs the APT
+baseline and the non-aggressive external guidance/verification steps. Node,
+Chezmoi, SOPS, uv, Azure CLI and agent validation tools stay behind explicit
+opt-in targets such as `make install-node-stack`, `make install-chezmoi`,
+`make install-sops`, `make install-uv`, `make install-azure-cli` and
+`make install-agent-tools`.
 
 ## What gets checked vs installed
 
 - Installed by `deps-install`: `common.yaml` and `ubuntu.yaml` entries with manager `apt`.
 - Checked but not installed by `deps-install`: `tooling.yaml` and `wsl.yaml`.
 - Windows-side commands such as `wt.exe` and `powershell.exe` are declared for visibility from WSL, not for Linux-side installation.
-- Recommended but not auto-run: `show-system-deps-actions.sh` explains how to reconcile missing `external:*` and `environment:*` entries.
+- Recommended but not auto-run by `deps-install` or `make install`: `show-system-deps-actions.sh` explains how to reconcile missing `external:*` and `environment:*` entries.
 
 ## Current operational examples
 
 - APT baseline: `git`, `zsh`, `tmux`, `python3`, `python3-pip`, `bubblewrap`, `ripgrep`, `fd-find`, `age`.
+- APT optional (shell): `zoxide` — directory jumper via `zsh/25-zoxide.zsh`; install with `make deps-install DEPS_INSTALL_ARGS=--include-optional`.
 - APT test/lint/security tooling: `bats`, `shellcheck`, `shfmt`, `yamllint`, `gitleaks` (required: true, see "Test/lint dependencies" below).
 - Non-APT tooling: `chezmoi`, `sops`, `uv`, `node`, `npm`, `corepack`, `pnpm`, `codex`, `gitnexus`, `@ast-grep/cli`, `actionlint`, `osv-scanner`, `opencode`, `docker`.
 - WSL/Windows-side: `wslpath`, `powershell.exe`, `wt.exe`.
@@ -148,6 +151,7 @@ A fail-fast preflight (`make test-deps-check`, also wired into `test-fast` / `te
 Agents can run the repo checks without guessing tool commands:
 
 ```bash
+make ai-doctor
 make quality-check
 make security-check
 make agent-validate
@@ -155,6 +159,7 @@ make agent-validate
 
 What these cover:
 
+- `make ai-doctor`: read-only agent readiness, including dependency inventory, update readiness, AI/MCP checks, skills/commands validation, and a `gitleaks` working-tree secret scan.
 - `make quality-check`: `shellcheck`, `shfmt` in check mode, `yamllint`, and `actionlint -shellcheck=` when `.github/workflows/*.yml|*.yaml` exists. Inline workflow shell is not delegated to actionlint's ShellCheck integration because the repo already has a separate shell lint target and the release workflow embeds changelog text patterns that ShellCheck misparses.
 - `make security-check`: `gitleaks detect --no-git --redact` over the working tree and `osv-scanner scan source -r` when supported manifests/lockfiles exist.
 - `make agent-validate`: quality + security.
@@ -166,10 +171,10 @@ Chezmoi templates are not passed raw to `shellcheck` or `shfmt`; those tools do 
 - `chezmoi`: `make install-chezmoi` (preferred, idempotent, no sudo, drops the binary at `~/.local/bin/chezmoi`). Direct fallback: `sh -c "$(curl -fsLS get.chezmoi.io)" -- -b "$HOME/.local/bin"` or download from https://github.com/twpayne/chezmoi/releases.
 - `sops`: `make install-sops` (preferred, idempotent, no sudo, sha256-verified, pinned version). Direct fallback: download the matching `sops-vX.Y.Z.linux.<arch>` binary from https://github.com/getsops/sops/releases and drop it at `~/.local/bin/sops`. Not in Ubuntu APT repos.
 - `uv`: `make install-uv` (preferred, idempotent, never edits rc files). Direct fallback: `curl -LsSf https://astral.sh/uv/install.sh | sh`
-- `node` / `npm`: install together with `make install-node-stack` (NodeSource 24.x, Node `>=22` for GitNexus)
+- `node` / `npm`: install together with `make install-node-stack` (NodeSource 24.x, Node `>=22` for GitNexus and managed Node tooling)
 - `azure-cli`: `make install-azure-cli` (opt-in, Debian/Ubuntu/WSL via Microsoft's official Azure CLI repository). It is not part of `make install`; `az login` remains manual.
 - `corepack`: ships with the Node stack; validate with `corepack --version`
-- `pnpm`: `corepack prepare pnpm@latest --activate`
+- `pnpm`: `npm install --global corepack@latest` then `corepack prepare pnpm@latest-11 --activate`
 - `codex`: `npm install -g --prefix="$HOME/.npm-global" @openai/codex@latest`
 - `gitnexus`: `npm install -g --prefix="$HOME/.npm-global" gitnexus@latest`
 - `@ast-grep/cli`: `make install-agent-tools` or `npm install -g --prefix="$HOME/.npm-global" @ast-grep/cli@latest`
@@ -178,6 +183,16 @@ Chezmoi templates are not passed raw to `shellcheck` or `shfmt`; those tools do 
 - `opencode`: `curl -fsSL https://opencode.ai/install | bash -s -- --no-modify-path`
 - `docker`: manual workstation decision on WSL; the repo does not enforce one installer path
 - `wt.exe` / `powershell.exe`: Windows-host capabilities used from WSL, not Linux install targets
+
+`make update` and `make update-tools` can autorrecover their Node/tooling block when an IDE or agent injects an incompatible `node` earlier in `PATH`. The update flow creates a temporary overlay for the child process so `#!/usr/bin/env node` resolves to the managed compatible runtime, while npm/Corepack/pnpm continue to live in the user npm prefix. It does not modify Cursor Server, shell startup files, or persistent `PATH`.
+
+Runtime overrides for advanced cases:
+
+- `DOTFILES_MANAGED_NODE_BIN`: explicit managed Node candidate, instead of `/usr/bin/node`
+- `DOTFILES_NODE_MIN_MAJOR`: minimum accepted Node major, default `22`
+- `DOTFILES_NPM_PREFIX`: user-space npm prefix for managed tooling, defaulting through the existing npm prefix policy
+
+Use `make update-check` to see the effective Node, managed candidate, and whether `make update-tools` can recover without mutating the environment.
 
 ## External version policy
 

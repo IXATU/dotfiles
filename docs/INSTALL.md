@@ -37,14 +37,21 @@ make install SKIP_EXTERNAL=1
 # 4. Instaladores opt-in (uno por uno, idempotentes, soportan DRY_RUN=1)
 make install-chezmoi # chezmoi (twpayne/chezmoi) en ~/.local/bin (sin Go, sin sudo)
 make install-sops    # descarga sops oficial (getsops/sops v3.9.4) a ~/.local/bin
+make install-node-stack  # Node.js LTS vía NodeSource (sudo/apt; requerido para MCPs npx)
+make install-agent-tools # ast-grep, actionlint, osv-scanner (opt-in corporativo)
 make install-uv      # uv (Astral) en ~/.local/bin
 make install-zsh-stack   # Oh My Zsh + Powerlevel10k + plugins (no toca ~/.zshrc)
+# zoxide (salto de directorios, reemplaza plugin OMZ z): make deps-install DEPS_INSTALL_ARGS=--include-optional
 make install-fonts   # MesloLGS NF para Powerlevel10k en Linux/WSL (no configura Windows Terminal)
+make install-mattpocock-skills # fallback externo opt-in: catálogo Matt completo
+make install-git-hooks # hooks Git locales de este checkout; no forma parte de make install/update
 
-# 5. Configurar la ruta real del vault de Obsidian (no se fuerza por defecto)
-#    Editar ~/.config/chezmoi/chezmoi.toml:
+# 5. Configurar rutas AI por máquina (vault Obsidian, workspace Excalidraw)
+#    Editar ~/.config/chezmoi/chezmoi.toml (mínimo: obsidian_vault_path).
+#    Si Excalidraw no vive en <vault>/excalidraw, añade excalidraw_workspace_host.
 #        [data.ai]
 #            obsidian_vault_path = "/ruta/real/del/vault"
+#            excalidraw_workspace_host = "/ruta/real/excalidraw"   # opcional
 
 # 6. Publicar dotfiles (chezmoi apply) — opt-in con DOTFILES_APPLY=1
 #    Crea/actualiza también los symlinks ~/.zshrc, ~/.p10k.zsh y ~/.aliases.
@@ -77,6 +84,19 @@ make ai-cursor-check
 > MesloLGS NF se verifica como `WARN` si falta; instálala con
 > `make install-fonts`. Si los iconos se ven mal en Windows Terminal o VS Code,
 > selecciona `MesloLGS NF` como fuente en la aplicación host.
+
+### Hooks Git locales (opt-in)
+
+`make install-git-hooks` configura únicamente este checkout con
+`core.hooksPath=.githooks`. El pre-commit ejecuta `treegen` sin auto-stage y
+aborta si actualiza `STRUCTURE.md`; revisa el cambio, ejecuta
+`git add STRUCTURE.md` y repite el commit. El post-commit refresca GitNexus con
+`--force --skip-agents-md`, incluso si detecta MCP/lock activo; tiene timeout de
+30 segundos, es best-effort y nunca invalida el commit. Si falla o expira,
+ejecuta manualmente `gitnexus analyze --force .`.
+
+Escapes puntuales: `DOTFILES_SKIP_HOOKS=1`, `DOTFILES_SKIP_TREEGEN=1` y
+`DOTFILES_SKIP_GITNEXUS=1`.
 
 ---
 

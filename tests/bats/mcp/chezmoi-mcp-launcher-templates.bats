@@ -42,8 +42,8 @@ bats_require_minimum_version 1.5.0
 	# Launchers must not ship secrets; only paths and env var names.
 	for name in filesystem git gitnexus postgres; do
 		f="${TMPL_DIR}/executable_mcp-${name}-launcher.tmpl"
-		run ! grep -qE 'ghp_[A-Za-z0-9]{10,}' "$f"
-		run ! grep -qE 'sk-[A-Za-z0-9]{10,}' "$f"
+		assert_file_not_matches "$f" 'ghp_[A-Za-z0-9]{10,}'
+		assert_file_not_matches "$f" 'sk-[A-Za-z0-9]{10,}'
 	done
 }
 
@@ -53,9 +53,19 @@ bats_require_minimum_version 1.5.0
 	done
 }
 
+@test "git/postgres bin launchers use tabs (avoid HOME whitespace-only drift)" {
+	for name in git postgres; do
+		local f="${BIN}/mcp-${name}-launcher"
+		[[ -f "$f" ]]
+		if grep -q $'\t' "$f"; then
+			! grep -q '^    ' "$f"
+		fi
+	done
+}
+
 @test "filesystem template uses portable chezmoi paths not hardcoded dotfiles user" {
 	local f="${TMPL_DIR}/executable_mcp-filesystem-launcher.tmpl"
-	run ! grep -qE '"/home/jesus/dotfiles"' "$f"
+	assert_file_not_matches "$f" '"/home/jesus/dotfiles"'
 	grep -q '{{ \.chezmoi\.sourceDir }}' "$f"
 	grep -q '{{ \.chezmoi\.homeDir }}' "$f"
 	grep -q '{{ \.ai\.obsidian_vault_path }}' "$f"
@@ -63,7 +73,7 @@ bats_require_minimum_version 1.5.0
 
 @test "filesystem bin resolves roots without hardcoded dotfiles path" {
 	local f="${BIN}/mcp-filesystem-launcher"
-	run ! grep -qE '"/home/jesus/dotfiles"' "$f"
+	assert_file_not_matches "$f" '"/home/jesus/dotfiles"'
 	grep -q 'MCP_DOTFILES_ROOT' "$f"
 	grep -q '_resolve_dotfiles_root' "$f"
 }
