@@ -29,15 +29,25 @@ Layers describe *purpose*; default **activation** for global agents follows the 
 | Platform | Local services | dagster, loki, minio, prometheus, tempo, store_etl_ops |
 | Connection | DB / engines | postgres, trino |
 
+## MCP profiles (manifest)
+
+`ai/assets/mcps/MANIFEST.yaml` declares `profiles:` for **future** overlays. Only **`global`** is active today.
+
+- `store-etl`, `ixatu`, `project-local` are **`status: reserved`** — not rendered, validated, or applied by the manifest pipeline.
+- Do **not** assume reserved profiles provide active MCPs.
+- **Project-local MCPs today:** configure in the project's own `.cursor/mcp.json`, `opencode.json`, or equivalent — not via dotfiles profile keys.
+- **Store ETL today:** global `store_etl_ops` with `STORE_ETL_WORKDIR`; stack-specific MCPs in the **store-etl** repository.
+
 ## GitNexus
 
 | Aspect | Value |
 |--------|-------|
 | **Type** | Knowledge/Semantic MCP |
 | **Scope** | Global (multi-repo) |
-| **Config Pattern** | `mcp-gitnexus-launcher` → binario local `gitnexus mcp` (sin npx en runtime) |
+| **Config Pattern** | `mcp-gitnexus-launcher` → `~/.local/bin/gitnexus mcp` (sin npx en runtime) |
 | **Index Location** | `~/.gitnexus/` |
-| **CLI** | Installed via npm in `~/.local` |
+| **CLI (real npm install)** | `~/.npm-global/bin/gitnexus` — `make update-wsl` / `scripts/install-gitnexus.sh` |
+| **CLI (agent-first canonical)** | `~/.local/bin/gitnexus` → symlink a npm-global; ver `make gitnexus-status` |
 | **Wiki Output** | `docs/wiki/` (per project) |
 | **LLM Required** | Yes (OpenAI API key for wiki) |
 
@@ -139,6 +149,35 @@ These are complementary, not interchangeable. Enable both for full Obsidian inte
 - **Requires:** Docker Desktop **running** on Windows; invoke via `docker.exe mcp gateway run` from WSL.
 - **`make update` does not fix** a closed Desktop — open Docker Desktop first.
 - Smoke: `docker.exe mcp version` · `docker.exe mcp gateway run --dry-run --verbose`
+
+## Store ETL Ops MCP
+
+| Aspect | Value |
+|--------|-------|
+| **Type** | Platform MCP (curated make wrapper) |
+| **Scope** | Global; operates on a Store ETL checkout |
+| **Config Pattern** | `~/.config/ai/runtime/.venv` + `ai/runtime/mcp/servers/store_etl_ops/server.py` |
+| **Workdir** | `STORE_ETL_WORKDIR` (optional); fallback `/home/jesus/proyectos/store-etl` |
+| **Allowlist** | Fixed curated `make` targets only (`run_make`, `tail_log`) |
+
+### Workdir resolution
+
+- Set `STORE_ETL_WORKDIR` in the MCP `env` block (Cursor/Codex/OpenCode) or shell to point at your `store-etl` checkout.
+- Supports `~` expansion and relative paths (resolved from the server process cwd).
+- The path must exist and look like a Store ETL repo (`.git`, `pyproject.toml`, or `Makefile`).
+- If unset, the server uses the local fallback `/home/jesus/proyectos/store-etl` (Jesús home layout only).
+- If the resolved path is missing: `Store ETL workdir not found: ... Set STORE_ETL_WORKDIR to your store-etl checkout`.
+- Domain-specific Store ETL skills belong in the **store-etl** repository, not in dotfiles.
+
+Example (Cursor `mcp.json` env):
+
+```json
+"store_etl_ops": {
+  "env": {
+    "STORE_ETL_WORKDIR": "/path/to/store-etl"
+  }
+}
+```
 
 ## Postgres MCP
 

@@ -4,7 +4,7 @@
 
 ## Estado actual
 
-- **Chezmoi** es el único gestor activo de dotfiles relevantes: MCPs (Cursor/Codex), secretos, config Codex, AI runtime, los RC files de la **zsh stack** (`~/.zshrc`, `~/.p10k.zsh`, `~/.aliases`) y **tmux** (`~/.tmux.conf`, launcher `tmux-dotfiles` en `~/.local/bin`).
+- **Chezmoi** es el único gestor activo de dotfiles relevantes: MCPs (Cursor/Codex), secretos, config Codex, AI runtime, los RC files de la **zsh stack** (`~/.zshrc`, `~/.p10k.zsh`, `~/.aliases`) y launchers en `~/.local/bin` como `tmux-dotfiles` y `playwright-docker`.
 - **`make install-zsh-stack`** instala únicamente runtime: Oh My Zsh + Powerlevel10k + plugins custom (`zsh-autosuggestions`, `zsh-completions`, etc.). No toca ningún RC file.
 - **Lista de plugins OMZ:** fuente de verdad en `zsh/20-omz.zsh` (cargado vía `dotfiles/zshrc`). No activar gestores de runtime vía OMZ (`nvm`, `pyenv`, `asdf`, `conda`, `autoenv`). El salto de directorios usa **zoxide** (`zsh/25-zoxide.zsh`, paquete APT opcional en `system/packages/ubuntu.yaml`): sustituye al plugin OMZ `z`, no cargar ambos; si falta el binario el shell arranca igual; con zoxide instalado se conserva `z <patrón>` vía `zoxide init zsh`. Migración de historial manual: `zoxide import --from=z "$HOME/.z"`. FastAPI, Vite, React, TypeScript, PostgreSQL, PowerShell, Cursor y Codex no van como plugins OMZ; si hace falta, conviene aliases o funciones en `aliases` / `zsh/`.
 - **RCM (`rcup`)** queda fuera del flujo activo. Sus referencias históricas se conservan solo como contexto. No hay paso `rcup` en el bootstrap; tampoco se requiere instalar `rcm`.
@@ -17,11 +17,25 @@ En este proyecto conviven dos mecanismos para aplicar cambios. Resumen:
 
 | Mecanismo | Qué hace | Cuándo usarlo |
 |-----------|----------|----------------|
-| **`chezmoi --source=$HOME/dotfiles apply`** (alias: `make install-dotfiles DOTFILES_APPLY=1`) | Aplica las plantillas, archivos y symlinks que Chezmoi gestiona desde el repo a tu HOME: `~/.cursor/mcp.json`, `~/.codex/config.toml`, `~/.config/ai/`, secretos generados, los symlinks `~/.zshrc`, `~/.p10k.zsh`, `~/.aliases`, `~/.tmux.conf`, y el launcher `~/.local/bin/tmux-dotfiles`. | Cuando has editado en el repo lo que Chezmoi controla. No hace falta ejecutarlo solo por haber corrido `make update` (que actualiza sistema/deps/imágenes). |
+| **`chezmoi --source=$HOME/dotfiles apply`** (alias: `make install-dotfiles DOTFILES_APPLY=1`) | Aplica las plantillas, archivos y symlinks que Chezmoi gestiona desde el repo a tu HOME: `~/.cursor/mcp.json`, `~/.codex/config.toml`, `~/.config/ai/`, secretos generados, los symlinks `~/.zshrc`, `~/.p10k.zsh`, `~/.aliases`, `~/.tmux.conf`, y launchers como `~/.local/bin/tmux-dotfiles` y `~/.local/bin/playwright-docker`. | Cuando has editado en el repo lo que Chezmoi controla. No hace falta ejecutarlo solo por haber corrido `make update` (que actualiza sistema/deps/imágenes). |
 | **`source ~/.zshrc`** | Recarga en la **sesión actual** de la terminal el contenido de `~/.zshrc`: aliases, PATH, etc. No escribe archivos. | Después de `chezmoi apply` o de `make update` si cambió PATH. |
 | **`chezmoi --source=$HOME/dotfiles apply ~/.cursor/mcp.json ~/.config/opencode/opencode.json ~/.codex/config.toml`** | Propaga solo las configs MCP renderizadas de Cursor, OpenCode y Codex. | Úsalo tras cambios de plantillas MCP como el launcher de GitNexus. Mantiene el arranque estable con binarios/launchers locales en vez de `npx ...@latest` en runtime. |
 
-Flujo típico tras un `git pull`: `chezmoi --source=$HOME/dotfiles apply` (si hay cambios en lo que Chezmoi gestiona) y `source ~/.zshrc` para la sesión actual.
+Flujo típico tras un `git pull`: revisar drift (`dotfiles-apply` o `make chezmoi-drift-report`), aplicar solo si procede (`dotfiles-apply --apply`), y `source ~/.zshrc` para la sesión actual.
+
+### `dotfiles-apply` (wrapper seguro)
+
+Comando global en `~/.local/bin/dotfiles-apply` (symlink Chezmoi → `bin/dotfiles-apply`). Hace pareja con `dotfiles-update`: preview por defecto, apply solo con intención explícita.
+
+| Comando | Efecto |
+|---------|--------|
+| `dotfiles-apply` | `chezmoi diff` + `status` — **no aplica** |
+| `dotfiles-apply --check` | Igual que el default (alias preview) |
+| `dotfiles-apply --check ~/.zshrc` | Preview acotado a paths |
+| `dotfiles-apply --apply` | Pide escribir `APPLY` y luego `chezmoi apply` |
+| `dotfiles-apply --apply --yes` | Apply sin prompt (humano/CI explícito) |
+
+Override: `DOTFILES_DIR=/ruta/al/repo dotfiles-apply`. No sustituye `chezmoi` avanzado; es el camino seguro recomendado antes de mutar HOME.
 
 ---
 
@@ -40,6 +54,9 @@ Flujo típico tras un `git pull`: `chezmoi --source=$HOME/dotfiles apply` (si ha
 | `~/.aliases` | `symlink_dot_aliases.tmpl` → `$HOME/dotfiles/aliases` |
 | `~/.tmux.conf` | `symlink_dot_tmux.conf.tmpl` → `$HOME/dotfiles/tmux.conf` |
 | `~/.local/bin/tmux-dotfiles` | `run_after_15_link_tmux_dotfiles` → `$HOME/dotfiles/bin/tmux-dotfiles` |
+| `~/.local/bin/playwright-docker` | `dot_local/bin/symlink_playwright-docker.tmpl` → `$HOME/dotfiles/bin/playwright-docker` |
+| `~/.local/bin/dotfiles-update` | `dot_local/bin/symlink_dotfiles-update.tmpl` → `$HOME/dotfiles/bin/dotfiles-update` |
+| `~/.local/bin/dotfiles-apply` | `dot_local/bin/symlink_dotfiles-apply.tmpl` → `$HOME/dotfiles/bin/dotfiles-apply` |
 
 ### Backup seguro de symlinks gestionados (RC + tmux)
 
@@ -408,7 +425,7 @@ Esto **no** sustituye un `chezmoi apply` global y **no** toca Codex ni secretos.
 
 - [GUIA_MCP_AI.md](GUIA_MCP_AI.md) — guía práctica con comandos (añadir MCP, skills, verificar)
 - [SECRETS_EXAMPLES.md](SECRETS_EXAMPLES.md) — ejemplos prácticos para dar de alta secretos (GitHub, Postgres, MinIO)
-- [TOKEN_GITHUB_GH.md](TOKEN_GITHUB_GH.md) — prioridad del token classic para `gh` CLI (Projects API)
+- [TOKEN_GITHUB_GH.md](TOKEN_GITHUB_GH.md) — MCP vs `gh` CLI; no exportar `GH_TOKEN` global
 - [MIGRATION_MCP_CHEZMOI.md](MIGRATION_MCP_CHEZMOI.md) — detalles de la migración MCP
 - [MIGRATION_MCP_ITER3.md](MIGRATION_MCP_ITER3.md) — layout de servidores MCP
 - [codex/README-mcp.md](../codex/README-mcp.md) — MCPs locales y smoke tests

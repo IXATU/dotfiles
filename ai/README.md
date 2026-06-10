@@ -98,6 +98,7 @@ ejecuta. En solapes, gana el skill local bajo `ai/assets/skills/`.
 | `ops/` | `system-updates/` | `Dotfiles Update Workflow` |
 | `ops/` | `excalidraw-mcp-operations/` | `Dotfiles Excalidraw MCP Operations` |
 | `ops/` | `wsl2-local-tools/` | `Dotfiles WSL2 Local Tools` |
+| `ops/` | `wsl2-raw-data-inspection/` | `Dotfiles WSL2 Raw Data Inspection` |
 | `ops/` | `agent-workflow/` | `Dotfiles Agent Workflow` (mapa de familia) |
 | `ops/` | `grill-plan/` | `Dotfiles Grill Plan` |
 | `ops/` | `to-spec/` | `Dotfiles To Spec` |
@@ -142,6 +143,8 @@ Referencias:
 - wrappers operativos derivados del vault: `Vault Development Acceleration`, `Vault Review Diff`, `Vault Detect Errors`, `Vault Suggest Improvements`, `Vault Update Documentation`, `Vault Write Commit Message`, `Vault Project Wiki`
 
 ## Agent workflow (vault + issues + repo)
+
+Contrato operativo para cambios **en dotfiles**: [docs/AGENT_WORKFLOW.md](../docs/AGENT_WORKFLOW.md). Mapa de zonas: [docs/AI_REPO_MAP.md](../docs/AI_REPO_MAP.md). Plantillas handoff: [ai/assets/handoffs/](assets/handoffs/).
 
 Tutorial paso a paso: [Agent Workflow Loop](../docs/AGENT_WORKFLOW_LOOP.md).
 

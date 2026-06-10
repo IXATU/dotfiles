@@ -11,7 +11,7 @@ Referencia corta por escenario. Detalle en [OPERATIONS.md](OPERATIONS.md), [CHEZ
 | **Descubrimiento** | `make help` | Índice CLI de targets por riesgo (read-only vs humano/mutante) |
 | **Bootstrap** | `make install*`, `make deps-*` | Paquetes y opt-ins en máquina nueva |
 | **Materialización** | `chezmoi status` / `diff` / apply acotado | Publica plantillas y secretos en HOME |
-| **Mantenimiento** | `make update`, checks read-only | Sistema, npm, imágenes MCP — **no** sustituye Chezmoi |
+| **Mantenimiento** | `dotfiles-update`, checks read-only | Sistema, npm, imágenes MCP — **no** sustituye Chezmoi |
 
 **Regla principal:** tras `git pull` o merge, revisa drift (`make chezmoi-drift-report`, `chezmoi status`/`diff`) y aplica **solo los paths que el reporte indique**. **`chezmoi apply` global no es el flujo normal** del día a día.
 
@@ -44,19 +44,19 @@ source ~/.zshrc
 ## 3. Día normal — casa
 
 ```bash
-cd ~/dotfiles
-git pull
+cd ~/dotfiles && git pull
 make chezmoi-drift-report
 chezmoi --source="$HOME/dotfiles" status
 chezmoi --source="$HOME/dotfiles" diff
 # apply acotado solo si el reporte o diff lo indican (ver §5–6)
 source ~/.zshrc                 # si cambió PATH tras apply
 make update-check
-make update                     # humano: muta sistema, puede usar red
+github-identity-check          # offline/warn-only por defecto
+dotfiles-update                 # humano: muta sistema, puede usar red
 ```
 
 - Si materializaste MCP/Codex/launchers: **`make ai-cursor-check`**.
-- **`make update`:** humano; APT/sudo, npm, Docker pull, WinGet en otra pestaña.
+- **`dotfiles-update`:** humano; APT/sudo, npm, Docker pull, WinGet en otra pestaña. Desde el repo: `make update`.
 
 ---
 
@@ -94,7 +94,8 @@ chezmoi --source="$HOME/dotfiles" diff
 | **Launchers MCP** (`~/.local/share/chezmoi/bin/mcp-*`) | Apply acotado de esos launchers |
 | **Configs MCP** (Cursor/OpenCode/Codex) | Apply acotado de `mcp.json` / `opencode.json` / `config.toml` |
 | **Scripts `R` en status** | Hooks que se ejecutarían en apply (`R` = Run); ruido esperado. Ver `make chezmoi-drift-report` y [CHEZMOI.md](CHEZMOI.md). No apply global para “limpiar”; no implica secretos rotos |
-| **Secretos** (`mcp-secrets.env`) | Solo con decisión explícita: `sops secrets.sops.yaml` → `chezmoi apply -i scripts` |
+| **Secretos** (`mcp-secrets.env`) | Solo con decisión explícita: `sops secrets.sops.yaml` → `chezmoi apply -i scripts`. Genera `GITHUB_PERSONAL_ACCESS_TOKEN` para MCP; **no** exporta `GH_TOKEN`/`GITHUB_TOKEN` en shell. Ver [TOKEN_GITHUB_GH.md](TOKEN_GITHUB_GH.md) |
+| **Codex snapshots** (`~/.codex/shell_snapshots/*.sh`) | Caché local; puede contener secretos en claro si el env estuvo contaminado. Diagnóstico: `scripts/diagnose-secret-surfaces.sh`. Limpieza: `rm -f ~/.codex/shell_snapshots/*.sh` |
 
 ---
 
@@ -149,9 +150,11 @@ Referencia agentes: [MCP_QUICKREF.md](MCP_QUICKREF.md).
 
 ## 8. GitNexus
 
+**Rutas:** instalación real `~/.npm-global/bin/gitnexus`; ruta canónica agent-first `~/.local/bin/gitnexus` (symlink). MCP y `command -v gitnexus` en shell nueva deben usar la canónica. Tras install/update: `exec zsh -l`, reiniciar MCP GitNexus, `make gitnexus-status`.
+
 | Quién | Permitido |
 |-------|-----------|
-| **Agentes** | `make gitnexus-status`; MCP GitNexus read-only (`gitnexus_query`, `gitnexus_context`, `gitnexus_impact`, …) |
+| **Agentes** | `make gitnexus-status` (incluye **path alignment**); MCP GitNexus read-only cuando alignment OK |
 | **Humanos** | `gnx-analyze-here`, `gnx-wiki-here`, `gnx-serve`, `gnx-map` — solo con decisión explícita |
 
 **Prohibido para agentes (salvo petición explícita de Jesús):**
@@ -170,11 +173,15 @@ make install-git-hooks
 ```
 
 Configura `core.hooksPath=.githooks` solo para este checkout. El pre-commit
-ejecuta `treegen` sin auto-stage y aborta si cambia `STRUCTURE.md`. El
-post-commit refresca GitNexus con `--force --skip-agents-md` de forma síncrona,
-best-effort y no fatal. Si detecta MCP/lock activo, informa y ejecuta igualmente
-el refresh forzado; si falla o expira tras 30 segundos, ejecuta manualmente
-`gitnexus analyze --force .`.
+ejecuta `treegen` antes de cada commit; si regenera `STRUCTURE.md`, stagea
+automáticamente solo ese fichero y deja continuar el commit. No stagea otros
+cambios del workspace. El post-commit refresca GitNexus con `--force --skip-agents-md` de forma síncrona,
+best-effort y no fatal. Si detecta MCP/lock activo o permisos no escribibles en
+`~/.gitnexus` / `registry.json`, omite el refresh con `WARN` (el índice puede
+quedar STALE). Si no hay contención y el analyze falla o expira tras 30 segundos,
+refresca manualmente con `make gitnexus-status` y
+`gnx-analyze-here --force --skip-agents-md`. Si hay varios procesos
+`gitnexus mcp`, cierra sesiones duplicadas de Cursor antes de refrescar.
 
 Escapes: `DOTFILES_SKIP_HOOKS=1`, `DOTFILES_SKIP_TREEGEN=1`,
 `DOTFILES_SKIP_GITNEXUS=1`.
@@ -200,11 +207,14 @@ make bats-docs
 make validate-skills-structure              # read-only: árbol ai/assets/skills/
 make install-mattpocock-skills DRY_RUN=1  # agente: solo simulación
 make update-ai-skills DRY_RUN=1             # agente: previsualizar refresh del catálogo externo
+make clean-runtime-skills                   # dry-run: runtime skills HOME
 ```
 
 - Instalación Matt real (`make install-mattpocock-skills` sin `DRY_RUN`): **humano**; usa red (`npx skills add`).
 - Refresh Matt (`make update-ai-skills` sin `DRY_RUN`): **humano**; usa red; **no** forma parte de `make update`.
 - Skill **local** bajo `ai/assets/skills/` gana sobre catálogo externo Matt.
+- `.claude/` no pertenece al checkout `~/dotfiles`; `make update-check` lo advierte y sugiere limpieza manual, pero no borra.
+- `make clean-runtime-skills` solo inspecciona `~/.claude/skills` y `~/.config/opencode/skills`. Para borrar symlinks rotos hace falta `scripts/clean-runtime-skills.sh --prune-broken-symlinks --yes`.
 
 ---
 
@@ -217,7 +227,7 @@ make update-ai-skills DRY_RUN=1             # agente: previsualizar refresh del 
 | MCP | `make mcp-launcher-contract-check`, `make ai-mcp-governance` |
 | GitNexus docs/aliases | `bats tests/bats/zsh/gitnexus_aliases.bats`, `make gitnexus-status` |
 | Skills | `make validate-skills-structure` |
-| General | `make agent-validate-changed` |
+| General | `make agent-validate` (gate dotfiles); `make agent-validate-changed` (solo cambios); `SECURITY_ONLINE=1` para OSV estricto (también en `security-check` / `agent-validate-full`) |
 
 Readiness agregado (no sustituye tests focalizados): `make ai-doctor`.
 
@@ -243,7 +253,10 @@ Detalle: [TESTING.md](TESTING.md).
 | Comando | Mutación | Red | Escenario |
 |---------|----------|-----|-----------|
 | `make update-check` | No | No | Antes de `make update` o trabajo GitNexus largo |
+| `github-identity-check` / `make github-identity-check` | No | No | Verificar remotos, tokens env e identidad GitHub en modo offline |
+| `github-identity-check --online` | No | Sí | Consultar login efectivo y permisos con `gh` |
 | `make update` | Sí | Sí | Mantenimiento diario (humano) |
+| `make clean-runtime-skills` | No | No | Dry-run de symlinks runtime skills |
 | `make update-ai-skills DRY_RUN=1` | No | No | Previsualizar actualización del catálogo externo Matt Pocock Skills |
 | `make update-ai-skills` | Sí | Sí | Refresh explícito del catálogo externo Matt; humano; no forma parte de `make update` |
 | `make chezmoi-drift-report` | No | No | Tras `git pull` / merge |
@@ -256,7 +269,18 @@ Detalle: [TESTING.md](TESTING.md).
 | `make test-bats-ci` | No | No | Paridad CI / pre-PR |
 | `make ai-doctor` | No | No | Readiness agregado pre-implementación |
 | `make ai-cursor-check` | No | No | Tras materializar MCP en HOME |
-| `make agent-validate-changed` | No | No | Cierre de rama con cambios |
+| `make agent-validate` | No | No | Gate dotfiles post-BUILD (read-only) |
+| `make shell-audit-check` | No | No | Auditoría shell focalizada para agentes |
+| `make agent-validate-report` | No | No | Gate + informe en `build/agent-validation/latest.md` |
+| `dotfiles-apply` | No | No | Preview Chezmoi: `diff` + `status` (default seguro) |
+| `dotfiles-apply --apply` | Sí | Sí | Apply interactivo (confirmar escribiendo `APPLY`) |
+| `dotfiles-apply --apply --yes` | Sí | Sí | Apply no interactivo — solo humano/CI explícito |
+| `scripts/treegen.sh --check .` | No | No | Comprobar drift de `STRUCTURE.md` sin escribir |
+| `make install DRY_RUN=1` | No | No | Simular instalación APT (ver [SCRIPT_CONVENTIONS.md](SCRIPT_CONVENTIONS.md)) |
+| `make agent-validate-changed` | No | No | Solo archivos cambiados (local; sin OSV online) |
+| `make agent-validate-audit` | No | No* | Auditoría full-repo (lint + security; OSV best-effort salvo `SECURITY_ONLINE=1`) |
+| `SECURITY_ONLINE=1 make agent-validate-changed` | No | Sí | Cierre humano con escaneo OSV estricto |
+| `SECURITY_ONLINE=1 make security-check` | No | Sí | OSV estricto dentro de `agent-validate-audit` / `agent-validate-full` |
 
 ---
 

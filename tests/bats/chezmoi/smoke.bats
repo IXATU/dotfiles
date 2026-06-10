@@ -50,6 +50,26 @@ teardown() {
 	grep -q 'LOCAL_BIN}/tmux-dotfiles' "$tmpl"
 }
 
+@test "playwright-docker is a directly managed chezmoi local bin symlink" {
+	local tmpl="$DOTFILES_DIR/dot_local/bin/symlink_playwright-docker.tmpl"
+	[[ -f "$tmpl" ]]
+	[[ "$(cat "$tmpl")" == '{{ .chezmoi.homeDir }}/dotfiles/bin/playwright-docker' ]]
+	[[ ! -f "$DOTFILES_DIR/.chezmoiscripts/run_after_16_link_playwright_docker.sh.tmpl" ]]
+}
+
+@test "dotfiles-update is a directly managed chezmoi local bin symlink" {
+	local tmpl="$DOTFILES_DIR/dot_local/bin/symlink_dotfiles-update.tmpl"
+	[[ -f "$tmpl" ]]
+	[[ "$(cat "$tmpl")" == '{{ .chezmoi.homeDir }}/dotfiles/bin/dotfiles-update' ]]
+	[[ ! -f "$DOTFILES_DIR/.chezmoiscripts/run_after_16_link_dotfiles_update.sh.tmpl" ]]
+}
+
+@test "dotfiles-apply is a directly managed chezmoi local bin symlink" {
+	local tmpl="$DOTFILES_DIR/dot_local/bin/symlink_dotfiles-apply.tmpl"
+	[[ -f "$tmpl" ]]
+	[[ "$(cat "$tmpl")" == '{{ .chezmoi.homeDir }}/dotfiles/bin/dotfiles-apply' ]]
+}
+
 @test "symlink_dot_tmux.conf points to repo tmux.conf" {
 	local tmpl="$DOTFILES_DIR/symlink_dot_tmux.conf.tmpl"
 	[[ -f "$tmpl" ]]
@@ -117,6 +137,12 @@ teardown() {
 	# Check for symlink handling that prevents duplicates
 	grep -q "ensure_symlink" "$DOTFILES_DIR/.chezmoiscripts/run_after_11_link_ai_assets.sh.tmpl" ||
 		grep -q "readlink" "$DOTFILES_DIR/.chezmoiscripts/run_after_11_link_ai_assets.sh.tmpl"
+}
+
+@test "ai assets script refuses repo-local agent skill surfaces" {
+	local tmpl="$DOTFILES_DIR/.chezmoiscripts/run_after_11_link_ai_assets.sh.tmpl"
+	grep -q "refuse_repo_local_target" "$tmpl"
+	grep -q "refusing to materialize AI assets inside dotfiles checkout" "$tmpl"
 }
 
 @test "dot_cursor/mcp.json.tmpl is valid json structure" {
@@ -214,6 +240,17 @@ tomllib.loads(content)
 	grep -q 'ln -sf "${HOME}/.config/mcp-secrets.env" "${HOME}/.secrets/codex.env"' "$tmpl"
 }
 
+@test "secrets script does not export GH_TOKEN or GITHUB_TOKEN globally" {
+	local tmpl="$DOTFILES_DIR/.chezmoiscripts/run_after_00_gen_secrets.sh.tmpl"
+	run grep -E 'export GH_TOKEN|export GITHUB_TOKEN' "$tmpl"
+	[[ "${status}" -eq 1 ]]
+}
+
+@test "secrets script keeps GITHUB_PERSONAL_ACCESS_TOKEN for MCP wrappers" {
+	grep -q 'GITHUB_PERSONAL_ACCESS_TOKEN' \
+		"$DOTFILES_DIR/.chezmoiscripts/run_after_00_gen_secrets.sh.tmpl"
+}
+
 @test "docs do not present store-etl secrets as canonical" {
 	assert_tree_not_matches "Secreto can[oó]nico:.*store-etl/secrets.env" \
 		"$DOTFILES_DIR/docs" "$DOTFILES_DIR/codex"
@@ -230,10 +267,12 @@ tomllib.loads(content)
 @test "shell policy defines canonical npm global prefix for Codex and GitNexus" {
 	grep -q 'export NPM_CONFIG_PREFIX="$HOME/.npm-global"' "$DOTFILES_DIR/zsh/00-env.zsh"
 	grep -q 'path_prepend "\$NPM_CONFIG_PREFIX/bin"' "$DOTFILES_DIR/zsh/10-path.zsh"
+	grep -q 'path_prepend "\$HOME/.local/bin"' "$DOTFILES_DIR/zsh/10-path.zsh"
+	grep -q 'Agent-first local commands should win over npm-global shims' "$DOTFILES_DIR/zsh/10-path.zsh"
 	grep -q '"@openai/codex"' "$DOTFILES_DIR/scripts/update/update-wsl.sh"
 	run grep -R 'npm update -g codex' "$DOTFILES_DIR/scripts/update" "$DOTFILES_DIR/aliases"
 	[[ "${status}" -ne 0 ]]
-	grep -q 'NPM_CONFIG_PREFIX="\${NPM_CONFIG_PREFIX:-\$HOME/.npm-global}"' "$DOTFILES_DIR/scripts/install-gitnexus.sh"
+	grep -q 'NPM_CONFIG_PREFIX="\${NPM_CONFIG_PREFIX:-\${DOTFILES_NPM_PREFIX:-\$HOME/.npm-global}}"' "$DOTFILES_DIR/scripts/install-gitnexus.sh"
 	run grep -q 'local_prefix="\$HOME/.local"' "$DOTFILES_DIR/scripts/update/update-wsl.sh"
 	[[ "${status}" -ne 0 ]]
 	assert_file_not_contains "$DOTFILES_DIR/scripts/install-gitnexus.sh" 'local_prefix="\$HOME/.local"'

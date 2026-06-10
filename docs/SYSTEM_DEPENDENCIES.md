@@ -130,6 +130,9 @@ opt-in targets such as `make install-node-stack`, `make install-chezmoi`,
 
 - APT baseline: `git`, `zsh`, `tmux`, `python3`, `python3-pip`, `bubblewrap`, `ripgrep`, `fd-find`, `age`.
 - APT optional (shell): `zoxide` — directory jumper via `zsh/25-zoxide.zsh`; install with `make deps-install DEPS_INSTALL_ARGS=--include-optional`.
+- APT optional (cli): `fzf` — fuzzy finder via `zsh/26-fzf.zsh`; install with `make deps-install DEPS_INSTALL_ARGS=--include-optional`.
+- APT optional (data): `lnav` — log navigator for local/Docker logs; install with `make deps-install DEPS_INSTALL_ARGS=--include-optional`.
+- APT optional (data): `visidata` (`vd`) — interactive terminal explorer for CSV, TSV, JSON and tabular files; install with `make deps-install DEPS_INSTALL_ARGS=--include-optional`.
 - APT test/lint/security tooling: `bats`, `shellcheck`, `shfmt`, `yamllint`, `gitleaks` (required: true, see "Test/lint dependencies" below).
 - Non-APT tooling: `chezmoi`, `sops`, `uv`, `node`, `npm`, `corepack`, `pnpm`, `codex`, `gitnexus`, `@ast-grep/cli`, `actionlint`, `osv-scanner`, `opencode`, `docker`.
 - WSL/Windows-side: `wslpath`, `powershell.exe`, `wt.exe`.
@@ -162,7 +165,8 @@ What these cover:
 - `make ai-doctor`: read-only agent readiness, including dependency inventory, update readiness, AI/MCP checks, skills/commands validation, and a `gitleaks` working-tree secret scan.
 - `make quality-check`: `shellcheck`, `shfmt` in check mode, `yamllint`, and `actionlint -shellcheck=` when `.github/workflows/*.yml|*.yaml` exists. Inline workflow shell is not delegated to actionlint's ShellCheck integration because the repo already has a separate shell lint target and the release workflow embeds changelog text patterns that ShellCheck misparses.
 - `make security-check`: `gitleaks detect --no-git --redact` over the working tree and `osv-scanner scan source -r` when supported manifests/lockfiles exist.
-- `make agent-validate`: quality + security.
+- `make agent-validate`: dotfiles operational gate (`scripts/agent-validate-dotfiles.sh`).
+- `make agent-validate-audit`: quality + security (full-repo strict audit).
 
 Chezmoi templates are not passed raw to `shellcheck` or `shfmt`; those tools do not reliably parse Go template delimiters. The current shell validation covers real shell scripts, launchers and Bats tests. MCP/Chezmoi template syntax remains covered by the existing `chezmoi-templates`, `ai-mcp-render`, and `ai-mcp-drift` paths.
 
@@ -176,7 +180,7 @@ Chezmoi templates are not passed raw to `shellcheck` or `shfmt`; those tools do 
 - `corepack`: ships with the Node stack; validate with `corepack --version`
 - `pnpm`: `npm install --global corepack@latest` then `corepack prepare pnpm@latest-11 --activate`
 - `codex`: `npm install -g --prefix="$HOME/.npm-global" @openai/codex@latest`
-- `gitnexus`: `npm install -g --prefix="$HOME/.npm-global" gitnexus@latest`
+- `gitnexus`: `scripts/install-gitnexus.sh` (installs in `~/.npm-global`, runs GitNexus grammar postinstall scripts, and materializes agent-first symlink `~/.local/bin/gitnexus` → `~/.npm-global/bin/gitnexus` via `scripts/lib/gitnexus_canonical.sh`; same symlink step runs in `make update-wsl`)
 - `@ast-grep/cli`: `make install-agent-tools` or `npm install -g --prefix="$HOME/.npm-global" @ast-grep/cli@latest`
 - `actionlint`: `make install-agent-tools` (official `rhysd/actionlint` GitHub release, checksum verified)
 - `osv-scanner`: `make install-agent-tools` (official `google/osv-scanner` GitHub release, checksum verified)

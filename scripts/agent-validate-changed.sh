@@ -2,6 +2,8 @@
 set -euo pipefail
 
 DOTFILES_DIR="${DOTFILES_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
+SECURITY_ONLINE="${SECURITY_ONLINE:-0}"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TMP_DIR="$(mktemp -d -t agent-validate-changed.XXXXXX)"
 
 cleanup() {
@@ -39,16 +41,52 @@ run_yamllint() {
 	fi
 }
 
-ensure_agent_release_tools() {
-	if command -v actionlint >/dev/null 2>&1 && command -v osv-scanner >/dev/null 2>&1; then
+ensure_actionlint() {
+	if command -v actionlint >/dev/null 2>&1; then
 		return 0
 	fi
 
-	warn "actionlint/osv-scanner missing; using temporary install-agent-tools fallback"
+	warn "actionlint missing; using temporary install-agent-tools fallback"
 	local temp_home="${TMP_DIR}/agent-tools-home"
 	mkdir -p "${temp_home}"
 	HOME="${temp_home}" bash "${DOTFILES_DIR}/scripts/install-agent-tools.sh" --external-only >/dev/null
 	export PATH="${temp_home}/.local/bin:${PATH}"
+}
+
+ensure_osv_scanner() {
+	if command -v osv-scanner >/dev/null 2>&1; then
+		return 0
+	fi
+
+	warn "osv-scanner missing; using temporary install-agent-tools fallback"
+	local temp_home="${TMP_DIR}/osv-tools-home"
+	mkdir -p "${temp_home}"
+	HOME="${temp_home}" bash "${DOTFILES_DIR}/scripts/install-agent-tools.sh" --external-only >/dev/null
+	export PATH="${temp_home}/.local/bin:${PATH}"
+}
+
+# shellcheck source=scripts/lib/osv_scan.sh
+source "${SCRIPT_DIR}/lib/osv_scan.sh"
+
+run_osv_online_scan() {
+	if ! has_osv_scan_inputs "${DOTFILES_DIR}"; then
+		log "osv-scanner skipped: no supported manifests or lockfiles found"
+		return 0
+	fi
+
+	ensure_osv_scanner
+
+	if ! command -v osv-scanner >/dev/null 2>&1; then
+		printf 'Missing security dependency: osv-scanner\n' >&2
+		printf 'Run: make install-agent-tools\n' >&2
+		return 1
+	fi
+
+	log "osv-scanner repository scan (SECURITY_ONLINE=1 strict)"
+	if run_osv_repo_scan "${DOTFILES_DIR}" 1; then
+		return 0
+	fi
+	return 1
 }
 
 install_temp_gitleaks() {
@@ -124,15 +162,11 @@ ensure_gitleaks() {
 	install_temp_gitleaks
 }
 
-run_security_scan() {
+run_local_security_scan() {
 	ensure_gitleaks
-	ensure_agent_release_tools
 
 	log "gitleaks working-tree scan"
 	gitleaks detect --source "${DOTFILES_DIR}" --no-git --redact --no-banner
-
-	log "osv-scanner repository scan"
-	osv-scanner scan source -r "${DOTFILES_DIR}"
 }
 
 main() {
@@ -171,13 +205,13 @@ main() {
 		esac
 		case "${file}" in
 		*.tmpl) ;;
-		*.sh | *.bash | *.bats | bin/mcp-*-launcher | local/bin/ai-prompt | local/bin/prompt-*)
+		*.sh | *.bash | *.bats | bin/mcp-*-launcher | bin/playwright-docker | bin/dotfiles-update | bin/dotfiles-apply | bin/tmux-dotfiles | local/bin/ai-prompt | local/bin/prompt-*)
 			printf '%s\n' "${DOTFILES_DIR}/${file}" >>"${shellcheck_files}"
 			;;
 		esac
 		case "${file}" in
 		*.tmpl | *.bats) ;;
-		*.sh | *.bash | bin/mcp-*-launcher | local/bin/ai-prompt | local/bin/prompt-*)
+		*.sh | *.bash | bin/mcp-*-launcher | bin/playwright-docker | bin/dotfiles-update | bin/dotfiles-apply | bin/tmux-dotfiles | local/bin/ai-prompt | local/bin/prompt-*)
 			printf '%s\n' "${DOTFILES_DIR}/${file}" >>"${shfmt_files}"
 			;;
 		esac
@@ -233,7 +267,7 @@ main() {
 	fi
 
 	if [[ -s "${workflow_files}" ]]; then
-		ensure_agent_release_tools
+		ensure_actionlint
 		log "actionlint GitHub workflows"
 		actionlint -shellcheck= "${DOTFILES_DIR}"/.github/workflows/*.yml
 	else
@@ -258,7 +292,83 @@ main() {
 			"${DOTFILES_DIR}/tests/bats/system/mcp-render-drift.bats"
 	fi
 
-	run_security_scan
+	if grep -Eq '^docs/' "${changed_file_list}"; then
+		log "documentation bats"
+		make -C "${DOTFILES_DIR}" bats-docs
+	fi
+
+	if grep -Eq '^ai/assets/handoffs/' "${changed_file_list}"; then
+		log "handoff template contract bats"
+		bats "${DOTFILES_DIR}/tests/bats/docs/documentation-consistency.bats"
+	fi
+
+	if grep -Eq '^ai/assets/skills/' "${changed_file_list}"; then
+		log "skills structure and bats"
+		bash "${DOTFILES_DIR}/scripts/validate-skills-structure.sh"
+		bats "${DOTFILES_DIR}/tests/bats/skills"
+	fi
+
+	if grep -Eq '^ai/assets/commands/' "${changed_file_list}"; then
+		log "commands structure and bats"
+		make -C "${DOTFILES_DIR}" validate-commands
+		bats "${DOTFILES_DIR}/tests/bats/commands"
+	fi
+
+	if grep -Eq '^(\.chezmoiscripts/|dot_)' "${changed_file_list}"; then
+		log "chezmoi template bats"
+		make -C "${DOTFILES_DIR}" test-chezmoi
+	fi
+
+	if grep -Eq '^(scripts/treegen\.sh|scripts/hooks/|\.githooks/)' "${changed_file_list}"; then
+		log "git hooks and treegen bats"
+		bats "${DOTFILES_DIR}/tests/bats/git-hooks/hooks.bats"
+	fi
+
+	if grep -Eq '^zsh/' "${changed_file_list}"; then
+		log "zsh stack bats"
+		make -C "${DOTFILES_DIR}" bats-zsh
+	fi
+
+	if grep -Eq '^scripts/update/' "${changed_file_list}"; then
+		log "update workflow bats"
+		bats "${DOTFILES_DIR}/tests/bats/system/update-workflow.bats" \
+			"${DOTFILES_DIR}/tests/bats/system/update-node-runtime.bats" \
+			"${DOTFILES_DIR}/tests/bats/system/update-governance.bats"
+	fi
+
+	if grep -Eq '^(bin/playwright-docker|dot_local/bin/symlink_playwright-docker\.tmpl|tests/bats/system/playwright-docker\.bats)' "${changed_file_list}"; then
+		log "playwright-docker bats"
+		bats "${DOTFILES_DIR}/tests/bats/system/playwright-docker.bats"
+	fi
+
+	if grep -Eq '^(bin/dotfiles-update|dot_local/bin/symlink_dotfiles-update\.tmpl|tests/bats/system/dotfiles-update\.bats)' "${changed_file_list}"; then
+		log "dotfiles-update bats"
+		bats "${DOTFILES_DIR}/tests/bats/system/dotfiles-update.bats"
+	fi
+
+	if grep -Eq '^(bin/dotfiles-apply|dot_local/bin/symlink_dotfiles-apply\.tmpl|tests/bats/system/dotfiles-apply\.bats)' "${changed_file_list}"; then
+		log "dotfiles-apply bats"
+		bats "${DOTFILES_DIR}/tests/bats/system/dotfiles-apply.bats"
+	fi
+
+	if grep -Eq '^(docs/SCRIPT_CONVENTIONS\.md|tests/bats/system/dry-run-guard\.bats)' "${changed_file_list}"; then
+		log "dry-run convention bats"
+		bats "${DOTFILES_DIR}/tests/bats/system/dry-run-guard.bats"
+	fi
+
+	if grep -Eq '^(tests/bats/agent/|docs/AGENT_WORKFLOW\.md|docs/TESTING\.md|docs/VALIDATION_MATRIX\.md)' "${changed_file_list}"; then
+		log "agent regression index bats"
+		bats "${DOTFILES_DIR}/tests/bats/agent/regression.bats"
+	fi
+
+	run_local_security_scan
+
+	if [[ "${SECURITY_ONLINE}" == "1" ]]; then
+		run_osv_online_scan
+	else
+		log "osv-scanner online scan skipped (set SECURITY_ONLINE=1 to enable strict dependency scan)"
+	fi
+
 	log "Changed-file agent validation completed"
 }
 

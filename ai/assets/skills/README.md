@@ -91,6 +91,7 @@ Visible skill names follow semantic origin, not just repository location:
 - `ops/dotfiles-operations/` - `Dotfiles operations` (Chezmoi, secrets, update vs apply; daily ops)
 - `ops/dotfiles-install/` - `Dotfiles bootstrap install`
 - `ops/dotfiles-skill-registration/` - `Dotfiles Skill Registration`
+- `ops/dotfiles-agent-review/` - `Dotfiles Agent Review` (post-change read-only review checklist)
 - `ops/vault-development-acceleration/` - `Vault Development Acceleration`
 - `ops/vault-review-diff/` - `Vault Review Diff`
 - `ops/vault-detect-errors/` - `Vault Detect Errors`
@@ -104,6 +105,7 @@ Visible skill names follow semantic origin, not just repository location:
 - `ops/excalidraw-mcp-operations/` - `Dotfiles Excalidraw MCP Operations`
 - `ops/playwright-ui-validation/` - `Dotfiles Playwright UI Validation`
 - `ops/wsl2-local-tools/` - `Dotfiles WSL2 Local Tools`
+- `ops/wsl2-raw-data-inspection/` - `Dotfiles WSL2 Raw Data Inspection`
 - `ops/agent-workflow/` - `Dotfiles Agent Workflow`
 - `ops/grill-plan/` - `Dotfiles Grill Plan`
 - `ops/to-spec/` - `Dotfiles To Spec`

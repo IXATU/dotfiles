@@ -3,6 +3,7 @@
 setup() {
 	load '../helpers/common'
 	DOTFILES_DIR="$(cd "${BATS_TEST_DIRNAME}/../../.." && pwd)"
+	WINGET_FIXTURES="${DOTFILES_DIR}/tests/fixtures/winget"
 	setup_temp_dir
 }
 
@@ -832,9 +833,19 @@ if [[ "\$1" == "view" ]]; then
 fi
 if [[ "\$1" == "install" && "\$*" == *"gitnexus@latest"* ]]; then
   printf '1.6.6\n' >"${TEST_TEMP_DIR}/gitnexus-version"
+  mkdir -p "${npm_prefix}/lib/node_modules/gitnexus/scripts"
   cat >"${npm_prefix}/lib/node_modules/gitnexus/package.json" <<'PKG'
-{"name":"gitnexus","version":"1.6.6"}
+{
+  "name": "gitnexus",
+  "version": "1.6.6",
+  "scripts": {
+    "postinstall": "node scripts/materialize-vendor-grammars.cjs && node scripts/build-tree-sitter-dart.cjs && node scripts/build-tree-sitter-proto.cjs && node scripts/build-tree-sitter-swift.cjs"
+  }
+}
 PKG
+  for script in materialize-vendor-grammars.cjs build-tree-sitter-dart.cjs build-tree-sitter-proto.cjs build-tree-sitter-swift.cjs; do
+    printf 'process.exit(0)\n' >"${npm_prefix}/lib/node_modules/gitnexus/scripts/\${script}"
+  done
 fi
 if [[ "\$1" == "install" && "\$*" == *"corepack@latest"* ]]; then
   cat >"${npm_prefix}/bin/corepack" <<'COREPACK'
@@ -851,6 +862,7 @@ EOF
 #!/usr/bin/env bash
 case "\$1" in --version) printf 'gitnexus %s\n' "\$(cat "${TEST_TEMP_DIR}/gitnexus-version")";; *) exit 0;; esac
 EOF
+	ln -sf "${stub_dir}/gitnexus" "${npm_prefix}/bin/gitnexus"
 	cat >"${stub_dir}/corepack" <<'EOF'
 #!/usr/bin/env bash
 echo "corepack $*"
@@ -1029,9 +1041,23 @@ fi
 if [[ "\$1" == "install" && "\$*" == *"gitnexus@latest"* ]]; then
   echo 1 >"${TEST_TEMP_DIR}/gitnexus-install-count"
   printf '1.6.6\n' >"${TEST_TEMP_DIR}/gitnexus-version"
+  mkdir -p "${npm_prefix}/lib/node_modules/gitnexus/scripts"
   cat >"${npm_prefix}/lib/node_modules/gitnexus/package.json" <<'PKG'
-{"name":"gitnexus","version":"1.6.6"}
+{
+  "name": "gitnexus",
+  "version": "1.6.6",
+  "scripts": {
+    "postinstall": "node scripts/materialize-vendor-grammars.cjs && node scripts/build-tree-sitter-dart.cjs && node scripts/build-tree-sitter-proto.cjs && node scripts/build-tree-sitter-swift.cjs"
+  }
+}
 PKG
+  for script in materialize-vendor-grammars.cjs build-tree-sitter-dart.cjs build-tree-sitter-proto.cjs build-tree-sitter-swift.cjs; do
+    cat >"${npm_prefix}/lib/node_modules/gitnexus/scripts/\${script}" <<SCRIPT
+#!/usr/bin/env node
+const fs = require('fs');
+fs.appendFileSync('${TEST_TEMP_DIR}/gitnexus-postinstall.log', '\${script}\\n');
+SCRIPT
+  done
   echo "changed 1 package"
   exit 0
 fi
@@ -1061,7 +1087,59 @@ EOF
 	[[ "$output" == *"OK    GitNexus CLI ("* ]]
 	[[ "$output" == *"GitNexus CLI           1.6.5          1.6.6          updated"* ]]
 	[[ "$(cat "${TEST_TEMP_DIR}/gitnexus-install-count")" -eq 1 ]]
+	grep -q '^build-tree-sitter-dart.cjs$' "${TEST_TEMP_DIR}/gitnexus-postinstall.log"
 	grep -q $'GitNexus CLI\t1.6.5\t1.6.6\tupdated' "${TEST_TEMP_DIR}/run-npm-update/tool-snapshot.tsv"
+}
+
+@test "global npm helper refuses GitNexus update when npm ignore-scripts is enabled" {
+	local fake_home="${TEST_TEMP_DIR}/home-npm-gitnexus-ignore"
+	local stub_dir="${TEST_TEMP_DIR}/npm-gitnexus-ignore-bin"
+	local npm_prefix="${fake_home}/.npm-global"
+	mkdir -p "$stub_dir" "$npm_prefix/bin"
+	write_global_npm_package "$npm_prefix" "gitnexus" "1.6.5"
+	make_passthrough_node_stub "$stub_dir" "v24.11.1"
+	cat >"${stub_dir}/npm" <<EOF
+#!/usr/bin/env bash
+if [[ "\$1" == "root" && "\$2" == "-g" ]]; then
+  echo "${npm_prefix}/lib/node_modules"
+  exit 0
+fi
+if [[ "\$1" == "view" ]]; then
+  echo "1.6.6"
+  exit 0
+fi
+if [[ "\$1" == "config" && "\$2" == "get" && "\$3" == "ignore-scripts" ]]; then
+  echo "true"
+  exit 0
+fi
+if [[ "\$1" == "install" ]]; then
+  echo "install should not run" >&2
+  exit 91
+fi
+exit 0
+EOF
+	cat >"${stub_dir}/gitnexus" <<'EOF'
+#!/usr/bin/env bash
+case "$1" in --version) echo "gitnexus 1.6.5";; *) exit 0;; esac
+EOF
+	local script="${TEST_TEMP_DIR}/npm-gitnexus-ignore.sh"
+	cat >"$script" <<EOF
+#!/usr/bin/env bash
+set -euo pipefail
+set -- --section none
+HOME="${fake_home}"
+NPM_CONFIG_PREFIX="${npm_prefix}"
+PATH="${stub_dir}:/usr/bin:/bin"
+DOTFILES_UPDATE_RUN_DIR="${TEST_TEMP_DIR}/run-npm-gitnexus-ignore"
+source "${DOTFILES_DIR}/scripts/update/update-wsl.sh"
+update_global_npm_tool_if_needed "WSL" "GitNexus CLI" "${TEST_TEMP_DIR}/run-npm-gitnexus-ignore/gitnexus.log" "${npm_prefix}" "gitnexus" "latest" gitnexus --version --
+EOF
+	chmod +x "${stub_dir}/node" "${stub_dir}/npm" "${stub_dir}/gitnexus" "$script"
+
+	run "$script"
+	[[ "$status" -eq 0 ]]
+	grep -q $'FAIL\tWSL\tGitNexus CLI\tnpm ignore-scripts is enabled; GitNexus requires postinstall scripts' "${TEST_TEMP_DIR}/run-npm-gitnexus-ignore/wsl-results.tsv"
+	[[ "$output" != *"install should not run"* ]]
 }
 
 @test "global npm helper installs missing tool and records installed snapshot" {
@@ -1118,6 +1196,7 @@ EOF
 	[[ "$output" == *"INFO  Codex CLI is not installed; installing latest available version 0.133.0"* ]]
 	[[ "$output" == *"0.133.0"* ]]
 	[[ "$output" == *"installed"* ]]
+	[[ ! -e "${TEST_TEMP_DIR}/gitnexus-postinstall.log" ]]
 	grep -q $'Codex CLI\t\t0.133.0\tinstalled' "${TEST_TEMP_DIR}/run-npm-install/tool-snapshot.tsv"
 }
 
@@ -1363,6 +1442,19 @@ PY
 	[[ "$output" == *$'OK\tWindows\tWinGet package Microsoft Teams [Microsoft.Teams]\tupdated successfully'* ]]
 }
 
+@test "winget parser fixtures match expected TSV" {
+	local log expected case_name expected_text
+	for log in "${WINGET_FIXTURES}"/*.log; do
+		case_name="$(basename "$log" .log)"
+		expected="${WINGET_FIXTURES}/${case_name}.expected.tsv"
+		[[ -f "$expected" ]]
+		expected_text="$(awk 'NF {print}' "$expected")"
+		run python3 "${DOTFILES_DIR}/scripts/update/parse-winget-log.py" "$log"
+		[[ "$status" -eq 0 ]]
+		[[ "$output" == "$expected_text" ]]
+	done
+}
+
 @test "PowerShell Windows logging uses native process capture and UTF-8 log writes" {
 	local ps1="${DOTFILES_DIR}/scripts/update/update-windows.ps1"
 	grep -q 'Run-NativeLogged' "$ps1"
@@ -1387,13 +1479,18 @@ PY
 	grep -q 'Write-WinGetListStatus \$winGetListName' "$ps1"
 }
 
-@test "PowerShell WinGet upgrade runner streams through Tee-Object and captures native exit code immediately" {
+@test "PowerShell WinGet upgrade runner uses ProcessStartInfo and live filtered console output" {
 	local ps1="${DOTFILES_DIR}/scripts/update/update-windows.ps1"
 	grep -q 'function Run-NativeLiveLogged' "$ps1"
-	grep -q 'Tee-Object -FilePath \$log' "$ps1"
-	grep -q 'Tee-Object -FilePath \$log.*| Out-Host' "$ps1"
-	grep -Fq '$script:LiveRunCode = $LASTEXITCODE' "$ps1"
+	grep -q 'function Invoke-WinGetLiveFiltered' "$ps1"
+	grep -Fq '[System.Diagnostics.ProcessStartInfo]::new()' "$ps1"
+	grep -Fq '$psi.RedirectStandardOutput = $true' "$ps1"
+	grep -Fq '$psi.RedirectStandardError = $true' "$ps1"
+	grep -Fq 'Get-WinGetConsoleLine $line' "$ps1"
 	grep -Fq '[System.IO.File]::WriteAllText($log, $content, $encoding)' "$ps1"
+	grep -Fq 'Run-NativeLiveLogged "WinGet packages" "windows-winget-upgrade.log" "winget" @("upgrade", "--all", "--include-unknown", "--silent", "--accept-package-agreements", "--accept-source-agreements") "utf8" "Updating $winGetPackageCount packages with WinGet..." $true' "$ps1"
+	run grep -q 'Tee-Object -FilePath \$log' "$ps1"
+	[[ "$status" -ne 0 ]]
 	run grep -q 'Run-NativeLogged "WinGet packages"' "$ps1"
 	[[ "$status" -ne 0 ]]
 }
@@ -1425,11 +1522,41 @@ PY
 	run powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$(wslpath -w "${DOTFILES_DIR}/scripts/update/update-windows.ps1")" -SelfTestWinGetConsoleText
 	[[ "$status" -eq 0 ]]
 	[[ "$output" == *"Pandoc"* ]]
+	[[ "$output" == *"1603"* ]]
+	[[ "$output" == *"Cursor"* ]]
+	[[ "$output" == *"Successfully installed"* ]]
 	[[ "$output" == *"OK WinGet console text self-test passed"* ]]
 	[[ "$output" != *$'\n-\n'* ]]
 	[[ "$output" != *$'\n\\\n'* ]]
 	[[ "$output" != *$'\n|\n'* ]]
 	[[ "$output" != *$'\n/\n'* ]]
+	[[ "$output" != *$'\342\226\222\342\226\222\342\226\222'* ]]
+	[[ "$output" != *$'\342\226\210\342\226\210\342\226\210'* ]]
+}
+
+@test "PowerShell WinGet package parser self-test uses fixtures without running WinGet" {
+	local ps1="${DOTFILES_DIR}/scripts/update/update-windows.ps1"
+	local run_dir="${TEST_TEMP_DIR}/winget-package-selftest"
+	if command -v powershell.exe >/dev/null 2>&1 && command -v wslpath >/dev/null 2>&1; then
+		run powershell.exe -NoProfile -Command 'exit 0'
+		if [[ "$status" -ne 0 ]]; then
+			skip "powershell.exe is present but not runnable in this environment (WSL interop unavailable; status=$status)"
+		fi
+		run powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$(wslpath -w "$ps1")" -RunDir "$(wslpath -w "$run_dir")" -SelfTestWinGetPackageResults
+	elif command -v pwsh >/dev/null 2>&1; then
+		run pwsh -NoProfile -File "$ps1" -RunDir "$run_dir" -SelfTestWinGetPackageResults
+	else
+		skip "requires powershell.exe or pwsh"
+	fi
+	[[ "$status" -eq 0 ]]
+	[[ "$output" == *"OK english-success"* ]]
+	[[ "$output" == *"OK english-failure"* ]]
+	[[ "$output" == *"OK spanish-mixed"* ]]
+	[[ "$output" == *"OK unknown"* ]]
+	[[ "$output" == *"OK WinGet package parser self-test passed"* ]]
+	[[ "$output" != *"==> WinGet sources"* ]]
+	[[ "$output" != *"Dotfiles Windows update"$'\n'* ]]
+	grep -q $'OK\tWindows\tWinGet package parser self-test\tfixtures matched' "${run_dir}/windows-results.tsv"
 }
 
 @test "PowerShell live native runner writes output before child exits and preserves WARN result" {
@@ -1717,6 +1844,12 @@ EOF
 @test "update PowerShell script invokes wsl --update and never wsl --shutdown" {
 	grep -q 'Run-NativeLogged "WSL update" "windows-wsl-update.log" "wsl" @("--update") "unicode"' "${DOTFILES_DIR}/scripts/update/update-windows.ps1"
 	assert_file_not_matches "${DOTFILES_DIR}/scripts/update/update-windows.ps1" '^.*Run-Logged.*wsl --shutdown|^[[:space:]]*wsl --shutdown'
+}
+
+@test "update-wsl does not install mcp-server-fetch as persistent uv tool" {
+	run grep -q 'uv tool install mcp-server-fetch' "${DOTFILES_DIR}/scripts/update/update-wsl.sh"
+	[[ "${status}" -eq 1 ]]
+	grep -q 'runtime-managed via uvx' "${DOTFILES_DIR}/scripts/update/update-wsl.sh"
 }
 
 @test "ups command is absent from aliases and Make targets" {
