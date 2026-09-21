@@ -633,7 +633,6 @@
 ├── 🔨 install.mk
 ├── 📄 modelcontextprotocol-server-postgres-0.6.2.tgz
 ├── ⚙️ secrets.sops.yaml
-├── 📄 secrets.sops.yaml.old-age1mq3-unreadable
 ├── 📄 symlink_dot_aliases.tmpl
 ├── 📄 symlink_dot_codex_mcp
 ├── 📄 symlink_dot_p10k.zsh.tmpl
