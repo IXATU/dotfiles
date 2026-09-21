@@ -24,6 +24,13 @@
 │   └── 📁 workflows
 │       ├── ⚙️ release.yml
 │       └── ⚙️ test.yml
+├── 📁 .serena
+│   ├── 📁 cache
+│   │   └── 📁 bash
+│   ├── 📁 memories
+│   ├── 📄 .gitignore
+│   ├── ⚙️ project.local.yml
+│   └── ⚙️ project.yml
 ├── 📁 ai
 │   ├── 📁 adapters
 │   │   ├── 📁 codex
@@ -403,6 +410,7 @@
 │   ├── 🔧 check-system-deps.sh
 │   ├── 🔧 chezmoi-drift-report.sh
 │   ├── 🔧 clean-runtime-skills.sh
+│   ├── 🔧 configure-claude-gitnexus.sh
 │   ├── 🔧 configure-claude-serena.sh
 │   ├── 🔧 diagnose-checkout-ai-surface.sh
 │   ├── 🔧 diagnose-secret-surfaces.sh
@@ -541,6 +549,7 @@
 │   │   │   ├── 📄 ai-cursor-check.bats
 │   │   │   ├── 📄 azure-tools.bats
 │   │   │   ├── 📄 clean-runtime-skills.bats
+│   │   │   ├── 📄 configure-claude-gitnexus.bats
 │   │   │   ├── 📄 configure-claude-serena.bats
 │   │   │   ├── 📄 diagnose-secret-surfaces.bats
 │   │   │   ├── 📄 docker-desktop-credentials.bats

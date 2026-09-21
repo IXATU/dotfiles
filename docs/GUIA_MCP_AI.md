@@ -172,6 +172,8 @@ chezmoi --source="$HOME/dotfiles" apply ~/.config/ai/runtime
 
 `make install-serena` instala o converge la versión canónica. Cursor usa contexto `ide` y no presupone que el cwd de la GUI sea el workspace; activa el proyecto desde Serena cuando sea necesario. Codex y OpenCode usan `--project-from-cwd`; Claude se registra de forma opt-in con `make configure-claude-serena` mediante `claude mcp add --scope user`, sin gestionar `~/.claude.json` ni borrar otros MCPs.
 
+GitNexus se registra en Claude de la misma forma opt-in con `make configure-claude-gitnexus`, que añade el MCP user-scoped `gitnexus` apuntando a `mcp-gitnexus-launcher` (no usa `npx` ni invoca `gitnexus mcp` directamente). Ambos adapters son idempotentes.
+
 La configuración de lenguajes pertenece a cada `.serena/project.yml`. Serena admite varios language servers simultáneos: no se reinicia al alternar entre Python y TypeScript, y los agentes no cambian `language_servers` durante un handoff normal sin autorización explícita.
 
 Guía de elección para agentes: [Dotfiles Serena Development Tooling](../ai/assets/skills/ops/serena-development-tooling/SKILL.md).

@@ -27,7 +27,7 @@ export DOTFILES_APPLY
 # Optional passthrough to the declarative APT installer (same as deps-install).
 DEPS_INSTALL_ARGS ?=
 
-.PHONY: install-check install-apt install-external install-dotfiles install-verify install install-zsh-stack install-fonts install-uv install-serena install-taplo configure-claude-serena install-sops install-chezmoi install-node-stack install-docker-desktop-helper install-azure-cli install-agent-tools install-mattpocock-skills install-mcp-github install-git-hooks set-default-shell-zsh secrets-check ai-cursor-check chezmoi-drift-report mcp-launcher-contract-check gitnexus-status ai-mcp-validate ai-mcp-render ai-mcp-drift ai-mcp-governance ai-mcp-generate
+.PHONY: install-check install-apt install-external install-dotfiles install-verify install install-zsh-stack install-fonts install-uv install-serena install-taplo configure-claude-serena configure-claude-gitnexus install-sops install-chezmoi install-node-stack install-docker-desktop-helper install-azure-cli install-agent-tools install-mattpocock-skills install-mcp-github install-git-hooks set-default-shell-zsh secrets-check ai-cursor-check chezmoi-drift-report mcp-launcher-contract-check gitnexus-status ai-mcp-validate ai-mcp-render ai-mcp-drift ai-mcp-governance ai-mcp-generate
 
 install-check:
 	@bash $(DOTFILES_DIR)/scripts/install-check.sh
@@ -83,6 +83,13 @@ install-taplo:
 # registrations and every unrelated Claude MCP are preserved.
 configure-claude-serena:
 	@bash $(DOTFILES_DIR)/scripts/configure-claude-serena.sh $(if $(filter 1 true yes on,$(DRY_RUN)),--dry-run,)
+
+# Add only the GitNexus user MCP through Claude's supported CLI. Existing
+# GitNexus registrations and every unrelated Claude MCP are preserved. The
+# server is started through the canonical launcher under
+# ~/.local/share/chezmoi/bin, so no npx runtime dependency is introduced.
+configure-claude-gitnexus:
+	@bash $(DOTFILES_DIR)/scripts/configure-claude-gitnexus.sh $(if $(filter 1 true yes on,$(DRY_RUN)),--dry-run,)
 
 # Optional, opt-in installer for the SOPS secrets editor (getsops/sops).
 # Intentionally NOT part of `make install`: sops is external (not in Ubuntu APT

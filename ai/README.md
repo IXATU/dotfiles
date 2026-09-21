@@ -54,7 +54,7 @@ Los títulos visibles siguen procedencia semántica:
 - marca original para terceros, como `GitNexus ...`
 - familias de proyecto como `Store ETL ...` reservadas para repos concretos
 
-> **Nota:** `.claude/skills/` es una convención de nombre compartida por Claude Code y OpenCode. Los skills de este repo viven en `ai/assets/skills/` y se symlinkean a las rutas que cada plataforma espera. La integración MCP Serena de Claude es opt-in mediante `make configure-claude-serena`; no se gestiona `~/.claude.json` completo.
+> **Nota:** `.claude/skills/` es una convención de nombre compartida por Claude Code y OpenCode. Los skills de este repo viven en `ai/assets/skills/` y se symlinkean a las rutas que cada plataforma espera. Las integraciones MCP de Claude (Serena y GitNexus) son opt-in mediante `make configure-claude-serena` y `make configure-claude-gitnexus`; no se gestiona `~/.claude.json` completo.
 
 ## Adapters
 

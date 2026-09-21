@@ -86,7 +86,11 @@ normalize_component_version() {
 		version="$(printf '%s\n' "$version" | sed -E 's/^yamllint[[:space:]]+//')"
 		;;
 	gitleaks)
-		version="$(printf '%s\n' "$version" | sed -E 's/^gitleaks[[:space:]]+version[[:space:]]+//; s/^v//')"
+		if [[ "$version" == *"version is set by build process"* ]]; then
+			version=""
+		else
+			version="$(printf '%s\n' "$version" | sed -E 's/^gitleaks[[:space:]]+version[[:space:]]+//; s/^v//')"
+		fi
 		;;
 	esac
 	printf '%s\n' "$version"

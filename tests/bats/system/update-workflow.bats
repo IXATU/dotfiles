@@ -2180,6 +2180,24 @@ EOF
 	[[ "$status" -eq 0 ]]
 }
 
+@test "gitleaks version normalization handles real versions and build-process sentinel" {
+	local script="${TEST_TEMP_DIR}/gitleaks-normalization.sh"
+	cat >"$script" <<EOF
+#!/usr/bin/env bash
+set -euo pipefail
+set -- --section none
+DOTFILES_UPDATE_RUN_DIR="${TEST_TEMP_DIR}/run-gitleaks-normalize"
+source "${DOTFILES_DIR}/scripts/update/update-wsl.sh"
+[[ "\$(normalize_component_version gitleaks 'gitleaks version v8.21.2')" == '8.21.2' ]]
+[[ "\$(normalize_component_version gitleaks 'v8.21.2')" == '8.21.2' ]]
+[[ -z "\$(normalize_component_version gitleaks 'version is set by build process')" ]]
+[[ "\$(normalize_component_version gitleaks 'version is set by build process')" != *'ersion is set by build process'* ]]
+EOF
+	chmod +x "$script"
+	run "$script"
+	[[ "$status" -eq 0 ]]
+}
+
 @test "update workflow keeps Serena pinned and uses natural uv upgrades for Ruff and ty" {
 	grep -q 'install-serena.sh' "${DOTFILES_DIR}/scripts/update/update-wsl.sh"
 	grep -q 'update_uv_tool.*Ruff.*ruff' "${DOTFILES_DIR}/scripts/update/update-wsl.sh"
