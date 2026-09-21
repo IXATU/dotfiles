@@ -2,238 +2,346 @@
 
 Este archivo contiene las últimas 5 releases. Para el historial completo, consulta los archivos en el directorio `releases/`.
 
-## [v2026.06.05_0800] - 2026-06-05
+## [v0.1.0] - 2026-09-21
 
 ## Changes
 ### Added
-- 2026-05-31 12:03 [37769f3](https://github.com/IXATU/dotfiles/commit/37769f3) feat(gitnexus): enhance alias functionality and documentation (Cursor Agent)
-  - Removed direct alias for `gnx-serve` to ensure it utilizes the `_gnx_with_managed_node` helper for managed Node execution.
-  - Introduced new helper functions to streamline the execution of GitNexus commands with managed Node, improving compatibility and user experience.
-  - Updated documentation to reflect changes in command usage and the importance of managed Node overlays for various GitNexus operations.
-- 2026-05-31 11:59 [8990902](https://github.com/IXATU/dotfiles/commit/8990902) feat(gitnexus): add gitnexus-status target and update documentation (Cursor Agent)
-  - Introduced a new Makefile target `gitnexus-status` for checking read-only index, lock, and Node status for agents, ensuring compliance with operational policies.
-  - Updated multiple skill documentation files to reflect the new command, emphasizing the importance of human approval for mutating operations.
-  - Enhanced the MCP_QUICKREF.md to include the new `gitnexus-status` command, providing clearer guidance for users on GitNexus operations.
-- 2026-05-31 11:52 [3e12425](https://github.com/IXATU/dotfiles/commit/3e12425) feat(mcp): introduce mcp-launcher-contract-check for launcher validation (Cursor Agent)
-  - Added a new script `mcp-launcher-contract-check.sh` to validate the synchronization between launcher binaries and their corresponding templates, ensuring strict compliance for git, gitnexus, and postgres launchers.
-  - Updated `install.mk` to include the new Makefile target `mcp-launcher-contract-check`, allowing users to run the validation easily.
-  - Enhanced documentation in CHEZMOI.md and MCP_QUICKREF.md to explain the new contract check and its usage.
-- 2026-05-31 11:46 [f8812f7](https://github.com/IXATU/dotfiles/commit/f8812f7) feat(codex): update configuration management and enhance documentation (Cursor Agent)
-  - Added new Codex agent preferences to `.chezmoi.toml`, allowing for model and reasoning effort customization.
-  - Renamed the Codex configuration template from `config.toml.tmpl` to `private_config.toml.tmpl` to reflect its private nature and ensure proper permissions on apply.
-  - Updated documentation in CHEZMOI.md and GUIA_MCP_AI.md to clarify the governance of Codex configurations and the importance of manual application.
-- 2026-05-31 11:36 [33f6f13](https://github.com/IXATU/dotfiles/commit/33f6f13) feat(install): add chezmoi-drift-report target and enhance documentation (Cursor Agent)
-  - Introduced a new Makefile target `chezmoi-drift-report` for generating a read-only report of chezmoi status and launcher diffs without applying changes.
-  - Updated documentation in CHEZMOI.md to explain how to interpret `chezmoi status` and the significance of drift, including examples of read-only commands.
-  - Enhanced the tests to include checks for the new drift report functionality, ensuring proper validation of the chezmoi launchers.
-- 2026-05-31 11:29 [f8ab903](https://github.com/IXATU/dotfiles/commit/f8ab903) feat(scripts): enhance skills validation and cleanup processes (Cursor Agent)
-  - Introduced functions to check for symlinks and the presence of the 'mattpocock' vendor directory in the skills structure, ensuring compliance with governance standards.
-  - Updated the cleanup process for Matt symlinks to utilize a more robust method for finding and removing links.
-  - Enhanced the install-agent-skills script to assert the cleanliness of the canonical skills directory post-installation.
-- 2026-05-31 09:27 [d26cc77](https://github.com/IXATU/dotfiles/commit/d26cc77) feat(tests): add zsh syntax validation to testing workflow (Cursor Agent)
-  - Updated the GitHub Actions workflow to install zsh alongside existing test tooling.
-  - Enhanced the agent validation script to include zsh syntax checks for specific scripts.
-  - Modified the Makefile to exclude zsh scripts from ShellCheck and added a dedicated linting target for zsh syntax validation.
-- 2026-05-30 23:19 [7ab508d](https://github.com/IXATU/dotfiles/commit/7ab508d) feat(tmux): enhance tmux integration and backup policy for managed symlinks (Cursor Agent)
-  - Updated the backup script to include `~/.tmux.conf` in the management of symlinks, ensuring a secure backup process before applying changes.
-  - Revised documentation in `CHEZMOI.md` and `TMUX.md` to reflect the inclusion of tmux configuration and the updated backup policy.
-  - Added tests to verify the existence of the new tmux symlink template and the backup hook functionality for `tmux.conf`.
-- 2026-05-30 23:08 [1f103dd](https://github.com/IXATU/dotfiles/commit/1f103dd) feat(tmux): add tmux configuration and testing support; remove deprecated scripts (Cursor Agent)
-  - Introduced a new `TMUX.md` documentation file and a `tmux` directory for related tests.
-  - Updated `Makefile.tests` to include `tmux-dotfiles` in the shell launchers and added a dedicated `bats-tmux` target for testing.
-  - Removed obsolete `localidades.sh`, `nges.sh`, and `ofertas.sh` scripts to streamline tmux configurations.
-- 2026-05-30 14:37 [dc7f286](https://github.com/IXATU/dotfiles/commit/dc7f286) feat(zoxide): integrate zoxide for directory navigation and update documentation (Cursor Agent)
-  - Added zoxide integration in the zsh configuration to replace the OMZ plugin `z`.
-  - Updated documentation in `CHEZMOI.md`, `INSTALL.md`, and `SYSTEM_DEPENDENCIES.md` to include zoxide installation instructions and its role as a directory jumper.
-  - Enhanced test suite to include tests for the zoxide module and updated plugin management to reflect the removal of the `z` plugin.
-- 2026-05-30 14:22 [052df82](https://github.com/IXATU/dotfiles/commit/052df82) feat(ohmyzsh): update zsh stack installation and plugin management (Cursor Agent)
-  - Clarified the functionality of `make install-zsh-stack`, specifying that it installs only the runtime components without modifying RC files.
-  - Added a detailed list of Oh My Zsh plugins in `zsh/20-omz.zsh`, including new plugins and removal of unnecessary ones.
-  - Updated documentation in `CHEZMOI.md` to reflect changes in plugin management and installation processes.
-- 2026-05-30 14:05 [9ca82b2](https://github.com/IXATU/dotfiles/commit/9ca82b2) feat(excalidraw): enhance Excalidraw workspace configuration and integration (Cursor Agent)
-  - Added `excalidraw_workspace_host` to `.chezmoi.toml` for customizable Excalidraw workspace paths.
-  - Updated `MANIFEST.yaml` and various template files to utilize the new workspace host variable, replacing hardcoded paths.
-  - Modified installation process in `install.mk` to clarify opt-in nature of Node and agent tools.
-- 2026-05-30 12:58 [0c0995e](https://github.com/IXATU/dotfiles/commit/0c0995e) feat(skills): introduce opt-in support for Matt Pocock external skills (Cursor Agent)
-  - Added `install-mattpocock-skills` and `update-ai-skills` targets to `install.mk` and `update.mk` for managing external skills.
-  - Updated documentation to clarify the fallback policy for external skills and their installation process.
-  - Enhanced `AGENT_WORKFLOW_FOR_AGENTS.md`, `README.md`, and other relevant files to reflect the new external skills structure and usage.
-- 2026-05-30 11:38 [056c197](https://github.com/IXATU/dotfiles/commit/056c197) feat(gitnexus): implement managed Node runtime analysis helper (Cursor Agent)
-  - Added a new function `_gnx_analyze_with_managed_node` to streamline the analysis process with GitNexus, ensuring compatibility with managed Node runtimes.
-  - Updated `gnx-analyze-here` and `gnx-wiki-here` functions to utilize the new helper for improved runtime management.
-  - Revised documentation in `SKILL.md` and `MCP_QUICKREF.md` to emphasize the use of the managed helper for running GitNexus commands, enhancing user guidance on Node runtime compatibility.
-- 2026-05-30 11:25 [5d795bc](https://github.com/IXATU/dotfiles/commit/5d795bc) feat(ai-doctor): introduce read-only agent readiness check (Cursor Agent)
-  - Added `make ai-doctor` command to perform a comprehensive readiness check for agents, including dependency inventory, update readiness, AI/MCP checks, skills validation, and a secret scan using `gitleaks`.
-  - Updated documentation to reflect the new command and its purpose in ensuring agent readiness before implementation.
-  - Refactored related scripts to integrate the new checks and improve overall validation processes.
-- 2026-05-30 10:54 [7d8be06](https://github.com/IXATU/dotfiles/commit/7d8be06) feat(update-windows): enhance self-testing and logging for WinGet console output (Cursor Agent)
-  - Added a new switch parameter for self-testing WinGet console text filtering, improving validation of output.
-  - Introduced a function to write the status of WinGet package updates, enhancing logging clarity.
-  - Updated the `Run-NativeLogged` function to include an optional parameter for controlling step display during execution.
-- 2026-05-25 20:16 [42412f7](https://github.com/IXATU/dotfiles/commit/42412f7) feat(node-runtime): implement controlled Node runtime management for update tooling (Cursor Agent)
-  - Introduced a new `node_runtime.sh` library to manage Node.js runtime checks and overlays for update scripts.
-  - Enhanced `update-check.sh` and `update-wsl.sh` to utilize the new Node runtime management functions, allowing for better handling of incompatible Node versions.
-  - Added support for environment variables to customize Node runtime behavior, including minimum major version and managed Node binary path.
-- 2026-05-25 17:29 [bb2a679](https://github.com/IXATU/dotfiles/commit/bb2a679) feat(docker): add Docker Desktop credential helper installation and validation (Cursor Agent)
-  - Introduced a new `install-docker-desktop-helper` target in `install.mk` to create symlinks for Docker Desktop credential helpers in WSL.
-  - Enhanced the `update` scripts to check for Docker credential helpers and validate their availability before performing image operations.
-  - Updated documentation to include instructions for the new helper installation and its role in managing Docker credentials.
+- 2026-09-21 10:50 [c03bfed](https://github.com/IXATU/dotfiles/commit/c03bfed) feat(ai): add Serena and development tooling (Jesús)
+  Integrate Serena 1.7.0, global Pyright/ty/Ruff/Taplo tooling, Claude Serena/GitNexus adapters, workstation snapshot coverage, and project-owned Serena configuration.
+- 2026-06-14 13:56 [1224988](https://github.com/IXATU/dotfiles/commit/1224988) feat(makefile): add secrets readiness check and update help documentation (Cursor Agent)
+  - Introduced a new `secrets-check` target in `install.mk` to verify SOPS/Age/Chezmoi secrets readiness without mutating values.
+  - Updated the help section in `tests/Makefile.tests` to include the new `secrets-check` command for better user guidance.
+  - Integrated the `secrets-check` into the system tests to ensure its functionality is validated during testing.
+- 2026-06-14 13:20 [0836368](https://github.com/IXATU/dotfiles/commit/0836368) feat(docker): improve Docker command resolution and error handling in update scripts (Cursor Agent)
+  - Introduced a new function `resolve_responsive_docker_bin` to streamline Docker command resolution, allowing for fallback to `docker.exe` when the primary Docker command is unresponsive.
+  - Enhanced error messages to provide clearer guidance when Docker is unavailable, improving user experience during Excalidraw image operations.
+  - Updated `update-check.sh` to utilize the new resolution function, ensuring accurate status reporting for Docker commands.
+- 2026-06-14 13:05 [4846959](https://github.com/IXATU/dotfiles/commit/4846959) feat(docker): enhance Docker command resolution and error handling in scripts (Cursor Agent)
+  - Added support for resolving Docker commands in `ai-cursor-check.sh` and `update-excalidraw.sh`, allowing for fallback to `docker.exe` when the primary Docker command is unresponsive.
+  - Improved error messages to provide clearer guidance when Docker is not available, enhancing user experience during Excalidraw image operations.
+  - Updated test cases to validate the new Docker command resolution logic and ensure proper handling of various scenarios, including unresponsive Docker commands.
+- 2026-06-13 11:48 [be65f52](https://github.com/IXATU/dotfiles/commit/be65f52) feat(ci): add gitleaks secret scanning to CI workflow and update documentation (Cursor Agent)
+  - Integrated gitleaks into the CI workflow for secret scanning by adding a new step in `.github/workflows/test.yml`.
+  - Updated `docs/TESTING.md` to reflect the inclusion of the gitleaks step in the CI process, clarifying its purpose and usage.
+  - Enhanced test coverage by adding a new test case in `tests/bats/git-hooks/hooks.bats` to validate behavior when tree generation produces empty output.
+- 2026-06-13 11:17 [eb235b9](https://github.com/IXATU/dotfiles/commit/eb235b9) feat(update): refine color-coding logic for WinGet summary results (Cursor Agent)
+  - Enhanced the `Get-WinGetSummaryResultColor` function to improve color determination for various result statuses, including handling of additional cases like "unchanged" and "error".
+  - Introduced a new `Test-WinGetSummaryResultColorContract` function to validate the color output against expected results, ensuring consistency in the summary display.
+  - Updated tests to verify the presence of the new function and the refined logic in the PowerShell script.
+- 2026-06-13 11:06 [9549927](https://github.com/IXATU/dotfiles/commit/9549927) feat(update): add color-coded output for WinGet summary results (Cursor Agent)
+  - Introduced a new function `Get-WinGetSummaryResultColor` to determine the color for displaying WinGet results based on their status.
+  - Updated the `Write-WindowsSemanticSummary` function to utilize the new color-coding feature, enhancing the visibility of package update statuses in the console output.
+  - Enhanced tests to verify the presence of the new function and the color output in the PowerShell script.
+- 2026-06-13 10:57 [e5aae71](https://github.com/IXATU/dotfiles/commit/e5aae71) feat(update): enhance WinGet inventory display and add ShowInventory option (Cursor Agent)
+  - Updated the inventory classification in `UPDATE.md` to include a summary of managed apps with their statuses.
+  - Introduced a new `-ShowInventory` switch in the PowerShell script to display detailed inventory results for managed apps.
+  - Modified shell scripts to support the new `ShowInventory` option, allowing users to toggle this feature via environment variables.
+- 2026-06-13 10:21 [eadc3d6](https://github.com/IXATU/dotfiles/commit/eadc3d6) feat(update): improve WinGet inventory tracking with UTF-8 encoding and duplicate handling (Cursor Agent)
+  - Enhanced the `windows-winget-inventory.tsv` to include a `duplicate_count` field, allowing for better tracking of packages with multiple installed entries.
+  - Updated the PowerShell script to write TSV files without BOM, ensuring compatibility and proper encoding.
+  - Modified inventory classification logic to reflect duplicate counts in the output messages.
+- 2026-06-13 10:09 [932f861](https://github.com/IXATU/dotfiles/commit/932f861) feat(update): enhance Windows update workflow with inventory tracking and detailed logging (Cursor Agent)
+  - Added new inventory tracking features to the PowerShell script, generating `windows-winget-inventory.tsv` and `windows-winget-snapshot.tsv` for comprehensive package coverage analysis.
+  - Introduced a new `SelfTestWinGetInventory` switch to facilitate testing of inventory functionality.
+  - Updated the logging mechanism to include detailed package statuses and coverage classifications.
+- 2026-06-13 09:54 [01484be](https://github.com/IXATU/dotfiles/commit/01484be) feat(powershell_update); enhance Windows update workflow with detailed logging and retry options (Cursor Agent)
+  - Updated PowerShell script to log detailed WinGet upgrade results in a new TSV format, including package status and execution duration.
+  - Introduced options for including unknown packages and retrying failed updates from a TSV file.
+  - Modified shell scripts to pass new parameters for unknown package inclusion and retry functionality.
+- 2026-06-09 18:19 [4eecc41](https://github.com/IXATU/dotfiles/commit/4eecc41) feat(dotfiles-apply): add chezmoi status preview functionality (Cursor Agent)
+  - Introduced `run_chezmoi_status_preview` to summarize the status of chezmoi-managed files, filtering benign script entries while preserving real changes.
+  - Updated `run_preview` to call the new status preview function instead of the previous status command.
+  - Enhanced test coverage to validate the new status preview behavior, ensuring expected entries are reported correctly and non-script changes are visible.
+- 2026-06-09 08:45 [b9cd1cc](https://github.com/IXATU/dotfiles/commit/b9cd1cc) feat(gitnexus): enhance post-install script handling and npm ignore-scripts validation (jesus)
+  - Introduced a function to check if npm ignore-scripts is enabled, preventing installation if true.
+  - Updated `run_gitnexus_postinstall_scripts` to dynamically retrieve postinstall scripts from package.json.
+  - Enhanced error messaging for missing postinstall scripts and ignore-scripts scenarios.
+- 2026-06-07 13:02 [efe386a](https://github.com/IXATU/dotfiles/commit/efe386a) feat(runtime): add clean-runtime-skills and github-identity-check scripts (Cursor Agent)
+  - Introduced `clean-runtime-skills.sh` for dry-run inspection and cleanup of runtime skills symlinks in user directories.
+  - Added `github-identity-check.sh` for offline diagnostics of GitHub identity, ensuring proper token management and remote verification.
+  - Updated `update.mk` to include new targets for both scripts, enhancing the Makefile with additional functionality.
+- 2026-06-07 12:06 [42514c4](https://github.com/IXATU/dotfiles/commit/42514c4) feat(secrets): introduce diagnose-secret-surfaces script and enhance documentation (Cursor Agent)
+  - Added `diagnose-secret-surfaces.sh` for read-only scanning of plaintext secrets in local cache files, ensuring sensitive information is not exposed.
+  - Updated `TOKEN_GITHUB_GH.md` and `AGENT_WORKFLOW.md` to include guidance on managing Codex shell snapshots and using the new diagnostic script.
+  - Enhanced `OPERATIONS_CHEATSHEET.md` to reflect the new cleaning procedures for local snapshots containing potential secrets.
+- 2026-06-07 11:13 [abb531e](https://github.com/IXATU/dotfiles/commit/abb531e) feat(security): add OSV scanning capabilities and enhance validation scripts (Cursor Agent)
+  - Introduced `osv_scan.sh` and `security-osv-scan.sh` scripts for improved vulnerability scanning.
+  - Updated `agent-validate-changed.sh` to integrate OSV scanning with strict mode handling.
+  - Enhanced documentation in `AGENT_WORKFLOW.md`, `OPERATIONS_CHEATSHEET.md`, and `TESTING.md` to clarify OSV scanning behavior and configurations.
+- 2026-06-07 10:27 [4349db9](https://github.com/IXATU/dotfiles/commit/4349db9) feat(git-flow): update dotfiles policy and documentation for manual PR integration (Cursor Agent)
+  - Changed `.git-flow-policy.env` to set manual PR modes for development and main branches, enabling validation commands for feature and release flows.
+  - Updated `GIT_FLOW_POLICY.md` to reflect the new operational policy and checklist for integrating changes.
+  - Revised `GIT_WORKFLOW.md` to emphasize the recommended use of `git feat` and `git rel` for manual PR creation.
+- 2026-06-07 10:23 [839d9ae](https://github.com/IXATU/dotfiles/commit/839d9ae) feat(git-flow): implement PR modes and merge strategies for feature and release flows (Cursor Agent)
+  - Added support for `pr_auto` and `pr_immediate` modes in `git feat` and `git rel`, allowing automatic and immediate merging of pull requests.
+  - Updated `GIT_FLOW_POLICY.md` to reflect the new PR modes and their semantics, including detailed descriptions of merge strategies.
+  - Enhanced `git_feat.sh` and `git_rel.sh` scripts to handle the new PR modes and integrate merge strategy options.
+- 2026-06-07 10:19 [9bdfc3f](https://github.com/IXATU/dotfiles/commit/9bdfc3f) feat(git-flow): enhance PR policy documentation and implement dry-run functionality (Cursor Agent)
+  - Updated GIT_FLOW_POLICY.md to clarify the implementation status of manual PR creation for both feature and release flows.
+  - Added details on the new `--dry-run` option for `git feat` and `git rel`, allowing users to preview actions without executing them.
+  - Revised GIT_WORKFLOW.md to reflect the availability of manual PR creation and dry-run capabilities.
+- 2026-06-07 09:57 [873613c](https://github.com/IXATU/dotfiles/commit/873613c) feat(validation): enhance agent validation and documentation for .claude directory (Cursor Agent)
+  - Updated agent validation scripts to include a guard against the presence of the `.claude/` directory, ensuring compliance with ADR 0004.
+  - Enhanced AGENT_WORKFLOW.md, TESTING.md, and VALIDATION_MATRIX.md to reflect the new validation checks and remediation steps for `.claude/`.
+  - Added tests to verify the functionality of the new guard and ensure that the validation process correctly identifies and handles the `.claude/` directory.
+- 2026-06-07 09:50 [3d21e79](https://github.com/IXATU/dotfiles/commit/3d21e79) feat(script-conventions): enhance documentation and introduce check mode for tree generation (Cursor Agent)
+  - Updated AGENT_WORKFLOW.md to include references to the new `--check` flag for safe validation of STRUCTURE.md without modifications.
+  - Revised AI_REPO_MAP.md to document the implications of the `--check` flag in the context of script usage.
+  - Enhanced OPERATIONS_CHEATSHEET.md and TESTING.md to reflect the new conventions for dry-run and check modes, ensuring clarity in command usage.
+- 2026-06-07 09:47 [6ee35f0](https://github.com/IXATU/dotfiles/commit/6ee35f0) feat(dotfiles-apply): update documentation and enhance agent workflow (Cursor Agent)
+  - Revised AGENT_WORKFLOW.md to clarify the usage of `dotfiles-apply` and its related commands, emphasizing safe application practices.
+  - Updated AI_REPO_MAP.md to include `dotfiles-apply` in the context of repo wrappers and their functions.
+  - Enhanced CHEZMOI.md with detailed descriptions of the `dotfiles-apply` command and its safe usage guidelines.
+- 2026-06-07 09:41 [c38f4f2](https://github.com/IXATU/dotfiles/commit/c38f4f2) feat(validation): add agent validation report command and update documentation (Cursor Agent)
+  - Introduced `make agent-validate-report` to generate a persistent Markdown report at `build/agent-validation/latest.md`, capturing validation results even on failure.
+  - Updated AGENT_WORKFLOW.md, OPERATIONS_CHEATSHEET.md, TESTING.md, and VALIDATION_MATRIX.md to include references and details about the new report command.
+  - Enhanced the .gitignore file to exclude the new agent validation report directory.
+- 2026-06-07 09:38 [7c586ad](https://github.com/IXATU/dotfiles/commit/7c586ad) feat(validation): update agent validation commands and enhance documentation (Cursor Agent)
+  - Revised AGENT_WORKFLOW.md to clarify the usage of `make agent-validate`, `make agent-validate-changed`, `make agent-validate-audit`, and `make agent-validate-full`.
+  - Improved OPERATIONS_CHEATSHEET.md with detailed descriptions of validation commands and their contexts.
+  - Updated SYSTEM_DEPENDENCIES.md to reflect changes in validation command semantics.
+- 2026-06-07 09:23 [6d11236](https://github.com/IXATU/dotfiles/commit/6d11236) feat(update): update maintenance commands and improve documentation clarity (Cursor Agent)
+  - Replaced instances of `make update` with `dotfiles-update` in various documentation files to standardize the command usage for daily updates.
+  - Enhanced descriptions in README.md, SKILL.md, and UPDATE.md to clarify the purpose and usage of `dotfiles-update`.
+  - Updated aliases conventions in aliases-conventions.mdc to reflect new guidelines and removed outdated sections.
+- 2026-06-07 09:01 [1bc41ae](https://github.com/IXATU/dotfiles/commit/1bc41ae) feat(git_feat): enhance command behavior to utilize current feature branch without argument (Cursor Agent)
+  - Updated `git feat` to allow usage without a branch argument, defaulting to the current feature branch if it matches the configured prefix.
+  - Enhanced documentation in GIT_FLOW_POLICY.md and GIT_WORKFLOW.md to clarify this new behavior and provide usage examples.
+  - Added tests to verify the correct functionality of the command in various scenarios, including validation checks for branch naming and prefix adherence.
+- 2026-06-07 08:47 [f6aee9c](https://github.com/IXATU/dotfiles/commit/f6aee9c) feat(git_feat): implement feature PR mode for streamlined branch integration (Cursor Agent)
+  - Introduced `FLOW_MODE_TO_DEV=pr` for `git feat`, enabling automatic creation of Pull Requests using GitHub CLI.
+  - Updated documentation in GIT_FLOW_POLICY.md and GIT_WORKFLOW.md to reflect new PR capabilities and usage examples.
+  - Enhanced validation checks to ensure proper branch naming and validation commands before creating PRs.
+- 2026-06-07 08:01 [9c25ba1](https://github.com/IXATU/dotfiles/commit/9c25ba1) feat(gitflow): enhance git feat and git rel with policy loading and validation (Cursor Agent)
+  - Implemented phase 2 features in git feat and git rel, including policy loading from `.git-flow-policy.env` and validation commands before merging.
+  - Added `--print-policy` option to both commands for effective policy inspection without executing merges or pushes.
+  - Updated scripts to utilize custom remote names and branch prefixes, improving flexibility in repository management.
+- 2026-06-07 07:47 [5a79cc6](https://github.com/IXATU/dotfiles/commit/5a79cc6) feat(gitflow policies): add GIT_FLOW_POLICY.md to README and update test targets for git-flow (Cursor Agent)
+  - Included a new document, GIT_FLOW_POLICY.md, outlining the opt-in policy for evolving the git feat / git rel workflow.
+  - Updated the test targets in Makefile.tests to include bats-git-flow for comprehensive testing of the new git flow policy.
+- 2026-06-06 22:28 [f7a5ddf](https://github.com/IXATU/dotfiles/commit/f7a5ddf) feat(visualization): add VisiData support and update documentation for optional tools (Cursor Agent)
+  - Included VisiData (`vd`) as an optional tool for exploring CSV, TSV, JSON, and tabular files in SKILL.md and SYSTEM_DEPENDENCIES.md.
+  - Updated INSTALL.md to reflect the installation instructions for VisiData.
+  - Enhanced tests to verify the inclusion of VisiData in the system dependencies check, ensuring proper documentation alignment.
+- 2026-06-06 22:17 [f5e6952](https://github.com/IXATU/dotfiles/commit/f5e6952) feat(zsh): add fzf integration and update documentation for optional tools (Cursor Agent)
+  - Included the fzf script in the zsh configuration for enhanced fuzzy finding capabilities.
+  - Updated SKILL.md to mention the use of fzf for interactive file and history searches.
+  - Enhanced INSTALL.md and SYSTEM_DEPENDENCIES.md to include installation instructions for fzf and lnav as optional tools.
+- 2026-06-06 21:58 [10de2c4](https://github.com/IXATU/dotfiles/commit/10de2c4) feat(store_etl_ops): implement configurable workdir resolution and update documentation (Cursor Agent)
+  - Introduced a new function to resolve the Store ETL workspace using the `STORE_ETL_WORKDIR` environment variable, with a fallback to `/home/jesus/proyectos/store-etl`.
+  - Updated the `server.py` to handle workdir validation, ensuring it exists and contains necessary repository markers.
+  - Enhanced documentation in `MCP_QUICKREF.md`, `MCP_TAXONOMY.md`, and `VERIFICAR_MCP_STORE_ETL.md` to clarify workdir configuration and error handling.
+- 2026-06-06 21:26 [5dc427b](https://github.com/IXATU/dotfiles/commit/5dc427b) feat(ai-assets): implement validation to prevent materializing AI assets in dotfiles checkout (Cursor Agent)
+  - Added a new function to refuse the creation of agent skill surfaces within the dotfiles repository, enhancing the governance of AI asset locations.
+  - Updated the script to use absolute paths for better clarity and reliability.
+  - Enhanced tests to verify that the script correctly refuses to create symlinks for agent skills in the source directory, ensuring robust error handling and messaging.
+- 2026-06-06 21:05 [9b94d4b](https://github.com/IXATU/dotfiles/commit/9b94d4b) feat(powershell): enhance WinGet package parser with self-test functionality (Cursor Agent)
+  - Added a new self-test feature for the WinGet package parser in the PowerShell script, allowing validation against predefined fixtures without requiring WinGet execution.
+  - Introduced helper functions for line comparison and non-empty line retrieval to facilitate the self-test process.
+  - Updated the `parse-winget-log.py` script documentation to clarify its role as an auxiliary parser for WSL diagnostics.
+- 2026-06-06 20:57 [92b3c9f](https://github.com/IXATU/dotfiles/commit/92b3c9f) feat(playwright): update CHEZMOI and OPERATIONS documentation to include Playwright Docker (Cursor Agent)
+  - Enhanced the CHEZMOI documentation to clarify the management of dotfiles and the addition of Playwright Docker as a launcher in the local bin.
+  - Added a new section in OPERATIONS.md detailing the usage and configuration of Playwright Docker for browser automation without local installations.
+  - Updated references to include the new launcher in relevant commands and examples, ensuring comprehensive guidance for users.
+- 2026-06-06 20:20 [dd58993](https://github.com/IXATU/dotfiles/commit/dd58993) feat(powershell): enhance WinGet upgrade process with live output filtering (Cursor Agent)
+  - Introduced new functions `Get-WinGetConsoleLine` and `Invoke-WinGetLiveFiltered` to improve console output handling during WinGet upgrades.
+  - Updated `Run-NativeLiveLogged` to support live filtered output, enhancing user experience by providing real-time feedback.
+  - Revised tests to validate the new functionality and ensure accurate logging and output during the upgrade process.
 
 ### Fixed
-- 2026-06-04 20:13 [60a6d61](https://github.com/IXATU/dotfiles/commit/60a6d61) fix(gitnexus): update error message for GitNexus installation path (Cursor Agent)
-  - Modified the error message in the GitNexus runtime script to dynamically reference the DOTFILES_DIR variable, improving clarity on the installation command.
-  - Adjusted the test to ensure it correctly matches the updated command format in the output, enhancing the robustness of the testing suite.
-- 2026-06-04 20:02 [4d9158e](https://github.com/IXATU/dotfiles/commit/4d9158e) fix(gitnexus): improve error messaging and command handling in gnx-analyze-here (Cursor Agent)
-  - Updated the error message for the gnx-analyze-here command to provide clearer guidance when executed outside a Git repository.
-  - Enhanced command handling to correctly process optional leading "--" before GitNexus flags, ensuring proper functionality during analysis.
-  - Added tests to validate the new error messaging and command behavior, improving overall robustness of the gnx-analyze-here functionality.
-- 2026-06-04 19:31 [1d289b2](https://github.com/IXATU/dotfiles/commit/1d289b2) fix(gitnexus): update index refresh instructions and skill file paths (Cursor Agent)
-  - Revised instructions for refreshing the GitNexus index to use `make gitnexus-status` instead of `npx gitnexus analyze`.
-  - Updated skill file paths in AGENTS.md and CLAUDE.md to reflect the new directory structure under `ai/assets/skills/gitnexus`.
-  - Modified STRUCTURE.md generation to indicate it is produced by `scripts/treegen.sh` instead of a timestamp.
-- 2026-06-04 17:59 [2d6907f](https://github.com/IXATU/dotfiles/commit/2d6907f) fix(gitnexus): standardize index refresh command across documentation (Cursor Agent)
-  - Updated all instances of the `gnx-analyze-here` command to remove the redundant `--` before the `--skip-agents-md` flag, ensuring consistency in documentation.
-  - Revised related documentation files including GITNEXUS_OPERATIONAL_POLICY.md, MCP_QUICKREF.md, and OPERATIONS_CHEATSHEET.md to reflect the updated command format.
-  - Enhanced tests to validate the changes and ensure accurate representation of the canonical refresh procedure.
-- 2026-06-04 17:32 [0827419](https://github.com/IXATU/dotfiles/commit/0827419) fix(ci): restore GitNexus contracts and lint drift report (Jesús Erro)
-- 2026-05-31 08:36 [e8c1c75](https://github.com/IXATU/dotfiles/commit/e8c1c75) fix(aliases): add GitNexus analyze log handling and user feedback (Cursor Agent)
-  - Introduced functions to analyze GitNexus logs for lock issues and provide user-friendly hints.
-  - Updated the analyze command to utilize the new log handling functions, improving error reporting.
-  - Added tests to verify the correct behavior of the new log handling and user feedback mechanisms.
-- 2026-05-30 21:59 [63969e6](https://github.com/IXATU/dotfiles/commit/63969e6) fix(tests): update indexing information in AGENTS.md and CLAUDE.md; improve temporary file cleanup in scripts (Cursor Agent)
-- 2026-05-30 21:39 [e79f196](https://github.com/IXATU/dotfiles/commit/e79f196) fix(tests): update installation and testing documentation for clarity and opt-in processes (Cursor Agent)
-  - Revised `SYSTEM_DEPENDENCIES.md` to clarify the opt-in nature of various installation targets and their roles in the baseline setup.
-  - Updated `TESTING.md` to reflect changes in the installation command, emphasizing the use of `SKIP_EXTERNAL=1` for a streamlined setup.
-  - Enhanced `dotfiles-install.md` to specify the idempotent behavior of installation commands and their non-destructive nature.
-- 2026-05-30 21:18 [c61ea8e](https://github.com/IXATU/dotfiles/commit/c61ea8e) fix(tests): enhance assertions in test suite for better validation (Cursor Agent)
-  - Updated test assertions to use more descriptive functions like `assert_file_not_contains` and `assert_find_no_results`, improving clarity and maintainability.
-  - Modified documentation in `AGENTS.md` and `CLAUDE.md` to reflect updated indexing information.
-  - Ensured consistency in test cases by replacing direct grep commands with assertion functions across various test files, enhancing the robustness of the test suite.
-- 2026-05-25 20:16 [5d0adb4](https://github.com/IXATU/dotfiles/commit/5d0adb4) fix(update-wsl): ensure cleanup of Node runtime overlay on failure conditions (Cursor Agent)
-  - Added `node_runtime_cleanup_overlay` calls in `update-wsl.sh` to remove the Node runtime overlay when activation fails or when npm is not found.
-  - Implemented a new function in `node_runtime.sh` to handle the cleanup of Node runtime overlays.
-  - Enhanced tests to verify that overlays are correctly cleaned up in failure scenarios, ensuring no residual overlays remain.
+- 2026-06-13 11:59 [14566f0](https://github.com/IXATU/dotfiles/commit/14566f0) fix(tests): wire `github-identity-check.bats` into the `bats-system` target (Cursor Agent)
+  - Added `github-identity-check.bats` to the `bats-system` target in `Makefile.tests` to ensure it runs during system tests.
+  - Updated documentation in `TESTING.md` to clarify that some Bats files remain unwired for automated testing, specifically noting the omission of `github-identity-check.bats` from the previous mention.
+- 2026-06-13 11:51 [0ac4a50](https://github.com/IXATU/dotfiles/commit/0ac4a50) fix(tests): wire `clean-runtime-skills.bats` into the `bats-system` target (Cursor Agent)
+  - Added `clean-runtime-skills.bats` to the `bats-system` target in `Makefile.tests` to ensure it runs during system tests.
+  - Updated documentation in `TESTING.md` to clarify the status of Bats files in the `tests/bats/` directory, emphasizing that some files remain unwired for automated testing.
+- 2026-06-09 17:47 [837da4e](https://github.com/IXATU/dotfiles/commit/837da4e) fix(github-identity-check): enhance remote classification for IXATU organization (Cursor Agent)
+  - Updated the `infer_profile` function to classify remotes from the IXATU organization as 'oficina/fork'.
+  - Modified warning message to include IXATU organization in the expected remote profiles.
+  - Added a test to verify that IXATU organization remotes are correctly classified, ensuring accurate profile inference.
+- 2026-06-09 08:39 [a4ed305](https://github.com/IXATU/dotfiles/commit/a4ed305) fix(gitnexus): streamline installation and enhance post-install scripts (jesus)
+  - Updated installation instructions for GitNexus CLI to use `scripts/install-gitnexus.sh` instead of npm commands.
+  - Enhanced `install-gitnexus.sh` to include post-install scripts for setting up GitNexus grammar.
+  - Modified documentation in `SYSTEM_DEPENDENCIES.md` and `0002-gitnexus-mcp.md` to reflect the new installation process.
+- 2026-06-07 11:53 [940ffcf](https://github.com/IXATU/dotfiles/commit/940ffcf) fix(secrets): enhance GitHub token management and documentation (Cursor Agent)
+  - Added `github-token-policy.bats` to enforce isolation of GitHub tokens in MCP and `gh` CLI contexts.
+  - Updated `run_after_00_gen_secrets.sh.tmpl` to prevent global export of `GH_TOKEN` and `GITHUB_TOKEN`, ensuring they are only available in the appropriate contexts.
+  - Revised documentation in `TOKEN_GITHUB_GH.md`, `CAMBIAR_TOKEN_GITHUB.md`, and `SECRETS_EXAMPLES.md` to clarify token usage and sourcing practices.
+- 2026-06-07 11:28 [63679bc](https://github.com/IXATU/dotfiles/commit/63679bc) fix(git-flow): enhance auto-merge behavior for PR modes (Cursor Agent)
+  - Updated `GIT_FLOW_POLICY.md`, `GIT_WORKFLOW.md`, and ADR 0008 to clarify the behavior of `pr_auto` mode, allowing immediate merging if the PR is already in clean status.
+  - Modified `git_flow_policy.sh` to implement fallback logic for immediate merging when auto-merge is unavailable due to clean status.
+  - Added tests to verify the new fallback behavior for both feature and release flows, ensuring correct handling of clean status scenarios.
+- 2026-06-07 10:43 [785479d](https://github.com/IXATU/dotfiles/commit/785479d) fix(git-flow): update documentation for local feature integration and auto-merge PRs (Cursor Agent)
+  - Revised `.git-flow-policy.env` to reflect the new integration strategy using local merges for features and automatic pull requests for releases.
+  - Updated `GIT_FLOW_POLICY.md` and `GIT_WORKFLOW.md` to clarify the changes in the integration flow and the use of validation commands.
+  - Enhanced tests to ensure consistency with the updated policy and verify the correct implementation of local and auto-merge behaviors.
+- 2026-06-07 10:38 [12c740a](https://github.com/IXATU/dotfiles/commit/12c740a) fix(git-flow): update flow modes in .git-flow-policy.env (Cursor Agent)
+  - Changed FLOW_MODE_TO_DEV from 'pr' to 'local' to facilitate local development.
+  - Updated FLOW_MODE_TO_MAIN to 'pr_auto' for automatic pull request handling.
+  - Removed unnecessary lines for improved clarity and conciseness in the configuration file.
+- 2026-06-07 08:49 [f993840](https://github.com/IXATU/dotfiles/commit/f993840) fix(git_feat): resolve issues with PR mode validation and documentation updates (Cursor Agent)
+  - Fixed validation checks in the `git feat` PR mode to ensure proper branch naming and command execution.
+  - Updated GIT_FLOW_POLICY.md and GIT_WORKFLOW.md to clarify usage and examples related to the PR mode.
+  - Enhanced test coverage to verify the correctness of validation processes and error handling in PR creation.
+- 2026-06-07 08:08 [8771028](https://github.com/IXATU/dotfiles/commit/8771028) fix(GITNEXUS): update operational policy and enhance test coverage (Cursor Agent)
+  - Added recommendations for immediate recovery using `--force --skip-agents-md` in GITNEXUS_OPERATIONAL_POLICY.md.
+  - Updated test cases to verify the presence of new documentation and ensure no typos in hook scripts.
+  - Enhanced output messages in Makefile.tests for better clarity during test dependency installation and validation processes.
+- 2026-06-06 22:52 [e07e531](https://github.com/IXATU/dotfiles/commit/e07e531) fix(hooks): update pre-commit hook to auto-stage STRUCTURE.md changes (Cursor Agent)
+  - Modified the pre-commit hook to automatically stage STRUCTURE.md if it is regenerated by treegen, allowing the commit to proceed without manual intervention.
+  - Updated documentation in INSTALL.md and OPERATIONS_CHEATSHEET.md to reflect the new behavior of the pre-commit hook.
+  - Enhanced tests to verify that STRUCTURE.md is staged automatically and that unrelated unstaged files remain unaffected.
+- 2026-06-06 20:37 [1737eb0](https://github.com/IXATU/dotfiles/commit/1737eb0) fix(validation): add check for non-canonical agent skill directories (Cursor Agent)
+  - Introduced a new validation function to ensure that agent skills are located only under `ai/assets/skills`, preventing the use of non-canonical directories like `.claude/skills`.
+  - Updated the validation script to include this new check, enhancing the governance of skill structure.
+  - Added a corresponding test to verify that the validation fails when a non-canonical directory is present, ensuring robust error messaging and validation feedback.
 
 ### Documentation
-- 2026-06-04 20:23 [1583fde](https://github.com/IXATU/dotfiles/commit/1583fde) docs(releases): add feature changelog for git hooks integration (Cursor Agent)
-  - Created a new changelog file for the feature branch `feature/22-adding-git-hooks`, summarizing 8 commits related to GitNexus improvements, error handling, and documentation updates.
-  - Highlights include enhancements to error messaging, command handling, and the introduction of a new Git hooks installation process.
-  - Integrated changes into the `dev` branch on 2026-06-04.
-- 2026-06-04 18:51 [686f768](https://github.com/IXATU/dotfiles/commit/686f768) docs(structure): update STRUCTURE.md generation timestamp and maintain file tree structure (Cursor Agent)
-  - Updated the generated timestamp in STRUCTURE.md to reflect the latest generation time.
-  - Ensured the file tree structure remains consistent and accurate for better clarity and navigation.
-- 2026-06-01 08:45 [23e577c](https://github.com/IXATU/dotfiles/commit/23e577c) docs(gitnexus): update index information and skill file paths (jesus)
-  - Increased symbol and relationship counts in AGENTS.md and CLAUDE.md to reflect the latest indexing.
-  - Revised instructions for refreshing the index, replacing `make gitnexus-status` with `npx gitnexus analyze`.
-  - Updated skill file paths to use the `.claude` directory for consistency across documentation.
-- 2026-05-31 13:12 [85ffb69](https://github.com/IXATU/dotfiles/commit/85ffb69) docs(releases): added changelog (Cursor Agent)
-- 2026-05-31 13:00 [dd32de4](https://github.com/IXATU/dotfiles/commit/dd32de4) docs(gitnexus): enhance index refresh procedure and documentation (Cursor Agent)
-  - Updated the `gnx-analyze-here` command to include a `--skip-agents-md` flag for refreshing the index without modifying `AGENTS.md` and `CLAUDE.md` blocks, streamlining the process for human users.
-  - Revised `GITNEXUS_OPERATIONAL_POLICY.md` and `MCP_QUICKREF.md` to clarify the conditions under which humans should refresh the index and the implications of using the new flag.
-  - Enhanced the `OPERATIONS_CHEATSHEET.md` to provide a canonical procedure for index refresh, ensuring users follow best practices.
-- 2026-05-31 12:52 [f26b369](https://github.com/IXATU/dotfiles/commit/f26b369) docs(cheatsheet, tests): enhance update-ai-skills documentation and testing (Cursor Agent)
-  - Updated OPERATIONS_CHEATSHEET.md to include new commands for `make update-ai-skills`, clarifying its usage for refreshing the external skills catalog and the DRY_RUN option for previews.
-  - Revised the Makefile's help section to mention `make update-ai-skills` as a human opt-in command.
-  - Added tests to ensure the documentation accurately reflects the new command and its implications for users, including checks for the DRY_RUN preview functionality.
-- 2026-05-31 12:45 [7dd0538](https://github.com/IXATU/dotfiles/commit/7dd0538) docs(CHEZMOI, OPERATIONS): clarify script R status and enhance drift reporting (Cursor Agent)
-  - Updated CHEZMOI.md to clarify that `R` in chezmoi status indicates scripts that will run on apply, not removed files, and provided examples of normalized script names.
-  - Revised OPERATIONS.md and OPERATIONS_CHEATSHEET.md to reflect the updated understanding of script R entries, emphasizing the importance of not using global apply to clear these lines.
-  - Enhanced the chezmoi-drift-report.sh script to document the meaning of R entries and provide guidance on auditing scripts explicitly.
-- 2026-05-31 12:32 [db17cf9](https://github.com/IXATU/dotfiles/commit/db17cf9) docs(README, cheatsheet): update help command and enhance operational documentation (Cursor Agent)
-  - Added a new entry to the README for the `make help` command, detailing targets categorized by risk (read-only vs human/mutating).
-  - Updated the OPERATIONS_CHEATSHEET.md to include a description of the `make help` command, providing clearer guidance on CLI targets.
-  - Revised the Makefile's help section to improve clarity and organization of available commands, distinguishing between safe and human/mutating operations.
-- 2026-05-31 12:17 [c4b280a](https://github.com/IXATU/dotfiles/commit/c4b280a) docs(gitnexus): update operational instructions and enhance index refresh process (Cursor Agent)
-  - Revised instructions in AGENTS.md and CLAUDE.md to replace `npx gitnexus analyze` with `make gitnexus-status`, emphasizing the need for human approval before refreshing the index.
-  - Added a new section in GITNEXUS_OPERATIONAL_POLICY.md detailing the procedure for refreshing the index without regenerating agent blocks, including a warning about potential overwrites.
-  - Updated tests in the Makefile to include checks for the new operational guidelines regarding GitNexus blocks.
-- 2026-05-31 12:13 [3d2fe92](https://github.com/IXATU/dotfiles/commit/3d2fe92) docs(guide): enhance MCP operational instructions and clarify apply processes (Cursor Agent)
-  - Updated GUIA_MCP_AI.md to emphasize the importance of reviewing drift before applying changes, introducing specific commands for drift reporting and selective application.
-  - Revised instructions for applying MCP configurations and launchers, ensuring users understand the need for careful review of diffs.
-  - Enhanced OPERATIONS.md to reflect the new workflow for daily operations, highlighting the significance of applying changes in a controlled manner.
-- 2026-05-31 12:10 [c2d7772](https://github.com/IXATU/dotfiles/commit/c2d7772) docs(cheatsheet): update operational documentation and add cheatsheet reference (Cursor Agent)
-  - Enhanced the README and OPERATIONS.md to include a new operational cheatsheet for daily tasks, Chezmoi drift, and agent limits.
-  - Updated MCP_QUICKREF.md to reference the new cheatsheet, providing clearer guidance for users.
-  - Revised the UPDATE.md to emphasize the importance of checking Chezmoi drift before updates.
-- 2026-05-31 09:36 [434edec](https://github.com/IXATU/dotfiles/commit/434edec) docs(releases): added changelog for feature/19-resolver-shellchecks integration (Cursor Agent)
-  - Documented the integration of feature branch feature/19-resolver-shellchecks into the dev branch.
-  - Summarized 8 commits including enhancements to zsh syntax validation, tests for legacy scripts, and various script refactors for improved readability and error handling.
-  - Included technical details such as integration date and status.
-- 2026-05-30 14:27 [774445f](https://github.com/IXATU/dotfiles/commit/774445f) docs(releases): added changelog for improving zsh stack installation and plugin management (Cursor Agent)
-- 2026-05-30 11:28 [2079e2a](https://github.com/IXATU/dotfiles/commit/2079e2a) docs(gitnexus): update runtime precheck instructions and clarify usage (Cursor Agent)
-  - Added a new section on runtime precheck in `gitnexus-cli` documentation to guide users on running `make update-check` before re-indexing.
-  - Updated references in `gitnexus-guide` and `MCP_QUICKREF` to emphasize the importance of checking Node runtime compatibility.
-  - Clarified troubleshooting steps for slow analysis under Cursor and the need for managed Node paths.
+- 2026-06-14 14:08 [142dd65](https://github.com/IXATU/dotfiles/commit/142dd65) docs(cheatsheets): clarify human decision points in OFFICE_SETUP_CHEATSHEET (Cursor Agent)
+  - Updated the OFFICE_SETUP_CHEATSHEET to specify that updates to the local `dev` branch and decisions regarding push, merge conflict resolution, commits, and rebases are human decisions, enhancing clarity for users.
+- 2026-06-14 14:05 [9d01d8d](https://github.com/IXATU/dotfiles/commit/9d01d8d) docs(cheatsheets): add OFFICE_SETUP_CHEATSHEET and update references (Cursor Agent)
+  - Introduced a new `OFFICE_SETUP_CHEATSHEET.md` to provide a comprehensive guide for setting up office laptops with WSL2, Chezmoi, SOPS/Age, and Docker Desktop.
+  - Updated `README.md` and `OPERATIONS_CHEATSHEET.md` to include links to the new cheatsheet, enhancing documentation for office setup processes.
+- 2026-06-14 13:28 [a87c73e](https://github.com/IXATU/dotfiles/commit/a87c73e) docs(excalidraw): update Excalidraw workspace path resolution in documentation (Cursor Agent)
+  - Clarified the path resolution for the Excalidraw workspace in the MCP documentation, specifying the use of Chezmoi variables for mounting.
+  - Adjusted the description of file access restrictions to reflect the updated binding process, ensuring better understanding of path traversal protection.
+- 2026-06-13 11:20 [fa8cddc](https://github.com/IXATU/dotfiles/commit/fa8cddc) docs(releases): added changelog for feature/updating-updates-on-powershell (Cursor Agent)
+  - Added a new changelog file summarizing the integration of six commits related to enhancing the Windows update workflow and WinGet inventory features.
+  - Included details on improvements such as color-coding for summary results, inventory tracking, and detailed logging enhancements.
+  - Documented the integration date and status for better tracking of feature development.
+- 2026-06-09 20:23 [a721d21](https://github.com/IXATU/dotfiles/commit/a721d21) docs(gitnexus): update GitNexus MCP documentation with agent-first policy details (Cursor Agent)
+  - Added a status update to clarify the agent-first GitNexus runtime policy and the use of the MCP launcher.
+  - Revised the execution pattern section to reflect the current method of invoking GitNexus without `npx`.
+  - Updated installation details to emphasize the creation of a canonical symlink for agent access.
+- 2026-06-09 19:13 [0eab757](https://github.com/IXATU/dotfiles/commit/0eab757) docs(operations): add shell-audit-check command and update validation matrix (Cursor Agent)
+  - Introduced `make shell-audit-check` to the operations cheatsheet, providing a focused shell audit for agents.
+  - Updated `TESTING.md` to reflect the inclusion of `zsh -n` in the `make test-lint` command for enhanced linting.
+  - Revised the validation matrix to incorporate `shell-audit-check` in the extended validation for `scripts/*` and `bin/*`, clarifying its role as a focused audit tool rather than a substitute for `test-lint`.
+- 2026-06-09 18:50 [3bad2cd](https://github.com/IXATU/dotfiles/commit/3bad2cd) docs(gitnexus): update fallback procedures and agent workflow for GitNexus availability (Cursor Agent)
+  - Added fallback guidelines in SKILL.md for scenarios where GitNexus is unavailable or returns errors, emphasizing manual review and testing.
+  - Updated AGENT_WORKFLOW.md to clarify the use of GitNexus and fallback procedures for micro-BUILDs, ensuring agents follow the new protocols.
+  - Enhanced GITNEXUS_OPERATIONAL_POLICY.md with detailed fallback steps and reporting templates for better operational clarity.
+- 2026-06-09 08:58 [eb76c1b](https://github.com/IXATU/dotfiles/commit/eb76c1b) docs(releases): added changelog (jesus)
+  - Enhanced error handling in `run_gitnexus_postinstall_scripts` to provide clearer feedback when post-install scripts are missing or when npm ignore-scripts is enabled.
+  - Updated validation logic to ensure that installation proceeds only when appropriate conditions are met.
+  - Added additional tests to cover new error scenarios and ensure robust handling of post-install script execution.
+- 2026-06-07 10:46 [35f8017](https://github.com/IXATU/dotfiles/commit/35f8017) docs(releases): added changelog (Cursor Agent)
+- 2026-06-07 10:14 [d9cce0b](https://github.com/IXATU/dotfiles/commit/d9cce0b) docs(adrs): finalize dotfiles-update and ups removal decisions (Cursor Agent)
+  - Updated AGENT_FIRST_SUMMARY.md to reflect the closure of the `dotfiles-update` and `ups` removal decisions, marking them as implemented and closed respectively.
+  - Revised ADR 0009 to indicate the implementation status of the `dotfiles-update` global wrapper, including details on its functionality and usage.
+  - Updated ADR 0010 to confirm the complete removal of the `ups` command, clarifying that no legacy alias will be provided.
+- 2026-06-07 10:01 [945886e](https://github.com/IXATU/dotfiles/commit/945886e) docs(summary): update references to AGENT_FIRST_SUMMARY.md across documentation (Cursor Agent)
+  - Replaced instances of AGENT_WORKFLOW.md with AGENT_FIRST_SUMMARY.md in multiple files to streamline operational guidance.
+  - Enhanced documentation consistency by ensuring all relevant files reference the new summary and checklist for agent workflows.
+  - Updated README.md, AI_REPO_MAP.md, VALIDATION_MATRIX.md, and SCRIPT_CONVENTIONS.md to include the AGENT_FIRST_SUMMARY.md link for improved clarity.
+- 2026-06-07 09:35 [bd810e2](https://github.com/IXATU/dotfiles/commit/bd810e2) docs(adrs): enhance documentation and tests for Architecture Decision Records (Cursor Agent)
+  - Updated AGENT_WORKFLOW.md and AI_REPO_MAP.md to include references to the ADRs directory and its README.
+  - Added a section in README.md to highlight the purpose of ADRs in documenting architectural decisions.
+  - Introduced tests to verify the existence and structure of ADR files, ensuring consistency and completeness in documentation.
+- 2026-06-07 09:33 [d0d308f](https://github.com/IXATU/dotfiles/commit/d0d308f) docs(handoffs): enhance agent workflow documentation and add handoff templates (Cursor Agent)
+  - Updated ai/README.md to include links to handoff templates for better guidance on agent workflows.
+  - Expanded docs/AGENT_WORKFLOW.md with detailed descriptions of handoff templates and their required sections.
+  - Added a new skill entry for 'Dotfiles Agent Review' in ai/assets/skills/README.md to clarify its purpose in post-change reviews.
+- 2026-06-07 09:31 [179437f](https://github.com/IXATU/dotfiles/commit/179437f) docs(agent): add operational contract and references for agent workflows (Cursor Agent)
+  - Introduced a new section in AGENTS.md detailing the operational contract for working with dotfiles, including links to relevant documentation.
+  - Updated ai/README.md to reference the agent workflow and repo map for better clarity on operational procedures.
+  - Enhanced docs/README.md with links to agent-related documents, improving accessibility to important resources.
+- 2026-06-07 08:15 [fd0d00e](https://github.com/IXATU/dotfiles/commit/fd0d00e) docs(GIT_FLOW_POLICY): enhance documentation for future policy features and validation processes (Cursor Agent)
+  - Added details on `DELETE_FEATURE_BRANCH` and `OPEN_BROWSER` parsing for future policy use.
+  - Included a manual validation fixture for testing scripts in a disposable repository.
+  - Documented validation success and failure paths for `git feat` and `git rel`, emphasizing the importance of policy checks before executing critical operations.
+- 2026-06-06 23:16 [e0848e5](https://github.com/IXATU/dotfiles/commit/e0848e5) docs(releases): added changelog for branch #23 (Cursor Agent)
+  - Hooks Git más robustos: pre-commit regenera y auto-stagea STRUCTURE.md; post-commit actualiza GitNexus con comportamiento más claro.
+  - Mejor integración de fzf en Zsh.
+  - Añadido soporte/documentación para VisiData como herramienta opcional de inspección tabular.
+- 2026-06-06 22:37 [40c7485](https://github.com/IXATU/dotfiles/commit/40c7485) docs(ops): add wsl2-raw-data-inspection skill and update documentation (Cursor Agent)
+  - Introduced the `wsl2-raw-data-inspection` skill for secure inspection of CSV/JSON/raw ETL data.
+  - Updated `SKILL.md` for `wsl2-local-tools` to reference the new skill for raw data handling.
+  - Enhanced `README.md` to include the new skill in the list of available operations, ensuring comprehensive documentation.
 
 ### Refactored
-- 2026-06-04 19:54 [cf38e7d](https://github.com/IXATU/dotfiles/commit/cf38e7d) refactor(powershell): enhance Windows update script with live logging and upgrade count functionality (Cursor Agent)
-  - Updated the PowerShell script to implement live logging during the WinGet upgrade process, capturing real-time output and exit codes.
-  - Introduced a new function, `Run-NativeLiveLogged`, to facilitate live logging and ensure accurate logging of upgrade actions.
-  - Added a method to count available upgrades, improving the feedback provided during the update process.
-- 2026-06-04 19:05 [2ffdaa8](https://github.com/IXATU/dotfiles/commit/2ffdaa8) refactor(gitnexus): enhance post-commit refresh process and update documentation (Cursor Agent)
-  - Updated the post-commit hook to use `--force --skip-agents-md` for refreshing the GitNexus index, ensuring it runs even when MCP/lock is active.
-  - Added a timeout mechanism for the refresh process, with appropriate warnings for timeouts and failures.
-  - Revised documentation in GITNEXUS_OPERATIONAL_POLICY.md and INSTALL.md to reflect the new refresh command and its behavior.
-- 2026-06-04 18:49 [c85453e](https://github.com/IXATU/dotfiles/commit/c85453e) refactor(gitnexus): streamline GitNexus commands and enhance documentation (Cursor Agent)
-  - Removed deprecated functions from the aliases file, replacing them with direct calls to `gitnexus` commands for improved clarity and maintainability.
-  - Introduced a new Git hooks installation process via `make install-git-hooks`, allowing for local configuration of hooks without affecting global settings.
-  - Updated documentation across multiple files, including INSTALL.md and GITNEXUS_OPERATIONAL_POLICY.md, to reflect the new Git hooks setup and command usage.
-- 2026-05-31 09:07 [ac2fc88](https://github.com/IXATU/dotfiles/commit/ac2fc88) refactor(scripts): improve path addition logic and streamline directory checks (Cursor Agent)
-  - Updated the path addition logic in mcp-filesystem-launcher to use a loop for checking existing paths, enhancing clarity and preventing duplicates.
-  - Introduced a new function, is_skip_dir, to simplify directory skipping logic in validate-skills-structure.sh, improving readability and maintainability.
-  - Enhanced tests to verify the handling of duplicate paths with spaces and regex metacharacters, ensuring robust functionality.
-- 2026-05-31 08:56 [b3050de](https://github.com/IXATU/dotfiles/commit/b3050de) refactor(scripts): update error messages to use \$HOME for clarity (Cursor Agent)
-  - Modified error and status messages in ai-cursor-check.sh to replace hardcoded paths with \$HOME, improving clarity for users.
-  - Enhanced consistency in messaging across the script, ensuring a more user-friendly experience.
-- 2026-05-31 08:54 [8f52867](https://github.com/IXATU/dotfiles/commit/8f52867) refactor(scripts): remove unused variables and improve readability in multiple scripts (Cursor Agent)
-  - Eliminated unnecessary variable declarations in various scripts, enhancing clarity and maintainability.
-  - Standardized variable naming conventions for improved readability and consistency across the codebase.
-  - Focused on essential parameters only, streamlining the scripts for better performance and understanding.
-- 2026-05-31 08:43 [720f5ae](https://github.com/IXATU/dotfiles/commit/720f5ae) refactor(scripts): remove unused variables in branch cleaning functions (Cursor Agent)
-  - Eliminated unnecessary variable declarations for branch types in the clean_local_branches and clean_remote_branches functions, simplifying the code.
-  - Improved clarity and maintainability of the scripts by focusing on essential parameters only.
-- 2026-05-31 08:41 [2007ea0](https://github.com/IXATU/dotfiles/commit/2007ea0) refactor(scripts): standardize variable assignment for improved readability (Cursor Agent)
-  - Updated variable assignments in multiple scripts to use a consistent format, enhancing overall readability.
-  - Ensured clarity in the declaration of temporary variables and improved the structure of the code.
-  - Maintained functionality while focusing on a cleaner presentation across the scripts.
-- 2026-05-31 00:15 [690a69c](https://github.com/IXATU/dotfiles/commit/690a69c) refactor(releases): added changelog for improving script readability and consistency (Cursor Agent)
-- 2026-05-31 00:09 [d9ae95c](https://github.com/IXATU/dotfiles/commit/d9ae95c) refactor(install_plugins): standardize formatting for improved readability (Cursor Agent)
-  - Reformatted the install_plugins.sh script for consistent indentation and spacing.
-  - Enhanced overall readability by aligning code structure and improving visual clarity.
-  - Maintained functionality while ensuring a cleaner presentation of the plugin installation process.
-- 2026-05-31 00:04 [67dfaf6](https://github.com/IXATU/dotfiles/commit/67dfaf6) refactor(scripts): standardize formatting and improve readability across various scripts (Cursor Agent)
-  - Reformatted scripts for consistent indentation and spacing, enhancing overall readability.
-  - Updated argument processing and validation sections for better clarity and maintainability.
-  - Improved error messages and user feedback throughout the scripts to ensure a more user-friendly experience.
-- 2026-05-30 23:49 [508081d](https://github.com/IXATU/dotfiles/commit/508081d) refactor(scripts): standardize formatting and improve readability across various scripts (Cursor Agent)
-  - Reformatted scripts for consistent indentation and spacing, enhancing overall readability.
-  - Updated argument processing and validation sections for better clarity and maintainability.
-  - Improved error messages and user feedback throughout the scripts to ensure a more user-friendly experience.
-- 2026-05-30 23:39 [8c90bfd](https://github.com/IXATU/dotfiles/commit/8c90bfd) refactor(scripts): standardize formatting and improve readability across various scripts (Cursor Agent)
-  - Reformatted scripts for consistent indentation and spacing, enhancing overall readability.
-  - Updated argument processing and validation sections for better clarity and maintainability.
-  - Improved error messages and user feedback throughout the scripts to ensure a more user-friendly experience.
-- 2026-05-30 23:24 [75b182a](https://github.com/IXATU/dotfiles/commit/75b182a) refactor(tests): standardize formatting and improve readability in BATS test files (Cursor Agent)
-  - Reformatted test files for consistent indentation and spacing, enhancing overall readability.
-  - Updated various test scripts to ensure uniformity in style and structure across the test suite.
-  - Improved clarity in test assertions and setup/teardown functions for better maintainability.
-- 2026-05-30 10:47 [5d71340](https://github.com/IXATU/dotfiles/commit/5d71340) refactor(update-scripts): streamline Windows update handling and logging (Cursor Agent)
-  - Removed the use of a temporary `windows.done` file to track completion, simplifying the update flow.
-  - Enhanced logging by adding a new function to parse and display WinGet console output, improving visibility of package upgrade results.
-  - Updated the `Run-NativeLogged` function to include an optional parameter for controlling output display, allowing for more flexible logging behavior.
+- 2026-06-14 12:50 [f21d6ab](https://github.com/IXATU/dotfiles/commit/f21d6ab) refactor(excalidraw): update workspace host resolution and improve script handling (Cursor Agent)
+  - Modified the SKILL.md documentation to clarify the host bind mount resolution process for the Excalidraw workspace.
+  - Updated `ai-cursor-check.sh` and `update-excalidraw.sh` scripts to utilize a new function for resolving the Excalidraw workspace host, enhancing flexibility with paths containing spaces.
+  - Enhanced test cases to validate the new workspace resolution logic, ensuring proper handling of Chezmoi configurations and legacy paths.
+- 2026-06-13 11:46 [1d8117c](https://github.com/IXATU/dotfiles/commit/1d8117c) refactor(codex): remove legacy config and update documentation (Cursor Agent)
+  - Deleted the outdated `codex/config.toml` file to streamline configuration management.
+  - Updated `README-mcp.md` and `README.md` to reflect the new configuration source in `dot_codex/private_config.toml.tmpl`.
+  - Adjusted references in documentation to ensure clarity on the configuration process and usage.
+- 2026-06-10 08:50 [6daa999](https://github.com/IXATU/dotfiles/commit/6daa999) refactor(gitnexus): align GitNexus post-commit hook with canonical refresh policy (jesus)
+- 2026-06-09 20:16 [763fa95](https://github.com/IXATU/dotfiles/commit/763fa95) refactor(gitnexus): improve installation and path alignment procedures (Cursor Agent)
+  - Enhanced SKILL.md and GITNEXUS_OPERATIONAL_POLICY.md to clarify the installation process and the importance of symlink creation for agent-first path alignment.
+  - Updated MCP_QUICKREF.md and OPERATIONS_CHEATSHEET.md to reflect changes in GitNexus installation paths and symlink management.
+  - Improved install-gitnexus.sh to ensure the creation of a canonical symlink from ~/.local/bin/gitnexus to the npm installation.
+- 2026-06-09 19:47 [056eda0](https://github.com/IXATU/dotfiles/commit/056eda0) refactor(gitnexus): enhance path alignment diagnostics and update operational policies (Cursor Agent)
+  - Expanded SKILL.md to include details on GitNexus path alignment, emphasizing its importance for agent safety and operational integrity.
+  - Updated GITNEXUS_OPERATIONAL_POLICY.md to reflect the new path alignment checks and their implications for read-only operations.
+  - Revised MCP_QUICKREF.md and OPERATIONS_CHEATSHEET.md to incorporate path alignment considerations for agents.
+- 2026-06-09 19:07 [1e01692](https://github.com/IXATU/dotfiles/commit/1e01692) refactor(canonical-target): update SCRIPT_CONVENTIONS and TESTING documentation for shell-audit-check (Cursor Agent)
+  - Revised SCRIPT_CONVENTIONS.md to include `make shell-audit-check` in the list of read-only validators, clarifying its usage.
+  - Enhanced TESTING.md with details about the `make shell-audit-check` command, outlining its focused shell audit capabilities and exclusions.
+  - Updated Makefile.tests to add `shell-audit-check` as a phony target and included it in the help section for better visibility.
+- 2026-06-09 18:43 [3e75593](https://github.com/IXATU/dotfiles/commit/3e75593) refactor(agent-validation): enhance agent-validate-report functionality and deprecate AGENT_VALIDATE_CMD (Cursor Agent)
+  - Updated `agent-validate-report` to use an allowlisted validation target via `AGENT_VALIDATE_TARGET`, replacing the deprecated `AGENT_VALIDATE_CMD`.
+  - Improved error handling for unsupported validation selectors, ensuring safer execution and clearer feedback.
+  - Enhanced the report generation process to include detailed command execution logs and warnings for deprecated usage.
+- 2026-06-09 18:32 [e75767b](https://github.com/IXATU/dotfiles/commit/e75767b) refactor(excalidraw): update README and SKILL documentation for canonical source paths (Cursor Agent)
+  - Revised README.md to clarify the canonical source path for the Excalidraw skill and emphasized the avoidance of checkout-local agent skill surfaces.
+  - Updated SKILL.md to reflect the new paths for rendering and setup instructions, ensuring consistency across documentation.
+  - Adjusted references in render_excalidraw.py to point to the correct directory structure, enhancing usability for users.
+- 2026-06-07 10:58 [fd92527](https://github.com/IXATU/dotfiles/commit/fd92527) refactor(gitnexus): implement dotfiles analyze policy and enhance post-commit behavior (Cursor Agent)
+  - Added `diagnose-checkout-ai-surface.sh` script for diagnosing AI surface issues in dotfiles.
+  - Updated `GITNEXUS_OPERATIONAL_POLICY.md` to clarify the use of `--skip-skills` during `gitnexus analyze` in dotfiles checkouts.
+  - Enhanced `post-commit-gitnexus.sh` to include `--skip-skills` in warnings and commands.
+- 2026-06-07 09:14 [f43ec03](https://github.com/IXATU/dotfiles/commit/f43ec03) refactor(git_flow_policy): adjust flow modes and validation settings for improved branch management (Cursor Agent)
+  - Changed `FLOW_MODE_TO_DEV` to `local` and `FLOW_MODE_TO_MAIN` to `pr` for better alignment with branch workflows.
+  - Updated validation settings by disabling `VALIDATE_TO_DEV` and enabling `VALIDATE_TO_MAIN`, along with defining a new validation command for the main branch.
+  - Added merge strategy configurations for both development and main branches to enhance clarity in merging processes.
+- 2026-06-07 09:04 [e09fa12](https://github.com/IXATU/dotfiles/commit/e09fa12) refactor(git_flow_policy): update validation commands and add main branch configuration (Cursor Agent)
+  - Introduced `FLOW_MODE_TO_MAIN=local` and updated validation commands for both development and main branches in `.git-flow-policy.env`.
+  - Enhanced `VALIDATE_CMD_TO_DEV` to include additional checks for better validation coverage.
+  - Set `VALIDATE_TO_MAIN` to false and defined a new command for full validation on the main branch.
+- 2026-06-07 08:28 [4ffbd03](https://github.com/IXATU/dotfiles/commit/4ffbd03) refactor(GIT_FLOW_POLICY): update documentation and examples for feature branch preservation (Cursor Agent)
+  - Clarified the behavior of `DELETE_FEATURE_BRANCH` in the context of feature branch integration.
+  - Added a canonical example of `.git-flow-policy.env` for better user guidance.
+  - Updated `GIT_WORKFLOW.md` to reflect the new default behavior of archiving feature branches.
+- 2026-06-06 23:01 [e4ee3e4](https://github.com/IXATU/dotfiles/commit/e4ee3e4) refactor(hooks): enhance post-commit behavior and documentation (Cursor Agent)
+  - Updated the post-commit hook to skip refresh when GitNexus MCP or index lock is active, ensuring commits remain valid and the index does not become stale.
+  - Improved error handling for non-writable GitNexus home and registry files, providing actionable warnings to users.
+  - Revised documentation in GITNEXUS_OPERATIONAL_POLICY.md, INSTALL.md, and OPERATIONS_CHEATSHEET.md to reflect the new post-commit behavior and clarify manual refresh procedures.
+- 2026-06-06 22:02 [9624630](https://github.com/IXATU/dotfiles/commit/9624630) refactor(update): clarify mcp-server-fetch installation in WSL update process (Cursor Agent)
+  - Updated documentation to specify that `make update-wsl` does not install `mcp-server-fetch` as a persistent tool, instead managing it at runtime via `uvx`.
+  - Modified the `update-wsl.sh` script to reflect this change, ensuring clarity in the installation process.
+  - Added tests to verify that the `mcp-server-fetch` installation behavior aligns with the updated documentation, confirming it is not installed persistently.
+- 2026-06-06 22:00 [11c1e14](https://github.com/IXATU/dotfiles/commit/11c1e14) refactor(manifest): update MCP profiles in MANIFEST.yaml and documentation for clarity (Cursor Agent)
+  - Enhanced the `MANIFEST.yaml` to include status and descriptions for reserved profiles: `store-etl`, `ixatu`, and `project-local`, clarifying their inactive status.
+  - Updated `MCP_QUICKREF.md` and `MCP_TAXONOMY.md` to reflect the changes in profile management and emphasize that reserved profiles are not operational.
+  - Added a new test for consistency between MCP taxonomy and manifest profiles to ensure documentation accuracy.
+- 2026-06-06 21:56 [82cdc86](https://github.com/IXATU/dotfiles/commit/82cdc86) refactor(operations): update agent validation commands and clarify OSV scanning options (Cursor Agent)
+  - Enhanced the documentation for `make agent-validate-changed` to specify that it performs local checks by default and requires `SECURITY_ONLINE=1` for strict OSV scanning.
+  - Updated the `TESTING.md` file to reflect the new behavior of the agent validation command, emphasizing the distinction between local and online security checks.
+  - Modified the `agent-validate-changed.sh` script to include a conditional for running the OSV online scan based on the `SECURITY_ONLINE` environment variable, improving flexibility in validation processes.
+- 2026-06-06 21:16 [b3ea38e](https://github.com/IXATU/dotfiles/commit/b3ea38e) refactor(playwright): remove run_after_16_link_playwright_docker script and update documentation (Cursor Agent)
+  - Deleted the `run_after_16_link_playwright_docker.sh.tmpl` script as it is no longer needed.
+  - Updated CHEZMOI and OPERATIONS documentation to reflect the change, clarifying the management of `playwright-docker` as a direct symlink in the local bin.
+  - Enhanced tests to verify the new symlink management for `playwright-docker`, ensuring proper functionality and documentation alignment.
 
 ### Tests
-- 2026-06-04 19:07 [e73500f](https://github.com/IXATU/dotfiles/commit/e73500f) test: trigger hooks (Jesús Erro)
-- 2026-05-31 09:14 [859bcc0](https://github.com/IXATU/dotfiles/commit/859bcc0) test(tmux): add tests for shellcheck sources in legacy scripts (Cursor Agent)
-  - Introduced tests to verify the presence of shellcheck source directives in legacy tmux scripts (home.sh and work.sh).
-  - Ensured that the scripts correctly reference the common header and footer files, improving maintainability and adherence to best practices.
+- 2026-06-07 09:53 [7d67c48](https://github.com/IXATU/dotfiles/commit/7d67c48) test(regression): introduce regression index and enhance documentation (Cursor Agent)
+  - Added `make bats-agent` command to run the agent regression index, facilitating dedicated testing for historical risks.
+  - Updated AGENT_WORKFLOW.md, AI_REPO_MAP.md, and VALIDATION_MATRIX.md to include references to the new regression index and its usage.
+  - Enhanced SCRIPT_CONVENTIONS.md to document the purpose of the regression index tests.
 
 ### Chores
-- 2026-06-01 08:37 [e663918](https://github.com/IXATU/dotfiles/commit/e663918) chore(assets): remove unused symlink governance file (jesus)
-  - Deleted the `_test_symlink_governance` file as it is no longer needed, streamlining the asset directory.
-
-### Other
-- 2026-05-25 21:23 [a04fd7e](https://github.com/IXATU/dotfiles/commit/a04fd7e) build(doc): removed `PLAN_000009.md:Zone.Identifier` (Cursor Agent)
+- 2026-06-14 14:10 [ee17ac9](https://github.com/IXATU/dotfiles/commit/ee17ac9) chore(release): add changelog for feature/fixing-laptop-ixatu-issues (Cursor Agent)
+  - Created a new changelog file summarizing the integration of seven commits related to enhancements and documentation updates in the Cursor Agent.
+  - Documented integration date, base branch, and status for better tracking of feature development.
+- 2026-06-13 12:05 [e0fb49a](https://github.com/IXATU/dotfiles/commit/e0fb49a) chore(release): add changelog for feature/refactors-by-composer (Cursor Agent)
+  - Created a new changelog file summarizing the integration of four commits related to testing and CI improvements in the Cursor Agent.
+  - Documented the integration date, base branch, and status for better tracking of feature development.
+- 2026-06-07 09:43 [bf9716a](https://github.com/IXATU/dotfiles/commit/bf9716a) chore(gitignore): update .gitignore to exclude .claude runtime surface (Cursor Agent)
+  - Modified .gitignore to prevent the checkout of the .claude directory, aligning with the agent runtime surface requirements.
+  - Added tests to ensure the .claude directory is not present in the dotfiles repository and that it is correctly ignored during checkout.
 
 
 ## [v2025.12.07_1051] - 2025-12-07
