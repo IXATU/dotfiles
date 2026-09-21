@@ -58,6 +58,36 @@ normalize_component_version() {
 	*uv*)
 		version="$(printf '%s\n' "$version" | sed -E 's/^uv[[:space:]]+//; s/[[:space:]]+\([^)]*\)$//')"
 		;;
+	python)
+		version="$(printf '%s\n' "$version" | sed -E 's/^Python[[:space:]]+//')"
+		;;
+	node.js)
+		version="${version#v}"
+		;;
+	ruff)
+		version="$(printf '%s\n' "$version" | sed -E 's/^[Rr]uff[[:space:]]+//')"
+		;;
+	pyright)
+		version="$(printf '%s\n' "$version" | sed -E 's/^[Pp]yright[[:space:]]+//')"
+		;;
+	ty)
+		version="$(printf '%s\n' "$version" | sed -E 's/^ty[[:space:]]+//')"
+		;;
+	taplo)
+		version="$(printf '%s\n' "$version" | sed -E 's/^[Tt]aplo[[:space:]]+//')"
+		;;
+	serena)
+		version="$(printf '%s\n' "$version" | sed -E 's/^[Ss]erena[[:space:]]+//')"
+		;;
+	ripgrep)
+		version="$(printf '%s\n' "$version" | sed -E 's/^ripgrep[[:space:]]+//')"
+		;;
+	yamllint)
+		version="$(printf '%s\n' "$version" | sed -E 's/^yamllint[[:space:]]+//')"
+		;;
+	gitleaks)
+		version="$(printf '%s\n' "$version" | sed -E 's/^gitleaks[[:space:]]+version[[:space:]]+//; s/^v//')"
+		;;
 	esac
 	printf '%s\n' "$version"
 }
@@ -432,6 +462,70 @@ update_global_npm_tool_if_needed() {
 	record_version_transition "$area" "$name" "$before" "$after"
 }
 
+uv_tool_is_installed() {
+	local package_name="$1"
+	uv tool list 2>/dev/null | grep -Eq "^${package_name} v[^[:space:]]+"
+}
+
+update_uv_tool() {
+	local area="$1" name="$2" package_name="$3" log_file="$4"
+	shift 4
+	local before after
+	before="$(probe_named_version "$name" "$@" || true)"
+	if ! command -v uv >/dev/null 2>&1; then
+		result_warn "$area" "$name" "uv not found; global tool maintenance skipped"
+		tool_snapshot_add "$name" "$before" "$before"
+		return 0
+	fi
+	if uv_tool_is_installed "$package_name"; then
+		run_step "$area" "$name" "$log_file" uv tool upgrade "$package_name"
+	else
+		run_step "$area" "$name" "$log_file" uv tool install "$package_name"
+	fi
+	if [[ "${RUN_STEP_LAST_RESULT_STATUS:-}" == "FAIL" ]]; then
+		tool_snapshot_add "$name" "$before" "$before"
+		return 0
+	fi
+	after="$(probe_named_version "$name" "$@" || true)"
+	record_version_transition "$area" "$name" "$before" "$after"
+}
+
+tool_snapshot_has() {
+	local name="$1"
+	[[ -f "$TOOL_SNAPSHOT_FILE" ]] && awk -F '\t' -v name="$name" '$1 == name { found=1 } END { exit found ? 0 : 1 }' "$TOOL_SNAPSHOT_FILE"
+}
+
+snapshot_current_tool() {
+	local name="$1"
+	shift
+	tool_snapshot_has "$name" && return 0
+	local version
+	version="$(probe_named_version "$name" "$@" || true)"
+	tool_snapshot_add "$name" "$version" "$version"
+}
+
+capture_workstation_snapshot() {
+	snapshot_current_tool "Python" python3 --version
+	snapshot_current_tool "Node.js" node --version
+	snapshot_current_tool "npm" npm --version
+	snapshot_current_tool "pnpm" pnpm --version
+	snapshot_current_tool "uv" uv --version
+	snapshot_current_tool "Ruff" ruff --version
+	snapshot_current_tool "Pyright" pyright --version
+	snapshot_current_tool "ty" ty --version
+	snapshot_current_tool "Taplo" taplo --version
+	snapshot_current_tool "ripgrep" rg --version
+	snapshot_current_tool "ast-grep CLI" ast-grep --version
+	snapshot_current_tool "GitNexus CLI" gitnexus --version
+	snapshot_current_tool "Serena" serena --version
+	snapshot_current_tool "actionlint" actionlint --version
+	snapshot_current_tool "yamllint" yamllint --version
+	snapshot_current_tool "gitleaks" gitleaks version
+	snapshot_current_tool "osv-scanner" osv-scanner --version
+	snapshot_current_tool "Codex CLI" codex --version
+	snapshot_current_tool "OpenCode" opencode --version
+}
+
 ingest_agent_tools_results() {
 	local result_file="$1"
 	[[ -f "$result_file" ]] || return 0
@@ -499,6 +593,7 @@ run_tools() {
 	update_global_npm_tool_if_needed "WSL" "Codex CLI" "${LOG_DIR}/wsl-codex.log" "$npm_prefix" "@openai/codex" "latest" codex --version --
 	update_global_npm_tool_if_needed "WSL" "ast-grep CLI" "${LOG_DIR}/wsl-ast-grep.log" "$npm_prefix" "@ast-grep/cli" "latest" ast-grep --version --
 	update_global_npm_tool_if_needed "WSL" "GitNexus CLI" "${LOG_DIR}/wsl-gitnexus.log" "$npm_prefix" "gitnexus" "latest" gitnexus --version --
+	update_global_npm_tool_if_needed "WSL" "Pyright" "${LOG_DIR}/wsl-pyright.log" "$npm_prefix" "pyright" "latest" pyright --version --
 	if [[ "${RUN_STEP_LAST_RESULT_STATUS:-}" != "FAIL" && "${RUN_STEP_LAST_RESULT_STATUS:-}" != "WARN" ]] && command -v gitnexus >/dev/null 2>&1; then
 		# shellcheck source=scripts/lib/gitnexus_canonical.sh
 		source "${DOTFILES_ROOT}/scripts/lib/gitnexus_canonical.sh"
@@ -513,6 +608,10 @@ run_tools() {
 		result_fail "WSL" "GitNexus" "install finished but gitnexus not found in PATH"
 	fi
 	update_pnpm_major_11
+	update_uv_tool "WSL" "Ruff" "ruff" "${LOG_DIR}/wsl-ruff.log" ruff --version
+	update_uv_tool "WSL" "ty" "ty" "${LOG_DIR}/wsl-ty.log" ty --version
+	run_versioned_step run_step "WSL" "Serena" "${LOG_DIR}/wsl-serena.log" serena --version -- "${DOTFILES_ROOT}/scripts/install-serena.sh"
+	run_versioned_step run_step "WSL" "Taplo" "${LOG_DIR}/wsl-taplo.log" taplo --version -- "${DOTFILES_ROOT}/scripts/install-taplo.sh" --upgrade
 	local agent_tools_script="${DOTFILES_ROOT}/scripts/install-agent-tools.sh"
 	if [[ -x "$agent_tools_script" ]]; then
 		local actionlint_before actionlint_after osv_before osv_after agent_tools_results
@@ -632,5 +731,7 @@ want_section shell && run_shell
 want_section shell && run_uv_update
 want_section mcp && run_mcp
 want_section services && run_services
+
+capture_workstation_snapshot
 
 result_info "WSL" "Projects" "personal projects are excluded; run make update-projects"

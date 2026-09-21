@@ -86,6 +86,9 @@ help:
 	@echo "  make install                     HUMAN: bootstrap/install flow; see docs/INSTALL.md"
 	@echo "  make deps-install                HUMAN: install APT dependencies (sudo)"
 	@echo "  make install-agent-tools         HUMAN: install non-APT validation CLIs"
+	@echo "  make install-serena             HUMAN: converge Serena to pinned uv tool version"
+	@echo "  make install-taplo              HUMAN: install checksum-verified Taplo binary"
+	@echo "  make configure-claude-serena    HUMAN: add missing Serena user MCP to Claude"
 	@echo "  make install-mattpocock-skills   HUMAN unless DRY_RUN=1; external skills catalog"
 	@echo "  make install-git-hooks           HUMAN: configure local core.hooksPath=.githooks"
 	@echo "  make update-ai-skills            HUMAN: opt-in external skills catalog; use DRY_RUN=1 for preview"
@@ -439,6 +442,9 @@ bats-system: bats-zsh
 	@$(call run_bats,$(BATS_DIR)/system/system-deps.bats)
 	@$(call run_bats,$(BATS_DIR)/system/install-dotfiles.bats)
 	@$(call run_bats,$(BATS_DIR)/system/install-uv.bats)
+	@$(call run_bats,$(BATS_DIR)/system/install-serena.bats)
+	@$(call run_bats,$(BATS_DIR)/system/install-taplo.bats)
+	@$(call run_bats,$(BATS_DIR)/system/configure-claude-serena.bats)
 	@$(call run_bats,$(BATS_DIR)/system/install-sops.bats)
 	@$(call run_bats,$(BATS_DIR)/system/install-chezmoi.bats)
 	@$(call run_bats,$(BATS_DIR)/system/install-node-stack.bats)

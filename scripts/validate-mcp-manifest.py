@@ -25,6 +25,7 @@ EXPECTED_IDS: Set[str] = {
     "github",
     "fetch",
     "gitnexus",
+    "serena",
     "filesystem",
     "git",
     "sequential-thinking",
@@ -51,6 +52,7 @@ ALLOWED_RUNTIMES = {
     "venv_python",
     "docker",
     "shell",
+    "uv_tool",
 }
 
 # Secret entry: only these keys allowed; values must not look like embedded secrets.

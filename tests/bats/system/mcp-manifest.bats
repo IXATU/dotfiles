@@ -94,3 +94,18 @@ sys.exit(0 if r.returncode == 1 else 1)
 PY
 	[[ "${status}" -eq 0 ]]
 }
+
+@test "Serena is governed and rendered for Cursor Codex and OpenCode" {
+	if ! python3 -c "import yaml" 2>/dev/null; then
+		skip "PyYAML not installed"
+	fi
+	run python3 "${DOTFILES_DIR}/scripts/generate-mcp-configs.py" render
+	[[ "${status}" -eq 0 ]]
+	grep -q '^  - id: serena$' "${MANIFEST}"
+	grep -q '"serena"' "${DOTFILES_DIR}/build/mcps/dot_cursor/mcp.json.tmpl"
+	grep -q '^\[mcp_servers.serena\]$' "${DOTFILES_DIR}/build/mcps/dot_codex/mcp_servers.toml.tmpl"
+	grep -q '"serena"' "${DOTFILES_DIR}/build/mcps/dot_config/opencode/opencode.json.tmpl"
+	grep -q -- '--context=ide' "${DOTFILES_DIR}/build/mcps/dot_cursor/mcp.json.tmpl"
+	grep -q -- '--context=codex' "${DOTFILES_DIR}/build/mcps/dot_codex/mcp_servers.toml.tmpl"
+	grep -q -- '--project-from-cwd' "${DOTFILES_DIR}/build/mcps/dot_config/opencode/opencode.json.tmpl"
+}

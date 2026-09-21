@@ -54,7 +54,7 @@ Los títulos visibles siguen procedencia semántica:
 - marca original para terceros, como `GitNexus ...`
 - familias de proyecto como `Store ETL ...` reservadas para repos concretos
 
-> **Nota:** `.claude/skills/` es una convención de nombre compartida por Claude Code y OpenCode. No implica que el repo soporte a Claude — es solo el nombre del directorio que ambos herramientas usan para skills. Los skills de este repo viven en `ai/assets/skills/` y se symlinkean a las rutas que cada plataforma espera.
+> **Nota:** `.claude/skills/` es una convención de nombre compartida por Claude Code y OpenCode. Los skills de este repo viven en `ai/assets/skills/` y se symlinkean a las rutas que cada plataforma espera. La integración MCP Serena de Claude es opt-in mediante `make configure-claude-serena`; no se gestiona `~/.claude.json` completo.
 
 ## Adapters
 
@@ -96,6 +96,7 @@ ejecuta. En solapes, gana el skill local bajo `ai/assets/skills/`.
 | `ops/` | `mcp-governance/` | `Dotfiles MCP Governance` |
 | `ops/` | `playwright-ui-validation/` | `Dotfiles Playwright UI Validation` |
 | `ops/` | `system-updates/` | `Dotfiles Update Workflow` |
+| `ops/` | `serena-development-tooling/` | `Dotfiles Serena Development Tooling` |
 | `ops/` | `excalidraw-mcp-operations/` | `Dotfiles Excalidraw MCP Operations` |
 | `ops/` | `wsl2-local-tools/` | `Dotfiles WSL2 Local Tools` |
 | `ops/` | `wsl2-raw-data-inspection/` | `Dotfiles WSL2 Raw Data Inspection` |

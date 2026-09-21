@@ -191,6 +191,20 @@ assert 'excalidrawWorkspaceHost' in out
 	[[ "${status}" -eq 0 ]]
 }
 
+@test "JSON template generation preserves the existing Chezmoi preamble in-memory" {
+	cd "${DOTFILES_DIR}" || exit 1
+	run python3 -c "
+import runpy
+from pathlib import Path
+g = runpy.run_path('scripts/generate-mcp-configs.py')
+path = Path('dot_cursor/mcp.json.tmpl')
+out = g['with_existing_chezmoi_preamble'](path, '{\"mcpServers\": {}}\n')
+assert out.startswith('{{- ') and 'excalidrawWorkspaceHost' in out.splitlines()[0]
+assert g['strip_chezmoi_template_preamble'](out) == '{\"mcpServers\": {}}\n'
+"
+	[[ "$status" -eq 0 ]]
+}
+
 @test "validate render drift generate plan succeed in sequence" {
 	if ! python3 -c "import yaml" 2>/dev/null; then
 		skip "PyYAML not installed"

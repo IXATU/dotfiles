@@ -19,6 +19,17 @@ teardown() {
 	[[ -f "${DOTFILES_DIR}/ai/assets/skills/gitnexus/gitnexus-cli/SKILL.md" ]]
 }
 
+@test "Serena development tooling skill is canonical and operational" {
+	local skill="${DOTFILES_DIR}/ai/assets/skills/ops/serena-development-tooling/SKILL.md"
+	[[ -f "$skill" ]]
+	grep -q 'text/regex.*`rg`' "$skill"
+	grep -q 'syntax.*`ast-grep`' "$skill"
+	grep -q 'architecture.*GitNexus' "$skill"
+	grep -q 'symbols.*Serena' "$skill"
+	grep -q 'do not modify `language_servers`' "$skill"
+	grep -q 'multiple language servers simultaneously' "$skill"
+}
+
 @test "no duplicate .claude/skills tree in dotfiles repo" {
 	[[ ! -d "${DOTFILES_DIR}/.claude/skills" ]]
 	[[ ! -d "${DOTFILES_DIR}/.claude" ]]
