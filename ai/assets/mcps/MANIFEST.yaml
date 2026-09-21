@@ -192,6 +192,26 @@ mcps:
       - ~/.local/share/chezmoi/bin/mcp-gitnexus-launcher
     notes: Index under ~/.gitnexus/; separate from this manifest.
 
+  - id: serena
+    display_name: Serena
+    description: Symbol-aware code intelligence, references, and semantic editing
+    layer: knowledge
+    category: semantic
+    runtime: uv_tool
+    surfaces:
+      cursor: { enabled: true }
+      codex: { enabled: true }
+      opencode: { enabled: true }
+    requires: [serena, uv]
+    secrets: []
+    paths_probe: []
+    notes: >
+      Installed as the pinned uv tool serena-agent==1.7.0. Each client starts
+      its own stdio process; no shared daemon. Codex and OpenCode inherit a
+      project cwd and use --project-from-cwd. Cursor GUI cwd is not assumed to
+      be the workspace, so agents activate the project through Serena when
+      needed. Project language servers remain owned by .serena/project.yml.
+
   - id: filesystem
     display_name: Filesystem MCP
     description: Whitelist-scoped filesystem access

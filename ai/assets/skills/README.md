@@ -102,6 +102,7 @@ Visible skill names follow semantic origin, not just repository location:
 - `ops/mcp-governance/` - `Dotfiles MCP Governance`
 - `ops/system-dependencies/` - `Dotfiles System Dependencies`
 - `ops/system-updates/` - `Dotfiles Update Workflow`
+- `ops/serena-development-tooling/` - `Dotfiles Serena Development Tooling`
 - `ops/excalidraw-mcp-operations/` - `Dotfiles Excalidraw MCP Operations`
 - `ops/playwright-ui-validation/` - `Dotfiles Playwright UI Validation`
 - `ops/wsl2-local-tools/` - `Dotfiles WSL2 Local Tools`

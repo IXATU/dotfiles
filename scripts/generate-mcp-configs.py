@@ -65,6 +65,16 @@ def strip_chezmoi_template_preamble(text: str) -> str:
     return "".join(lines[i:])
 
 
+def with_existing_chezmoi_preamble(path: Path, body: str) -> str:
+    """Keep leading Chezmoi directives from a productive JSON template."""
+    if not path.exists():
+        return body
+    text = path.read_text(encoding="utf-8")
+    stripped = strip_chezmoi_template_preamble(text)
+    preamble = text[: len(text) - len(stripped)]
+    return preamble + body
+
+
 def sanitize_template_for_toml(text: str) -> str:
     """Drop Chezmoi directive lines and replace inline {{ ... }} for tomllib validation."""
     text = strip_chezmoi_template_preamble(text)
@@ -191,9 +201,9 @@ def _atomic_write_text(
     try:
         tmp_path.write_text(content, encoding="utf-8")
         if validate_json:
-            json.loads(tmp_path.read_text(encoding="utf-8"))
+            json.loads(strip_chezmoi_template_preamble(tmp_path.read_text(encoding="utf-8")))
         if validate_toml:
-            tomllib.loads(tmp_path.read_text(encoding="utf-8"))
+            tomllib.loads(sanitize_template_for_toml(tmp_path.read_text(encoding="utf-8")))
         os.replace(tmp_path, dest)
     except Exception:
         if tmp_path.exists():
@@ -358,6 +368,23 @@ def build_mcp_surface_recipes() -> Dict[str, Dict[str, Dict[str, Any]]]:
             opencode={
                 "type": "local",
                 "command": [f"{H}/.local/share/chezmoi/bin/mcp-gitnexus-launcher"],
+                "environment": {},
+            },
+        ),
+        "serena": _r(
+            cursor={
+                "command": "serena",
+                "args": ["start-mcp-server", "--context=ide"],
+                "env": {},
+            },
+            codex={
+                "command": "serena",
+                "args": ["start-mcp-server", "--project-from-cwd", "--context=codex"],
+                "env": {},
+            },
+            opencode={
+                "type": "local",
+                "command": ["serena", "start-mcp-server", "--project-from-cwd", "--context=ide"],
                 "environment": {},
             },
         ),
@@ -1145,8 +1172,9 @@ def cmd_generate(args: argparse.Namespace) -> int:
 
     print("==> MCP generate APPLY=1 — writing productive templates (atomic + backups)")
     try:
-        cursor_body = OUT_CURSOR.read_text(encoding="utf-8")
-        json.loads(cursor_body)
+        cursor_rendered = OUT_CURSOR.read_text(encoding="utf-8")
+        json.loads(cursor_rendered)
+        cursor_body = with_existing_chezmoi_preamble(TMPL_CURSOR, cursor_rendered)
         _atomic_write_text(
             TMPL_CURSOR,
             cursor_body,
@@ -1155,8 +1183,9 @@ def cmd_generate(args: argparse.Namespace) -> int:
             validate_toml=False,
         )
 
-        op_body = OUT_OPENCODE.read_text(encoding="utf-8")
-        json.loads(op_body)
+        op_rendered = OUT_OPENCODE.read_text(encoding="utf-8")
+        json.loads(op_rendered)
+        op_body = with_existing_chezmoi_preamble(TMPL_OPENCODE, op_rendered)
         _atomic_write_text(
             TMPL_OPENCODE,
             op_body,
@@ -1170,7 +1199,7 @@ def cmd_generate(args: argparse.Namespace) -> int:
         merged = merge_codex_productive(full_codex, codex_frag)
         import tomllib  # noqa: PLC0415
 
-        tomllib.loads(merged)
+        tomllib.loads(sanitize_template_for_toml(merged))
         _atomic_write_text(
             TMPL_CODEX,
             merged,

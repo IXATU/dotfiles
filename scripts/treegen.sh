@@ -11,7 +11,7 @@ set -euo pipefail
 export LC_ALL=C.UTF-8
 
 # filetree-pro.exclude + py/db/logs + otel/dagster/grafana runtime (var, .nux, .telemetry, compute_logs)
-TREE_IGNORE='.git|.gitnexus|.venv-tools|.claude|node_modules|dist|build|out|.venv|venv|env|.env|target|bin|obj|.vs|.idea|__pycache__|__none__|mypy_cache|.mypy_cache|*.pyc|*.log|*.tmp|*.cache|.ruff_cache|uncommitted|index_*|chunks|wal|*.db|*.db-shm|*.db-wal|logs|var|.nux|.telemetry|compute_logs'
+TREE_IGNORE='.git|.gitnexus|.venv-tools|.claude|node_modules|dist|build|out|.venv|venv|env|.env|target|bin|obj|.vs|.idea|__pycache__|__none__|mypy_cache|.mypy_cache|*.pyc|*.log|*.tmp|*.cache|.ruff_cache|uncommitted|index_*|chunks|wal|*.db|*.db-shm|*.db-wal|logs|var|.nux|.telemetry|compute_logs|cache|project.local.yml'
 
 NO_STAGE=0
 CHECK_MODE=0

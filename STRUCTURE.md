@@ -15,7 +15,6 @@
 │   ├── 📄 run_after_15_link_tmux_dotfiles.sh.tmpl
 │   └── 📄 run_before_00_backup_rc_files.sh.tmpl
 ├── 📁 .cursor
-│   ├── 📁 plans
 │   └── 📁 rules
 │       └── 📄 aliases-conventions.mdc
 ├── 📁 .githooks
@@ -25,6 +24,10 @@
 │   └── 📁 workflows
 │       ├── ⚙️ release.yml
 │       └── ⚙️ test.yml
+├── 📁 .serena
+│   ├── 📁 memories
+│   ├── 📄 .gitignore
+│   └── ⚙️ project.yml
 ├── 📁 ai
 │   ├── 📁 adapters
 │   │   ├── 📁 codex
@@ -131,6 +134,8 @@
 │   │       │   │   └── 📝 SKILL.md
 │   │       │   ├── 📁 playwright-ui-validation
 │   │       │   │   └── 📝 SKILL.md
+│   │       │   ├── 📁 serena-development-tooling
+│   │       │   │   └── 📝 SKILL.md
 │   │       │   ├── 📁 system-dependencies
 │   │       │   │   └── 📝 SKILL.md
 │   │       │   ├── 📁 system-updates
@@ -229,7 +234,6 @@
 │   │   └── 📝 dotfiles-install.md
 │   ├── 📁 plans
 │   │   └── 📝 PLAN_000009.md
-│   ├── 📁 wiki
 │   ├── 📝 AGENT_FIRST_SUMMARY.md
 │   ├── 📝 AGENT_WORKFLOW.md
 │   ├── 📝 AGENT_WORKFLOW_LOOP.md
@@ -270,10 +274,6 @@
 ├── 📁 dot_codex
 │   └── 📄 private_config.toml.tmpl
 ├── 📁 dot_config
-│   ├── 📁 codex
-│   │   └── 📁 prompts
-│   ├── 📁 cursor
-│   │   └── 📁 commands
 │   ├── 📁 mcp
 │   │   ├── 📁 servers
 │   │   │   └── 📄 .keep
@@ -407,6 +407,8 @@
 │   ├── 🔧 check-system-deps.sh
 │   ├── 🔧 chezmoi-drift-report.sh
 │   ├── 🔧 clean-runtime-skills.sh
+│   ├── 🔧 configure-claude-gitnexus.sh
+│   ├── 🔧 configure-claude-serena.sh
 │   ├── 🔧 diagnose-checkout-ai-surface.sh
 │   ├── 🔧 diagnose-secret-surfaces.sh
 │   ├── 🔧 generate-commands.sh
@@ -456,8 +458,10 @@
 │   ├── 🔧 install-gitnexus.sh
 │   ├── 🔧 install-mcp-github.sh
 │   ├── 🔧 install-node-stack.sh
+│   ├── 🔧 install-serena.sh
 │   ├── 🔧 install-sops.sh
 │   ├── 🔧 install-system-packages.sh
+│   ├── 🔧 install-taplo.sh
 │   ├── 🔧 install-uv.sh
 │   ├── 🔧 install-verify.sh
 │   ├── 🔧 install-zsh-stack.sh
@@ -542,6 +546,8 @@
 │   │   │   ├── 📄 ai-cursor-check.bats
 │   │   │   ├── 📄 azure-tools.bats
 │   │   │   ├── 📄 clean-runtime-skills.bats
+│   │   │   ├── 📄 configure-claude-gitnexus.bats
+│   │   │   ├── 📄 configure-claude-serena.bats
 │   │   │   ├── 📄 diagnose-secret-surfaces.bats
 │   │   │   ├── 📄 docker-desktop-credentials.bats
 │   │   │   ├── 📄 dotfiles-apply.bats
@@ -557,7 +563,9 @@
 │   │   │   ├── 📄 install-fonts.bats
 │   │   │   ├── 📄 install-mcp-github.bats
 │   │   │   ├── 📄 install-node-stack.bats
+│   │   │   ├── 📄 install-serena.bats
 │   │   │   ├── 📄 install-sops.bats
+│   │   │   ├── 📄 install-taplo.bats
 │   │   │   ├── 📄 install-uv.bats
 │   │   │   ├── 📄 mcp-manifest.bats
 │   │   │   ├── 📄 mcp-render-drift.bats

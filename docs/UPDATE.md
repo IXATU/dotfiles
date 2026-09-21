@@ -151,6 +151,19 @@ La política de mantenimiento converge `pnpm` a major 11. `make update-wsl` actu
 
 `pnpm` 11 requiere Node compatible. Cuando el bloque Node/tooling usa overlay temporal, `npm`, Corepack y `pnpm` del prefijo user-space se ejecutan bajo el Node gestionado compatible. El éxito se valida siempre ejecutando `pnpm --version`. Si Corepack actualizado no deja un `pnpm` 11 funcional, el flujo registra un `WARN` y usa fallback explícito con `npm install -g --prefix=<prefijo-usuario> "pnpm@^11"`. El snapshot mantiene versiones limpias; el método final aparece como mensaje separado.
 
+## Serena y development tooling global
+
+La workstation mantiene estas capacidades globales sin imponerlas a los proyectos:
+
+- Serena: `serena-agent==1.7.0` como `uv tool` aislado; `make install-serena` converge missing/drift y no usa el venv MCP compartido.
+- Ruff y ty: `uv tool install|upgrade` durante el bloque de herramientas.
+- Pyright: paquete npm oficial `pyright` bajo el prefijo global de usuario.
+- Taplo: binario oficial 0.10.0 fijado, con SHA-256 por arquitectura; no requiere Cargo.
+
+Para previsualizar Serena/Taplo sin instalar: `make install-serena DRY_RUN=1` y `make install-taplo DRY_RUN=1`. Los repos siguen prefiriendo sus versiones fijadas (`uv run ...`, scripts npm o lockfiles); CI no debe depender de estas versiones globales.
+
+El resumen final de `dotfiles-update` conserva transiciones Before/After para lo mantenido y completa el estado post-mantenimiento de Python, Node/npm/pnpm/uv, Ruff, Pyright, ty, Taplo, ripgrep, ast-grep, GitNexus, Serena, actionlint, yamllint, gitleaks, osv-scanner, Codex y OpenCode. Una herramienta ausente aparece como `unavailable` y no interrumpe la captura.
+
 ## Excalidraw MCP
 
 Excalidraw ya no usa checkout local ni `dist/index.js`. La modalidad canónica es Docker upstream:

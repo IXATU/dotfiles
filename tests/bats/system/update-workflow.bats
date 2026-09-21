@@ -2148,6 +2148,104 @@ EOF
 	grep -q 'runtime-managed via uvx' "${DOTFILES_DIR}/scripts/update/update-wsl.sh"
 }
 
+@test "mocked tools update records the full workstation snapshot without installs" {
+	local run_dir="${TEST_TEMP_DIR}/run-development-tools-mock"
+	run env DOTFILES_UPDATE_MOCK=1 DOTFILES_UPDATE_RUN_DIR="$run_dir" \
+		"${DOTFILES_DIR}/scripts/update/update-wsl.sh" --section tools
+	[[ "$status" -eq 0 ]]
+	for tool in Python Node.js npm pnpm uv Ruff Pyright ty Taplo ripgrep "ast-grep CLI" "GitNexus CLI" Serena actionlint yamllint gitleaks osv-scanner "Codex CLI" OpenCode; do
+		grep -q "^${tool}"$'\t' "$run_dir/tool-snapshot.tsv"
+	done
+	[[ ! -e "$run_dir/logs/wsl-serena.log" ]]
+	[[ ! -e "$run_dir/logs/wsl-taplo.log" ]]
+}
+
+@test "development tool version normalization removes command prefixes" {
+	local script="${TEST_TEMP_DIR}/development-tool-normalization.sh"
+	cat >"$script" <<EOF
+#!/usr/bin/env bash
+set -euo pipefail
+set -- --section none
+DOTFILES_UPDATE_RUN_DIR="${TEST_TEMP_DIR}/run-development-normalize"
+source "${DOTFILES_DIR}/scripts/update/update-wsl.sh"
+[[ "\$(normalize_component_version Ruff 'ruff 0.12.5')" == '0.12.5' ]]
+[[ "\$(normalize_component_version Pyright 'pyright 1.1.405')" == '1.1.405' ]]
+[[ "\$(normalize_component_version ty 'ty 0.0.24')" == '0.0.24' ]]
+[[ "\$(normalize_component_version Taplo 'taplo 0.10.0')" == '0.10.0' ]]
+[[ "\$(normalize_component_version Serena 'Serena 1.7.0')" == '1.7.0' ]]
+[[ "\$(normalize_component_version ripgrep 'ripgrep 14.1.1')" == '14.1.1' ]]
+EOF
+	chmod +x "$script"
+	run "$script"
+	[[ "$status" -eq 0 ]]
+}
+
+@test "gitleaks version normalization handles real versions and build-process sentinel" {
+	local script="${TEST_TEMP_DIR}/gitleaks-normalization.sh"
+	cat >"$script" <<EOF
+#!/usr/bin/env bash
+set -euo pipefail
+set -- --section none
+DOTFILES_UPDATE_RUN_DIR="${TEST_TEMP_DIR}/run-gitleaks-normalize"
+source "${DOTFILES_DIR}/scripts/update/update-wsl.sh"
+[[ "\$(normalize_component_version gitleaks 'gitleaks version v8.21.2')" == '8.21.2' ]]
+[[ "\$(normalize_component_version gitleaks 'v8.21.2')" == '8.21.2' ]]
+[[ -z "\$(normalize_component_version gitleaks 'version is set by build process')" ]]
+[[ "\$(normalize_component_version gitleaks 'version is set by build process')" != *'ersion is set by build process'* ]]
+EOF
+	chmod +x "$script"
+	run "$script"
+	[[ "$status" -eq 0 ]]
+}
+
+@test "update workflow keeps Serena pinned and uses natural uv upgrades for Ruff and ty" {
+	grep -q 'install-serena.sh' "${DOTFILES_DIR}/scripts/update/update-wsl.sh"
+	grep -q 'update_uv_tool.*Ruff.*ruff' "${DOTFILES_DIR}/scripts/update/update-wsl.sh"
+	grep -q 'update_uv_tool.*ty.*ty' "${DOTFILES_DIR}/scripts/update/update-wsl.sh"
+	grep -q 'update_global_npm_tool_if_needed.*Pyright.*pyright.*latest' "${DOTFILES_DIR}/scripts/update/update-wsl.sh"
+	grep -q 'install-taplo.sh' "${DOTFILES_DIR}/scripts/update/update-wsl.sh"
+}
+
+@test "uv tool helper installs a missing tool and records its version transition" {
+	local stub_dir="${TEST_TEMP_DIR}/uv-tool-bin"
+	local run_dir="${TEST_TEMP_DIR}/run-uv-tool"
+	local version_file="${TEST_TEMP_DIR}/ruff-version"
+	local uv_log="${TEST_TEMP_DIR}/uv-tool.log"
+	local script="${TEST_TEMP_DIR}/uv-tool-runner.sh"
+	mkdir -p "$stub_dir"
+	cat >"${stub_dir}/uv" <<EOF
+#!/usr/bin/env bash
+printf '%s\n' "\$*" >>"${uv_log}"
+[[ "\$*" == 'tool list' ]] && exit 0
+if [[ "\$*" == 'tool install ruff' ]]; then
+	printf '0.12.5\n' >"${version_file}"
+	exit 0
+fi
+exit 90
+EOF
+	cat >"${stub_dir}/ruff" <<EOF
+#!/usr/bin/env bash
+[[ -f "${version_file}" ]] || exit 127
+printf 'ruff %s\n' "\$(cat "${version_file}")"
+EOF
+	chmod +x "${stub_dir}/uv" "${stub_dir}/ruff"
+	cat >"$script" <<EOF
+#!/usr/bin/env bash
+set -euo pipefail
+set -- --section none
+PATH="${stub_dir}:/usr/bin:/bin"
+DOTFILES_UPDATE_RUN_DIR="${run_dir}"
+source "${DOTFILES_DIR}/scripts/update/update-wsl.sh"
+update_uv_tool WSL Ruff ruff "${run_dir}/logs/ruff.log" ruff --version
+EOF
+	chmod +x "$script"
+
+	run "$script"
+	[[ "$status" -eq 0 ]]
+	grep -qx 'tool install ruff' "$uv_log"
+	grep -q $'Ruff\t\t0.12.5\tinstalled' "$run_dir/tool-snapshot.tsv"
+}
+
 @test "ups command is absent from aliases and Make targets" {
 	run grep -Eq '(^|[[:space:]])ups\\(\\)' "${DOTFILES_DIR}/aliases"
 	[[ "${status}" -ne 0 ]]
