@@ -25,11 +25,8 @@
 │       ├── ⚙️ release.yml
 │       └── ⚙️ test.yml
 ├── 📁 .serena
-│   ├── 📁 cache
-│   │   └── 📁 bash
 │   ├── 📁 memories
 │   ├── 📄 .gitignore
-│   ├── ⚙️ project.local.yml
 │   └── ⚙️ project.yml
 ├── 📁 ai
 │   ├── 📁 adapters
