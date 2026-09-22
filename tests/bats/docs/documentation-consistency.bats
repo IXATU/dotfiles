@@ -65,10 +65,10 @@ setup() {
 	grep -q 'VALIDATION_MATRIX.md' "${AGENT_WORKFLOW}"
 }
 
-@test "docs/AI_REPO_MAP.md exists and distinguishes from STRUCTURE.md" {
+@test "docs/AI_REPO_MAP.md exists and defines dynamic repository discovery" {
 	[[ -f "${AI_REPO_MAP}" ]]
-	grep -q 'STRUCTURE.md' "${AI_REPO_MAP}"
-	grep -qE 'No sustituye|diferencia|inventario' "${AI_REPO_MAP}"
+	grep -q 'estructura física se descubre dinámicamente' "${AI_REPO_MAP}"
+	grep -q 'GitNexus' "${AI_REPO_MAP}"
 	grep -q '^## 3\. Mapa por carpetas' "${AI_REPO_MAP}"
 }
 
