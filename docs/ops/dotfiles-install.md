@@ -22,7 +22,7 @@ Todos los targets están diseñados para ejecutarse más de una vez:
 - `make install-chezmoi` — instala Chezmoi en `~/.local/bin` (opt-in, idempotente, sin sudo).
 - `make install-sops` — instala SOPS en `~/.local/bin` (opt-in, idempotente, sin sudo, checksum verificado).
 - `make install-node-stack` — instala NodeSource 24.x con `node`, `npm` y `npx` (opt-in, sudo/APT; requerido por MCPs `npx`, GitNexus y herramientas Node gestionadas).
-- `make install-agent-tools` — instala herramientas de validación no APT (`@ast-grep/cli`, `actionlint`, `osv-scanner`). Opt-in; no forma parte de `make install`.
+- `make install-agent-tools` — instala/actualiza herramientas de validación y seguridad (`@ast-grep/cli`, `actionlint`, `osv-scanner`, `gitleaks`); las releases externas se verifican por checksum. Opt-in; no forma parte de `make install`.
 - `make install-zsh-stack` — Oh My Zsh + Powerlevel10k + plugins custom (idempotente; respeta `DRY_RUN=1`). No edita `~/.zshrc`.
 - `make install-fonts` — MesloLGS NF para Powerlevel10k en Linux/WSL bajo `${XDG_DATA_HOME:-$HOME/.local/share}/fonts/MesloLGS`. No configura Windows Terminal ni VS Code; si los iconos se ven mal, selecciona `MesloLGS NF` en la aplicación host.
 - `make install-uv` — instala **uv** (preferido para Python) con el instalador oficial de Astral. Idempotente: si `uv` existe, no reinstala. `DRY_RUN=1` no descarga ni instala. Pasa `UV_NO_MODIFY_PATH=1` al instalador para no editar `~/.zshrc`/`~/.bashrc`. **Fuera** del orquestador `make install` (opt-in).

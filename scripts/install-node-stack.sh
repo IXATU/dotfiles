@@ -11,7 +11,7 @@
 #
 # Contract:
 #   - DRY_RUN=1: prints what would happen, runs nothing under sudo.
-#   - If `node` AND `npm` are already >= required major, do not reinstall.
+#   - If `node` AND `npm` are already >= workstation target major, do not reinstall.
 #   - Linux/WSL only. Refuses to run on non-Debian-like systems.
 #   - Never edits ~/.zshrc, ~/.bashrc or any rc file.
 #   - Uses the NodeSource 24.x APT repository. No NVM/FNM shell initialization.
@@ -55,8 +55,11 @@ print_already_present() {
 	major="${major%%.*}"
 	install_label OK "node already present at ${node_path} (${node_v})"
 	install_label OK "npm already present at ${npm_path} (${npm_v})"
-	if [[ -n "$major" && "$major" -ge "$NODE_MAJOR_REQUIRED" ]]; then
-		install_label OK "Node runtime satisfies >=${NODE_MAJOR_REQUIRED} for GitNexus and AI tooling"
+	if [[ -n "$major" && "$major" -ge "$NODE_MAJOR_TARGET" ]]; then
+		install_label OK "Node runtime satisfies workstation baseline >=${NODE_MAJOR_TARGET}"
+	elif [[ -n "$major" && "$major" -ge "$NODE_MAJOR_REQUIRED" ]]; then
+		install_label WARN "Node runtime ${node_v} satisfies compatibility >=${NODE_MAJOR_REQUIRED} but is below workstation baseline ${NODE_MAJOR_TARGET}; NodeSource ${NODE_MAJOR_TARGET}.x convergence is needed"
+		return 1
 	else
 		install_label WARN "Node runtime ${node_v} is below required >=${NODE_MAJOR_REQUIRED}; NodeSource ${NODE_MAJOR_TARGET}.x install is needed"
 		return 1
@@ -192,8 +195,10 @@ post_install_report() {
 		node_v="$(node --version 2>/dev/null || true)"
 		major="${node_v#v}"
 		major="${major%%.*}"
-		if [[ -n "$major" && "$major" -ge "$NODE_MAJOR_REQUIRED" ]]; then
-			install_label OK "node ${node_v}, npm $(npm --version 2>/dev/null), npx $(npx --version 2>/dev/null) — runtime ready for GitNexus and npx-based MCPs."
+		if [[ -n "$major" && "$major" -ge "$NODE_MAJOR_TARGET" ]]; then
+			install_label OK "node ${node_v}, npm $(npm --version 2>/dev/null), npx $(npx --version 2>/dev/null) — workstation baseline ${NODE_MAJOR_TARGET}+ ready for GitNexus and npx-based MCPs."
+		elif [[ -n "$major" && "$major" -ge "$NODE_MAJOR_REQUIRED" ]]; then
+			install_label WARN "node ${node_v} satisfies compatibility >=${NODE_MAJOR_REQUIRED} but did not converge to workstation baseline ${NODE_MAJOR_TARGET}; check NodeSource apt priority."
 		else
 			install_label WARN "node ${node_v:-unknown} is still below required >=${NODE_MAJOR_REQUIRED}; check NodeSource apt priority."
 		fi

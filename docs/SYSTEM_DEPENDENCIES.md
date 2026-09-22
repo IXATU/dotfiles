@@ -184,6 +184,7 @@ Chezmoi templates are not passed raw to `shellcheck` or `shfmt`; those tools do 
 - `@ast-grep/cli`: `make install-agent-tools` or `npm install -g --prefix="$HOME/.npm-global" @ast-grep/cli@latest`
 - `actionlint`: `make install-agent-tools` (official `rhysd/actionlint` GitHub release, checksum verified)
 - `osv-scanner`: `make install-agent-tools` (official `google/osv-scanner` GitHub release, checksum verified)
+- `gitleaks`: the baseline may come from APT; `make install-agent-tools` installs/updates the official `gitleaks/gitleaks` GitHub release with checksum verification
 - `opencode`: `curl -fsSL https://opencode.ai/install | bash -s -- --no-modify-path`
 - `docker`: manual workstation decision on WSL; the repo does not enforce one installer path
 - `wt.exe` / `powershell.exe`: Windows-host capabilities used from WSL, not Linux install targets

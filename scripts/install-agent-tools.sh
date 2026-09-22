@@ -29,6 +29,7 @@ Installs/updates non-APT agent tools:
   - @ast-grep/cli through npm user prefix
   - actionlint from rhysd/actionlint GitHub Releases
   - osv-scanner from google/osv-scanner GitHub Releases
+  - gitleaks from gitleaks/gitleaks GitHub Releases
 
 When --result-file is set, non-blocking external-tool update-check warnings are
 appended as tab-separated records: STATUS<TAB>TOOL<TAB>MESSAGE
@@ -122,6 +123,13 @@ normalize_release_version() {
 	osv-scanner)
 		printf '%s\n' "$version_line" | sed -E 's/^osv-scanner[[:space:]]+(version:?[[:space:]]*)?//; s/^version:?[[:space:]]*//; s/^v([0-9])/\1/'
 		;;
+	gitleaks)
+		if [[ "$version_line" == *"version is set by build process"* ]]; then
+			printf '\n'
+		else
+			printf '%s\n' "$version_line" | sed -E 's/^gitleaks[[:space:]]+version[[:space:]]+//; s/^v//'
+		fi
+		;;
 	*)
 		printf '%s\n' "$version_line"
 		;;
@@ -129,9 +137,17 @@ normalize_release_version() {
 }
 
 installed_tool_version() {
-	local tool="$1"
+	local tool="$1" version_line
 	command -v "$tool" >/dev/null 2>&1 || return 1
-	normalize_release_version "$tool" "$("$tool" --version 2>/dev/null | head -n 1)"
+	case "$tool" in
+	gitleaks)
+		version_line="$("$tool" version 2>/dev/null | head -n 1)"
+		;;
+	*)
+		version_line="$("$tool" --version 2>/dev/null | head -n 1)"
+		;;
+	esac
+	normalize_release_version "$tool" "$version_line"
 }
 
 install_ast_grep() {
@@ -281,6 +297,84 @@ install_osv_scanner() {
 	install_label OK "osv-scanner ${tag} installed at ${TARGET_DIR}/osv-scanner"
 }
 
+
+install_gitleaks() {
+	echo ""
+	echo "==> gitleaks (official GitHub release)"
+	local installed_path=""
+	installed_path="$(command -v gitleaks 2>/dev/null || true)"
+	if [[ -n "$installed_path" && ${upgrade} -ne 1 ]]; then
+		install_label OK "gitleaks already present at ${installed_path}"
+		return 0
+	fi
+	need_command curl && need_command jq && need_command tar && need_command sha256sum || return 1
+
+	local release_arch tag version asset checksums_url asset_url
+	case "$(detect_arch)" in
+	amd64) release_arch="x64" ;;
+	arm64) release_arch="arm64" ;;
+	*)
+		install_label FAIL "Unsupported architecture for gitleaks: $(uname -m)"
+		return 1
+		;;
+	esac
+	if dry; then
+		echo "[DRY_RUN] Would query latest release: https://api.github.com/repos/gitleaks/gitleaks/releases/latest"
+		echo "[DRY_RUN] Would download gitleaks_<version>_linux_${release_arch}.tar.gz"
+		echo "[DRY_RUN] Would verify using gitleaks_<version>_checksums.txt"
+		echo "[DRY_RUN] Would install gitleaks to ${TARGET_DIR}/gitleaks"
+		return 0
+	fi
+
+	local installed_version=""
+	installed_version="$(installed_tool_version gitleaks || true)"
+	tag="$(latest_tag gitleaks/gitleaks)" || {
+		if [[ -n "$installed_path" ]]; then
+			if [[ -n "$installed_version" ]]; then
+				install_label WARN "gitleaks update check failed; keeping installed version ${installed_version}"
+				record_external_warning "gitleaks" "update check failed; keeping installed version ${installed_version}"
+			else
+				install_label WARN "gitleaks update check failed; keeping installed executable at ${installed_path}"
+				record_external_warning "gitleaks" "update check failed; keeping installed executable at ${installed_path}"
+			fi
+			return 0
+		fi
+		install_label FAIL "Could not resolve latest gitleaks release"
+		return 1
+	}
+	version="${tag#v}"
+	if [[ -n "$installed_version" && "$installed_version" == "$version" ]]; then
+		install_label OK "gitleaks already latest: ${installed_version}"
+		return 0
+	fi
+	if [[ -n "$installed_version" ]]; then
+		install_label INFO "gitleaks update available: ${installed_version} -> ${version}"
+	elif [[ -n "$installed_path" ]]; then
+		install_label INFO "gitleaks installed version unavailable; converging to latest available version ${version}"
+	else
+		install_label INFO "gitleaks is not installed; installing latest available version ${version}"
+	fi
+
+	asset="gitleaks_${version}_linux_${release_arch}.tar.gz"
+	asset_url="https://github.com/gitleaks/gitleaks/releases/download/${tag}/${asset}"
+	checksums_url="https://github.com/gitleaks/gitleaks/releases/download/${tag}/gitleaks_${version}_checksums.txt"
+
+	local tmp_dir
+	tmp_dir="$(mktemp -d -t install-gitleaks.XXXXXX)"
+	# shellcheck disable=SC2064
+	trap "rm -rf '${tmp_dir}'" EXIT INT TERM
+
+	curl -fsSL "${asset_url}" -o "${tmp_dir}/${asset}"
+	curl -fsSL "${checksums_url}" -o "${tmp_dir}/checksums.txt"
+	(cd "${tmp_dir}" && grep -E "[[:space:]]${asset}$" checksums.txt | sha256sum -c - >/dev/null)
+	tar -xzf "${tmp_dir}/${asset}" -C "${tmp_dir}" gitleaks
+	mkdir -p "${TARGET_DIR}"
+	install -m 0755 "${tmp_dir}/gitleaks" "${TARGET_DIR}/gitleaks"
+	rm -rf "${tmp_dir}"
+	trap - EXIT INT TERM
+	install_label OK "gitleaks ${tag} installed at ${TARGET_DIR}/gitleaks"
+}
+
 main() {
 	echo "==> install-agent-tools (idempotent, checksum-verified where applicable)"
 	init_result_file
@@ -295,6 +389,7 @@ main() {
 	if [[ ${npm_only} -ne 1 ]]; then
 		install_actionlint || errors=$((errors + 1))
 		install_osv_scanner || errors=$((errors + 1))
+		install_gitleaks || errors=$((errors + 1))
 	fi
 
 	if [[ ${errors} -gt 0 ]]; then

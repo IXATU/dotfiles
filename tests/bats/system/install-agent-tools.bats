@@ -51,12 +51,22 @@ EOF
 	chmod +x "${dir}/curl"
 }
 
+write_gitleaks_stub() {
+	local target_dir="$1" version="${2:-8.30.1}"
+	cat >"${target_dir}/gitleaks" <<EOF
+#!/usr/bin/env bash
+echo "${version}"
+EOF
+	chmod +x "${target_dir}/gitleaks"
+}
+
 @test "install-agent-tools skips actionlint downloads when already latest under upgrade" {
 	local fake_home="${TEST_TEMP_DIR}/home-actionlint-same"
 	local stub_dir="${TEST_TEMP_DIR}/bin-actionlint-same"
 	local target_dir="${fake_home}/.local/bin"
 	local curl_log="${TEST_TEMP_DIR}/curl-actionlint-same.log"
 	mkdir -p "$stub_dir" "$target_dir"
+	write_gitleaks_stub "$target_dir"
 	cat >"${target_dir}/actionlint" <<'EOF'
 #!/usr/bin/env bash
 echo "actionlint 1.7.12"
@@ -89,6 +99,9 @@ case "\$url" in
   *google/osv-scanner*)
     printf '{"tag_name":"v2.3.8"}\n'
     ;;
+  *gitleaks/gitleaks*)
+    printf '{"tag_name":"v8.30.1"}\n'
+    ;;
   *)
     exit 1
     ;;
@@ -117,6 +130,7 @@ EOF
 	local asset_tar="${TEST_TEMP_DIR}/actionlint_1.7.12_linux_amd64.tar.gz"
 	local checksums="${TEST_TEMP_DIR}/actionlint_1.7.12_checksums.txt"
 	mkdir -p "$stub_dir" "$target_dir" "$asset_dir"
+	write_gitleaks_stub "$target_dir"
 	cat >"${target_dir}/actionlint" <<'EOF'
 #!/usr/bin/env bash
 echo "actionlint 1.7.11"
@@ -168,6 +182,9 @@ case "\$url" in
   *api.github.com/repos/google/osv-scanner/releases/latest)
     printf '{"tag_name":"v2.3.8"}\n'
     ;;
+  *api.github.com/repos/gitleaks/gitleaks/releases/latest)
+    printf '{"tag_name":"v8.30.1"}\n'
+    ;;
   *actionlint_1.7.12_linux_amd64.tar.gz)
     cp "${asset_tar}" "\$out"
     ;;
@@ -200,6 +217,7 @@ EOF
 	local asset_tar="${TEST_TEMP_DIR}/actionlint_1.7.12_linux_amd64.tar.gz"
 	local checksums="${TEST_TEMP_DIR}/actionlint_1.7.12_checksums.txt"
 	mkdir -p "$stub_dir" "$target_dir" "$asset_dir"
+	write_gitleaks_stub "$target_dir"
 	cat >"${target_dir}/osv-scanner" <<'EOF'
 #!/usr/bin/env bash
 echo "osv-scanner version: 2.3.8"
@@ -246,6 +264,9 @@ case "\$url" in
   *api.github.com/repos/google/osv-scanner/releases/latest)
     printf '{"tag_name":"v2.3.8"}\n'
     ;;
+  *api.github.com/repos/gitleaks/gitleaks/releases/latest)
+    printf '{"tag_name":"v8.30.1"}\n'
+    ;;
   *actionlint_1.7.12_linux_amd64.tar.gz)
     cp "${asset_tar}" "\$out"
     ;;
@@ -288,6 +309,7 @@ EOF
 	local result_file="${TEST_TEMP_DIR}/actionlint-warn-results.tsv"
 	local curl_log="${TEST_TEMP_DIR}/curl-actionlint-warn.log"
 	mkdir -p "$stub_dir" "$target_dir"
+	write_gitleaks_stub "$target_dir"
 	cat >"${target_dir}/actionlint" <<'EOF'
 #!/usr/bin/env bash
 echo "actionlint 1.7.12"
@@ -303,6 +325,7 @@ printf '%s\n' "\$*" >>"${curl_log}"
 case "\$*" in
   *rhysd/actionlint*) exit 1 ;;
   *google/osv-scanner*) printf '{"tag_name":"v2.3.8"}\n' ;;
+  *gitleaks/gitleaks*) printf '{"tag_name":"v8.30.1"}\n' ;;
   *) exit 1 ;;
 esac
 EOF
@@ -323,6 +346,7 @@ EOF
 	local target_dir="${fake_home}/.local/bin"
 	local result_file="${TEST_TEMP_DIR}/osv-warn-results.tsv"
 	mkdir -p "$stub_dir" "$target_dir"
+	write_gitleaks_stub "$target_dir"
 	cat >"${target_dir}/osv-scanner" <<'EOF'
 #!/usr/bin/env bash
 echo "osv-scanner version: 2.3.8"
@@ -337,6 +361,7 @@ EOF
 case "$*" in
   *google/osv-scanner*) exit 1 ;;
   *rhysd/actionlint*) printf '{"tag_name":"v1.7.12"}\n' ;;
+  *gitleaks/gitleaks*) printf '{"tag_name":"v8.30.1"}\n' ;;
   *) exit 1 ;;
 esac
 EOF
@@ -356,6 +381,7 @@ EOF
 	local result_file="${TEST_TEMP_DIR}/agent-tools-clean-results.tsv"
 	local curl_log="${TEST_TEMP_DIR}/curl-agent-tools-clean.log"
 	mkdir -p "$stub_dir" "$target_dir"
+	write_gitleaks_stub "$target_dir"
 	cat >"${target_dir}/actionlint" <<'EOF'
 #!/usr/bin/env bash
 echo "actionlint 1.7.12"
@@ -377,7 +403,9 @@ while [[ \$# -gt 0 ]]; do
 done
 case "\$url" in
   *rhysd/actionlint*) printf '{"tag_name":"v1.7.12"}\n' ;;
+  *gitleaks/gitleaks*) printf '{"tag_name":"v8.30.1"}\n' ;;
   *google/osv-scanner*) printf '{"tag_name":"v2.3.8"}\n' ;;
+  *gitleaks/gitleaks*) printf '{"tag_name":"v8.30.1"}\n' ;;
   *) exit 1 ;;
 esac
 EOF
@@ -390,11 +418,77 @@ EOF
 	[[ "$status" -ne 0 ]]
 }
 
+@test "install-agent-tools updates gitleaks only after checksum verification" {
+	local fake_home="${TEST_TEMP_DIR}/home-gitleaks-update"
+	local stub_dir="${TEST_TEMP_DIR}/bin-gitleaks-update"
+	local target_dir="${fake_home}/.local/bin"
+	local curl_log="${TEST_TEMP_DIR}/curl-gitleaks-update.log"
+	local asset_dir="${TEST_TEMP_DIR}/gitleaks-asset"
+	local asset_tar="${TEST_TEMP_DIR}/gitleaks_8.30.1_linux_x64.tar.gz"
+	local checksums="${TEST_TEMP_DIR}/gitleaks_8.30.1_checksums.txt"
+	mkdir -p "$stub_dir" "$target_dir" "$asset_dir"
+
+	cat >"${target_dir}/actionlint" <<'EOF'
+#!/usr/bin/env bash
+echo "actionlint 1.7.12"
+EOF
+	cat >"${target_dir}/osv-scanner" <<'EOF'
+#!/usr/bin/env bash
+echo "osv-scanner version: 2.3.8"
+EOF
+	write_gitleaks_stub "$target_dir" "8.30.0"
+	cat >"${asset_dir}/gitleaks" <<'EOF'
+#!/usr/bin/env bash
+echo "8.30.1"
+EOF
+	chmod +x "${target_dir}/actionlint" "${target_dir}/osv-scanner" "${asset_dir}/gitleaks"
+	tar -czf "$asset_tar" -C "$asset_dir" gitleaks
+	(
+		cd "${TEST_TEMP_DIR}" &&
+			sha256sum "$(basename "$asset_tar")" >"$(basename "$checksums")"
+	)
+
+	cat >"${stub_dir}/curl" <<EOF
+#!/usr/bin/env bash
+set -euo pipefail
+printf '%s\n' "\$*" >>"${curl_log}"
+out=""
+url=""
+while [[ \$# -gt 0 ]]; do
+  case "\$1" in
+    -o) out="\$2"; shift 2 ;;
+    http*) url="\$1"; shift ;;
+    *) shift ;;
+  esac
+done
+case "\$url" in
+  *api.github.com/repos/rhysd/actionlint/releases/latest) printf '{"tag_name":"v1.7.12"}\n' ;;
+  *api.github.com/repos/google/osv-scanner/releases/latest) printf '{"tag_name":"v2.3.8"}\n' ;;
+  *api.github.com/repos/gitleaks/gitleaks/releases/latest) printf '{"tag_name":"v8.30.1"}\n' ;;
+  *gitleaks_8.30.1_linux_x64.tar.gz) cp "${asset_tar}" "\$out" ;;
+  *gitleaks_8.30.1_checksums.txt) cp "${checksums}" "\$out" ;;
+  *) exit 1 ;;
+esac
+EOF
+	chmod +x "${stub_dir}/curl"
+
+	run env HOME="$fake_home" PATH="${stub_dir}:${target_dir}:/usr/bin:/bin" bash "${DOTFILES_DIR}/scripts/install-agent-tools.sh" --external-only --upgrade
+	[[ "$status" -eq 0 ]]
+	[[ "$output" == *"INFO   gitleaks update available: 8.30.0 -> 8.30.1"* ]]
+	[[ "$output" == *"OK     gitleaks v8.30.1 installed at ${target_dir}/gitleaks"* ]]
+	run env PATH="${target_dir}:/usr/bin:/bin" gitleaks version
+	[[ "$status" -eq 0 ]]
+	[[ "$output" == *"8.30.1"* ]]
+	grep -q 'gitleaks_8.30.1_linux_x64.tar.gz' "$curl_log"
+	grep -q 'gitleaks_8.30.1_checksums.txt' "$curl_log"
+}
+
 @test "install-agent-tools warns and preserves osv-scanner when release lookup fails" {
 	local fake_home="${TEST_TEMP_DIR}/home-osv-warn"
 	local stub_dir="${TEST_TEMP_DIR}/bin-osv-warn"
 	local target_dir="${fake_home}/.local/bin"
 	mkdir -p "$stub_dir" "$target_dir"
+	write_gitleaks_stub "$target_dir"
 	cat >"${target_dir}/osv-scanner" <<'EOF'
 #!/usr/bin/env bash
 echo "osv-scanner version: 2.3.8"

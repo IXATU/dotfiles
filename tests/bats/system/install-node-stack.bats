@@ -263,24 +263,23 @@ assert_created_temporaries_removed() {
 	assert_created_temporaries_removed
 }
 
-@test "install-node-stack skips when node and npm are already present" {
+@test "install-node-stack does not downgrade Node newer than workstation baseline" {
 	local stub_dir="${TEST_TEMP_DIR}/bin"
 	mkdir -p "${stub_dir}"
 	cat >"${stub_dir}/node" <<'EOF'
 #!/usr/bin/env bash
-case "$1" in --version) echo "v22.99.0";; *) exit 0;; esac
+case "$1" in --version) echo "v26.1.0";; *) exit 0;; esac
 EOF
 	cat >"${stub_dir}/npm" <<'EOF'
 #!/usr/bin/env bash
-case "$1" in --version) echo "10.99.0";; *) exit 0;; esac
+case "$1" in --version) echo "12.0.0";; *) exit 0;; esac
 EOF
 	chmod +x "${stub_dir}/node" "${stub_dir}/npm"
 
 	run env PATH="${stub_dir}:/usr/bin:/bin" bash "${INSTALL_NODE}"
 	[[ "${status}" -eq 0 ]]
-	[[ "${output}" == *"already present"* ]]
-	[[ "${output}" == *"22.99.0"* ]]
-	# Must not attempt to call apt-get.
+	[[ "${output}" == *"v26.1.0"* ]]
+	[[ "${output}" == *"workstation baseline >=24"* ]]
 	[[ "${output}" != *"==> Installing"* ]]
 	[[ "${output}" != *"apt-get update"* ]]
 }
@@ -309,7 +308,7 @@ EOF
 	run env PATH="${stub_dir}:/usr/bin:/bin" bash "${INSTALL_NODE}"
 	[[ "${status}" -eq 0 ]]
 	[[ "${output}" == *"v24.11.1"* ]]
-	[[ "${output}" == *"satisfies >=22"* ]]
+	[[ "${output}" == *"workstation baseline >=24"* ]]
 	[[ "${output}" == *"corepack in PATH"* ]]
 	[[ "${output}" != *"==> Installing"* ]]
 }
@@ -321,7 +320,7 @@ EOF
 
 	run env PATH="${stub_dir}:/usr/bin:/bin" bash "${INSTALL_NODE}"
 	[[ "${status}" -eq 0 ]]
-	[[ "${output}" == *"Node runtime satisfies >=22 for GitNexus and AI tooling"* ]]
+	[[ "${output}" == *"Node runtime satisfies workstation baseline >=24"* ]]
 	[[ "${output}" != *"==> Installing"* ]]
 	run grep -Eq 'sudo |apt-get |curl |gpg |mktemp' "$INSTALL_STUB_LOG"
 	[[ "$status" -ne 0 ]]
@@ -362,7 +361,7 @@ EOF
 	[[ ! -s "$MKTEMP_CREATED_LOG" ]]
 }
 
-@test "install-node-stack DRY_RUN with node+npm present still skips the install branch" {
+@test "install-node-stack DRY_RUN with Node 22 plans convergence to Node 24 baseline" {
 	local stub_dir="${TEST_TEMP_DIR}/bin"
 	mkdir -p "${stub_dir}"
 	cat >"${stub_dir}/node" <<'EOF'
@@ -377,8 +376,9 @@ EOF
 
 	run env DRY_RUN=1 PATH="${stub_dir}:/usr/bin:/bin" bash "${INSTALL_NODE}"
 	[[ "${status}" -eq 0 ]]
-	[[ "${output}" == *"already present"* ]]
-	[[ "${output}" != *"Plan:"* ]]
+	[[ "${output}" == *"satisfies compatibility >=22 but is below workstation baseline 24"* ]]
+	[[ "${output}" == *"Plan:"* ]]
+	[[ "${output}" == *"NodeSource 24.x"* ]]
 }
 
 @test "install-node-stack target exists in install.mk but is not chained from install" {
