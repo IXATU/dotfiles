@@ -17,7 +17,6 @@ for f in \
   "$ZSH_DOTFILES_DIR/25-zoxide.zsh" \
   "$ZSH_DOTFILES_DIR/26-fzf.zsh" \
   "$ZSH_DOTFILES_DIR/30-python.zsh" \
-  "$ZSH_DOTFILES_DIR/50-aliases-dotfiles.zsh" \
   "$ZSH_DOTFILES_DIR/55-aliases-azure.zsh" \
   "$ZSH_DOTFILES_DIR/90-local.zsh"
 do
