@@ -159,7 +159,6 @@ Matriz detallada: [VALIDATION_MATRIX.md](VALIDATION_MATRIX.md). Stack: [TESTING.
 | Skills materializados en checkout | Editar solo `ai/assets/skills/`; validar con `canonical-skills.bats` |
 | MCP render drift | `make ai-mcp-governance` tras cambiar MANIFEST |
 | Secretos en claro en commits | `gitleaks` en `agent-validate-changed`; SOPS para secretos |
-| STRUCTURE.md desactualizado | Pre-commit treegen; no editar a mano |
 | Node sombreado por Cursor/IDE | `make update-check` / `make ai-doctor` |
 | `mcp-server-fetch` como uv tool persistente | Debe ser runtime-managed (uvx); ver `update-workflow.bats` |
 | Editar bloques GitNexus en AGENTS.md | Bloque auto-generado — prohibido para agentes |
@@ -174,7 +173,6 @@ Matriz detallada: [VALIDATION_MATRIX.md](VALIDATION_MATRIX.md). Stack: [TESTING.
 |-----------|-----------|
 | [AGENT_WORKFLOW.md](AGENT_WORKFLOW.md) | Contrato operativo agentes |
 | [VALIDATION_MATRIX.md](VALIDATION_MATRIX.md) | Matriz cambio → validación |
-| [STRUCTURE.md](../STRUCTURE.md) | Árbol del repositorio |
 | [OPERATIONS.md](OPERATIONS.md) | Guía operativa |
 | [OPERATIONS_CHEATSHEET.md](OPERATIONS_CHEATSHEET.md) | Chuleta diaria |
 | [TESTING.md](TESTING.md) | Targets y política de tests |
