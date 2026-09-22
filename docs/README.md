@@ -5,7 +5,7 @@
 - **[AGENT_FIRST_SUMMARY.md](AGENT_FIRST_SUMMARY.md)** — Resumen operativo y checklist del bloque agent-first (BUILDs 1–10); punto de entrada sintético.
 - **[AGENT_WORKFLOW.md](AGENT_WORKFLOW.md)** — Contrato operativo para agentes en este repo (modos PLAN/BUILD/AUDIT, rutas sensibles, validación).
 - **[SCRIPT_CONVENTIONS.md](SCRIPT_CONVENTIONS.md)** — Convención `--check`, `--dry-run`, `DRY_RUN=1`, `--yes` y auditoría de comandos mutantes.
-- **[AI_REPO_MAP.md](AI_REPO_MAP.md)** — Mapa operativo por zona (intención, riesgos, validación; complementa STRUCTURE.md).
+- **[AI_REPO_MAP.md](AI_REPO_MAP.md)** — Mapa operativo por zona (intención, riesgos y validación).
 - **[VALIDATION_MATRIX.md](VALIDATION_MATRIX.md)** — Matriz cambio → validación por tipo de archivo.
 - **[adr/](adr/README.md)** — Architecture Decision Records: decisiones técnicas y memoria arquitectónica.
 
@@ -46,5 +46,4 @@
 
 ## Otros
 
-- **[../STRUCTURE.md](../STRUCTURE.md)** — Árbol del repositorio.
 - **[../codex/README-mcp.md](../codex/README-mcp.md)** — MCPs locales, smoke tests, variables de entorno.
