@@ -127,10 +127,10 @@ install-azure-cli:
 	@bash $(DOTFILES_DIR)/scripts/install-azure-cli.sh
 
 # Optional, opt-in installer for non-APT validation/security CLIs useful to
-# agents. APT-backed peers (shellcheck, shfmt, yamllint, gitleaks) are handled
-# by deps-install/install-apt. This target installs @ast-grep/cli via the user
-# npm prefix and actionlint/osv-scanner from official GitHub releases with
-# checksum verification. Supports DRY_RUN=1.
+# agents. APT-backed peers (shellcheck, shfmt, yamllint) are handled by
+# deps-install/install-apt. Gitleaks may arrive from the APT baseline, while
+# this target converges it with actionlint/osv-scanner from official GitHub
+# releases with checksum verification. Supports DRY_RUN=1.
 install-agent-tools:
 	@bash $(DOTFILES_DIR)/scripts/install-agent-tools.sh $(if $(filter 1 true yes on,$(DRY_RUN)),--dry-run,)
 
