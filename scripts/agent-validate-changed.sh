@@ -89,77 +89,22 @@ run_osv_online_scan() {
 	return 1
 }
 
-install_temp_gitleaks() {
-	local repo="gitleaks/gitleaks"
-	local api_url="https://api.github.com/repos/${repo}/releases/latest"
-	local metadata="${TMP_DIR}/gitleaks-release.json"
-
-	warn "gitleaks is not installed; using temporary official GitHub release fallback"
-	curl -fsSL "${api_url}" -o "${metadata}"
-
-	local version
-	version="$(
-		python3 - "${metadata}" <<'PY'
-import json
-import sys
-
-with open(sys.argv[1], encoding="utf-8") as fh:
-    print(json.load(fh)["tag_name"].lstrip("v"))
-PY
-	)"
-
-	local asset="gitleaks_${version}_linux_x64.tar.gz"
-	local checksums="gitleaks_${version}_checksums.txt"
-	local asset_url
-	local checksums_url
-	asset_url="$(
-		python3 - "${metadata}" "${asset}" <<'PY'
-import json
-import sys
-
-with open(sys.argv[1], encoding="utf-8") as fh:
-    release = json.load(fh)
-for asset in release["assets"]:
-    if asset["name"] == sys.argv[2]:
-        print(asset["browser_download_url"])
-        break
-else:
-    raise SystemExit(f"asset not found: {sys.argv[2]}")
-PY
-	)"
-	checksums_url="$(
-		python3 - "${metadata}" "${checksums}" <<'PY'
-import json
-import sys
-
-with open(sys.argv[1], encoding="utf-8") as fh:
-    release = json.load(fh)
-for asset in release["assets"]:
-    if asset["name"] == sys.argv[2]:
-        print(asset["browser_download_url"])
-        break
-else:
-    raise SystemExit(f"asset not found: {sys.argv[2]}")
-PY
-	)"
-
-	curl -fsSL "${asset_url}" -o "${TMP_DIR}/${asset}"
-	curl -fsSL "${checksums_url}" -o "${TMP_DIR}/${checksums}"
-	grep -E "[[:space:]]${asset}$" "${TMP_DIR}/${checksums}" >"${TMP_DIR}/gitleaks.sha256"
-	(
-		cd "${TMP_DIR}"
-		sha256sum -c gitleaks.sha256 >/dev/null
-		tar -xzf "${asset}" gitleaks
-	)
-	chmod +x "${TMP_DIR}/gitleaks"
-	export PATH="${TMP_DIR}:${PATH}"
-}
-
 ensure_gitleaks() {
 	if command -v gitleaks >/dev/null 2>&1; then
 		return 0
 	fi
-	install_temp_gitleaks
+
+	warn "gitleaks missing; using temporary install-agent-tools fallback"
+	local temp_home="${TMP_DIR}/gitleaks-tools-home"
+	mkdir -p "${temp_home}"
+	HOME="${temp_home}" bash "${DOTFILES_DIR}/scripts/install-agent-tools.sh" --external-only >/dev/null
+	export PATH="${temp_home}/.local/bin:${PATH}"
+
+	if ! command -v gitleaks >/dev/null 2>&1; then
+		printf 'Missing security dependency: gitleaks\n' >&2
+		printf 'Run: make install-agent-tools\n' >&2
+		return 1
+	fi
 }
 
 run_local_security_scan() {
