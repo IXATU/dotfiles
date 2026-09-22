@@ -95,7 +95,6 @@ Usar cuando el BUILD es amplio, toca varias zonas o modifica contratos estructur
 | `bin/playwright-docker`, `dot_local/bin/` (playwright) | `playwright-docker.bats` |
 | `bin/dotfiles-update`, symlink template | `dotfiles-update.bats` |
 | `bin/dotfiles-apply`, `dot_local/bin/symlink_dotfiles-apply.tmpl` | `dotfiles-apply.bats` |
-| `scripts/treegen.sh` | `git-hooks/hooks.bats` (`treegen --check`) |
 | `docs/SCRIPT_CONVENTIONS.md` | `dry-run-guard.bats`, `documentation-consistency.bats` |
 | `tests/bats/agent/` (regression index) | `agent/regression.bats`, `make bats-agent` |
 | `bin/dotfiles-update`, `bin/playwright-docker`, `scripts/update/lib/node_runtime.sh` | `bats-system` (`dotfiles-update.bats`, `playwright-docker.bats`, `update-node-runtime.bats`) |
