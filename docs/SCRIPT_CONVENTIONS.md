@@ -12,7 +12,7 @@ Not every command implements every flag. Use only what the command documents.
 
 | Flag / variable | Meaning | Typical use |
 |-----------------|---------|-------------|
-| `--check` | Validate state or drift **without writing** | `dotfiles-apply --check`, `scripts/treegen.sh --check` |
+| `--check` | Validate state or drift **without writing** | `dotfiles-apply --check` |
 | `--dry-run` | Simulate a **mutating** action without applying it | `scripts/install-system-packages.sh --dry-run` |
 | `DRY_RUN=1` | Make-level or script env alias for dry-run (underscore only) | `make install DRY_RUN=1`, installer scripts |
 | `--yes` | Confirm a mutating action **non-interactively** | `dotfiles-apply --apply --yes` (human/CI explicit only) |
@@ -42,7 +42,6 @@ Use **`DRY_RUN=1`** (underscore). Hyphenated variants (`DRY-RUN=1`, `dry-run=1`)
 | `make agent-validate`, `make agent-validate-changed`, `make shell-audit-check` | `make update`, `dotfiles-update` |
 | `make bats-*`, `make test-chezmoi` (no real apply) | `make install*` without `DRY_RUN=1` |
 | `DRY_RUN=1` previews | `chezmoi apply`, package installs |
-| `scripts/treegen.sh --check` | `scripts/treegen.sh` (writes `STRUCTURE.md`) |
 
 Agents must prefer **fixtures and stubs** in tests; never mutate real HOME in Bats.
 
@@ -70,7 +69,6 @@ Representative commands only — not an exhaustive inventory.
 
 | Command | Safe mode | Mutating default | Validation |
 |---------|-----------|------------------|------------|
-| `scripts/treegen.sh` | `--check` | writes `STRUCTURE.md` | `git-hooks/hooks.bats` |
 | `make ai-mcp-render` | validate-only targets | writes `build/mcps/` | `mcp-render-drift.bats` |
 
 ### Installers / updaters
@@ -105,7 +103,6 @@ Representative commands only — not an exhaustive inventory.
 |---------|-----------|------|------------|
 | `make gitnexus-status` | default | none | `gitnexus-status.bats` |
 | `gnx-analyze-here` | **human approval** | index + optional AGENTS blocks | policy docs |
-| `scripts/hooks/pre-commit-treegen.sh` | runs on commit | writes `STRUCTURE.md` | `git-hooks/hooks.bats` |
 
 ---
 
