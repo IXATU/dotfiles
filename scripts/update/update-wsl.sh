@@ -618,17 +618,20 @@ run_tools() {
 	run_versioned_step run_step "WSL" "Taplo" "${LOG_DIR}/wsl-taplo.log" taplo --version -- "${DOTFILES_ROOT}/scripts/install-taplo.sh" --upgrade
 	local agent_tools_script="${DOTFILES_ROOT}/scripts/install-agent-tools.sh"
 	if [[ -x "$agent_tools_script" ]]; then
-		local actionlint_before actionlint_after osv_before osv_after agent_tools_results
+		local actionlint_before actionlint_after osv_before osv_after gitleaks_before gitleaks_after agent_tools_results
 		actionlint_before="$(probe_named_version "actionlint" actionlint --version || true)"
 		osv_before="$(probe_named_version "osv-scanner" osv-scanner --version || true)"
+		gitleaks_before="$(probe_named_version "gitleaks" gitleaks version || true)"
 		agent_tools_results="${LOG_DIR}/wsl-agent-tools-results.tsv"
 		run_step "WSL" "Agent validation tools" "${LOG_DIR}/wsl-agent-tools.log" "$agent_tools_script" --external-only --upgrade --result-file "$agent_tools_results"
 		ingest_agent_tools_results "$agent_tools_results"
 		if [[ "${RUN_STEP_LAST_RESULT_STATUS:-}" != "FAIL" ]]; then
 			actionlint_after="$(probe_named_version "actionlint" actionlint --version || true)"
 			osv_after="$(probe_named_version "osv-scanner" osv-scanner --version || true)"
+			gitleaks_after="$(probe_named_version "gitleaks" gitleaks version || true)"
 			tool_snapshot_add "actionlint" "$actionlint_before" "$actionlint_after"
 			tool_snapshot_add "osv-scanner" "$osv_before" "$osv_after"
+			tool_snapshot_add "gitleaks" "$gitleaks_before" "$gitleaks_after"
 		fi
 	fi
 	if [[ "$switched" -eq 1 ]]; then
