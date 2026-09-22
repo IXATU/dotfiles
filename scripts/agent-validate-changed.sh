@@ -264,8 +264,8 @@ main() {
 		make -C "${DOTFILES_DIR}" test-chezmoi
 	fi
 
-	if grep -Eq '^(scripts/treegen\.sh|scripts/hooks/|\.githooks/)' "${changed_file_list}"; then
-		log "git hooks and treegen bats"
+	if grep -Eq '^(scripts/hooks/|\.githooks/)' "${changed_file_list}"; then
+		log "git hooks bats"
 		bats "${DOTFILES_DIR}/tests/bats/git-hooks/hooks.bats"
 	fi
 

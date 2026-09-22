@@ -89,9 +89,7 @@ make ai-cursor-check
 ### Hooks Git locales (opt-in)
 
 `make install-git-hooks` configura únicamente este checkout con
-`core.hooksPath=.githooks`. El pre-commit ejecuta `treegen` antes de cada commit;
-si regenera `STRUCTURE.md`, stagea automáticamente solo ese fichero y deja
-continuar el commit. No stagea otros cambios del workspace. El post-commit refresca GitNexus de
+`core.hooksPath=.githooks`. El único hook versionado es el post-commit, que refresca GitNexus de
 forma síncrona, best-effort y no fatal: nunca invalida el commit. Si detecta MCP/index lock
 activo o permisos no escribibles en `~/.gitnexus` / `registry.json`, omite el analyze con
 `WARN` (el índice puede quedar **STALE**). Si no hay contención y permisos correctos, ejecuta
@@ -100,8 +98,7 @@ refresca manualmente con `make gitnexus-status` y
 `gnx-analyze-here --force --skip-agents-md`. Si hay varios procesos `gitnexus mcp`, cierra
 sesiones duplicadas de Cursor antes de refrescar.
 
-Escapes puntuales: `DOTFILES_SKIP_HOOKS=1`, `DOTFILES_SKIP_TREEGEN=1` y
-`DOTFILES_SKIP_GITNEXUS=1`.
+Escapes puntuales: `DOTFILES_SKIP_HOOKS=1` y `DOTFILES_SKIP_GITNEXUS=1`.
 
 ---
 

@@ -37,11 +37,6 @@ packages:
     required: true
     capability: cli
     note: Debian/Ubuntu package that provides the fd-style file finder.
-  - package: tree
-    command: tree
-    required: false
-    capability: docs
-    note: Used by scripts/treegen.sh to regenerate STRUCTURE.md.
   - package: zoxide
     command: zoxide
     required: false

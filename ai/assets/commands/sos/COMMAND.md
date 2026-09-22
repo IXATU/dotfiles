@@ -41,7 +41,7 @@ The generated prompt must include, whenever the information is available:
    - Qué limitaciones, regresiones o resultados tuvieron
 
 4. **Ficheros editados o afectados**
-   - Incluir una instrucción con `treegen` centrada en los ficheros relevantes
+   - Enumerar explícitamente solo los ficheros relevantes y su papel; no generar un árbol estático del repositorio
    - Si conviene, resumir también qué papel tiene cada fichero importante
 
 5. **Versiones y tooling**
@@ -77,9 +77,8 @@ Estoy trabajando en [problema o refactor].
 - ...
 
 ## Ficheros editados o afectados
-```bash
-treegen [rutas relevantes]
-```
+- `ruta/al/fichero` — papel y cambio relevante
+- ...
 
 ## Versiones y herramientas implicadas
 - ...

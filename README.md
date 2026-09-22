@@ -114,7 +114,7 @@ make test-fast
 make ai-doctor
 ```
 
-Ver [docs/TESTING.md](docs/TESTING.md) · árbol: [STRUCTURE.md](STRUCTURE.md).
+Ver [docs/TESTING.md](docs/TESTING.md) · mapa operativo: [docs/AI_REPO_MAP.md](docs/AI_REPO_MAP.md).
 
 ## License
 

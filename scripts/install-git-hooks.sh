@@ -13,7 +13,7 @@ if [[ ! -d "$hooks_dir" ]]; then
 	exit 1
 fi
 
-for hook in pre-commit post-commit; do
+for hook in post-commit; do
 	if [[ ! -x "$hooks_dir/$hook" ]]; then
 		echo "ERROR: hook is missing or not executable: $hooks_dir/$hook" >&2
 		exit 1

@@ -4,12 +4,7 @@
 
 Este documento explica **intención, contratos, riesgos y validación** por zona del repositorio dotfiles, orientado a agentes IA.
 
-**No sustituye a [STRUCTURE.md](../STRUCTURE.md):**
-
-| Documento | Rol |
-|-----------|-----|
-| **STRUCTURE.md** | Árbol completo del repo (inventario, generado automáticamente) |
-| **AI_REPO_MAP.md** | Qué hace cada zona, qué riesgos tiene y qué validar al cambiarla |
+La estructura física se descubre dinámicamente con Serena, GitNexus, búsqueda de ficheros y navegación normal del repositorio. Este mapa documenta **intención, contratos y riesgos**, no un snapshot estático del árbol.
 
 Resumen operativo: [AGENT_FIRST_SUMMARY.md](AGENT_FIRST_SUMMARY.md). Contrato: [AGENT_WORKFLOW.md](AGENT_WORKFLOW.md). Matriz cambio → validación: [VALIDATION_MATRIX.md](VALIDATION_MATRIX.md).
 
@@ -41,7 +36,7 @@ Los agentes suelen trabajar en la capa **fuente del repo** (plantillas, scripts,
 | `ai/runtime/mcp/` | Servidores MCP Python, venv, launchers fuente | Romper contrato launcher; deps runtime | `ai-mcp-governance`, `ai-runtime-uv.bats` |
 | `scripts/` | Scripts shell, librerías (`lib/`) | shellcheck/shfmt drift; efectos secundarios | `make agent-validate-changed`, `make test-lint`; ver [SCRIPT_CONVENTIONS.md](SCRIPT_CONVENTIONS.md) |
 | `scripts/update/` | Workflow `make update` (WSL, Node, MCPs) | Mutar sistema; shadowing Node | `update-workflow.bats`, `make update-check` |
-| `scripts/hooks/` | Hooks Git versionados (treegen, GitNexus) | Permisos; post-commit bloqueante | `git-hooks/hooks.bats` |
+| `scripts/hooks/` | Hook Git versionado de GitNexus | Permisos; post-commit bloqueante | `git-hooks/hooks.bats` |
 | `tests/` | Bats, fixtures, Makefile de tests | Tests huérfanos no cableados en CI | `make test-fast`, `make test-ci`, `make bats-agent` |
 | `.chezmoiscripts/` | Hooks Chezmoi (before/after apply) | Mutan HOME al apply; secretos | `make test-chezmoi`, `make chezmoi-drift-report` |
 | `dot_local/bin/` | Plantillas Chezmoi para binarios en HOME | Symlinks rotos post-apply | `chezmoi/smoke.bats`, bats focalizados |
@@ -129,7 +124,6 @@ Detalle: [UPDATE.md](UPDATE.md), skill [system-updates](../ai/assets/skills/ops/
 
 | Hook | Script | Efecto |
 |------|--------|--------|
-| pre-commit | `scripts/hooks/pre-commit-treegen.sh` | Regenera STRUCTURE.md |
 | post-commit | `scripts/hooks/post-commit-gitnexus.sh` | Refresh GitNexus best-effort |
 
 Instalación: `scripts/install-git-hooks.sh`. Tests: `git-hooks/hooks.bats`.
@@ -165,7 +159,6 @@ Matriz detallada: [VALIDATION_MATRIX.md](VALIDATION_MATRIX.md). Stack: [TESTING.
 | Skills materializados en checkout | Editar solo `ai/assets/skills/`; validar con `canonical-skills.bats` |
 | MCP render drift | `make ai-mcp-governance` tras cambiar MANIFEST |
 | Secretos en claro en commits | `gitleaks` en `agent-validate-changed`; SOPS para secretos |
-| STRUCTURE.md desactualizado | Pre-commit treegen; no editar a mano |
 | Node sombreado por Cursor/IDE | `make update-check` / `make ai-doctor` |
 | `mcp-server-fetch` como uv tool persistente | Debe ser runtime-managed (uvx); ver `update-workflow.bats` |
 | Editar bloques GitNexus en AGENTS.md | Bloque auto-generado — prohibido para agentes |
@@ -180,7 +173,6 @@ Matriz detallada: [VALIDATION_MATRIX.md](VALIDATION_MATRIX.md). Stack: [TESTING.
 |-----------|-----------|
 | [AGENT_WORKFLOW.md](AGENT_WORKFLOW.md) | Contrato operativo agentes |
 | [VALIDATION_MATRIX.md](VALIDATION_MATRIX.md) | Matriz cambio → validación |
-| [STRUCTURE.md](../STRUCTURE.md) | Árbol del repositorio |
 | [OPERATIONS.md](OPERATIONS.md) | Guía operativa |
 | [OPERATIONS_CHEATSHEET.md](OPERATIONS_CHEATSHEET.md) | Chuleta diaria |
 | [TESTING.md](TESTING.md) | Targets y política de tests |
