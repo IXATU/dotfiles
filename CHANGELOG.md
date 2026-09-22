@@ -5,18 +5,18 @@ Este archivo contiene las últimas 5 releases. Para el historial completo, consu
 ## [v0.2.0] - 2026-09-22
 
 ## Changes
+### Added
+- 2026-09-22 08:44 [1dbe61d](https://github.com/IXATU/dotfiles/commit/1dbe61d) feat(tooling): manage Gitleaks and converge Node 24 baseline (#9) (Jesús)
+  Manage Gitleaks via checksum-verified official releases, reuse the canonical installer in validation, and converge the workstation Node installer to the declared Node 24 baseline while preserving Node >=22 compatibility.
 
-### Changed
-- 2026-09-22 [1dbe61d](https://github.com/IXATU/dotfiles/commit/1dbe61d3e25d843b125a1958a69cfac45bf47dd5) feat(tooling): manage Gitleaks and converge Node 24 baseline (#9)
-  - Node 24 becomes the workstation baseline while Node >=22 remains the compatibility floor.
-  - Gitleaks is managed from official releases with SHA-256 verification and update-snapshot coverage.
-- 2026-09-22 [eb558ab](https://github.com/IXATU/dotfiles/commit/eb558ab458119b2343ac625bb69e58bbf1ebfcfd) refactor(agent): retire treegen and static STRUCTURE workflow (#10)
-  - Removes `STRUCTURE.md`, `treegen`, the treegen alias and pre-commit snapshot hook.
-  - Repository discovery becomes dynamic via Serena, GitNexus and normal code/file search.
-  - Git hooks are reduced to the GitNexus post-commit contract.
+### Documentation
+- 2026-09-22 09:14 [5256393](https://github.com/IXATU/dotfiles/commit/5256393) docs(release): prepare v0.2.0 (#11) (Jesús)
+  Add v0.2.0 release notes and changelog entry so the release tag includes its own documentation.
 
-### Maintenance
-- Repository branch inventory cleaned so `main` is the single active branch.
+### Refactored
+- 2026-09-22 09:01 [eb558ab](https://github.com/IXATU/dotfiles/commit/eb558ab) refactor(agent): retire treegen and static STRUCTURE workflow (#10) (Jesús)
+  Retire treegen, generated STRUCTURE.md and the pre-commit snapshot workflow. Keep only the GitNexus post-commit hook and use dynamic repository discovery via Serena, GitNexus and normal file search.
+
 
 ## [v0.1.0] - 2026-09-21
 
