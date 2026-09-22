@@ -260,7 +260,7 @@ Detalle: [TESTING.md](TESTING.md).
 | `make chezmoi-drift-report` | No | No | Tras `git pull` / merge |
 | `make mcp-launcher-contract-check` | No | No | Cambios launchers / plantillas MCP |
 | `make gitnexus-status` | No | No | Estado índice/lock/Node |
-| `make install-git-hooks` | Sí, local repo | No | Activar pre-commit treegen y post-commit GitNexus en este checkout |
+| `make install-git-hooks` | Sí, local repo | No | Activar post-commit GitNexus en este checkout |
 | `make validate-skills-structure` | No | No | Cambios en skills locales |
 | `make ai-mcp-governance` | No | No | Cambios MANIFEST / plantillas |
 | `make test-chezmoi` | No | No | Cambios Chezmoi / hooks |
