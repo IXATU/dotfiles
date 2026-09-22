@@ -24,7 +24,7 @@ make install SKIP_EXTERNAL=1
 
 **Installs:**
 - `bats`, `shellcheck`, `shfmt`, `yamllint`, `gitleaks` — via the APT baseline used by `make install` / `make deps-install`
-- `actionlint`, `osv-scanner`, `@ast-grep/cli` — via the opt-in `make install-agent-tools`
+- `actionlint`, `osv-scanner`, `@ast-grep/cli` — via the opt-in `make install-agent-tools`; the same target can also converge `gitleaks` to the official checksum-verified release
 
 **Limitations:**
 - On non-Debian systems, install APT-backed validation tools manually
