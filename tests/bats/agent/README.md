@@ -36,8 +36,7 @@ Operativa completa del bloque agent-first: [docs/AGENT_FIRST_SUMMARY.md](../../d
 |---|----------|------|-----------------|-----|
 | 1 | Runtime skills in checkout (`.claude/skills/`) | ADR 0004 violation; blocks `agent-validate` | `skills/canonical-skills.bats`, `skills/validate-skills-structure.bats`, `agent-validate-dotfiles.sh` guard | `docs/adr/0004-ai-assets-not-materialized.md` — remediation: `rm -rf .claude/` |
 | 2 | MCP misclassification / taxonomy drift | Wrong runtime contract in MANIFEST | `mcp/validate-governance.bats`, `docs/mcp-taxonomy-consistency.bats`, `system/mcp-manifest.bats` | `docs/MCP_TAXONOMY.md` |
-| 3 | Git hooks contract (treegen, GitNexus post-commit) | Broken pre-commit or refresh | `git-hooks/hooks.bats` | `docs/GITNEXUS_OPERATIONAL_POLICY.md` |
-| 4 | `STRUCTURE.md` / treegen drift | Hand-edited tree inventory | `git-hooks/hooks.bats` (`treegen --check`) | `docs/AGENT_WORKFLOW.md` § STRUCTURE |
+| 3 | GitNexus post-commit hook contract | Broken best-effort refresh or hooksPath install | `git-hooks/hooks.bats` | `docs/GITNEXUS_OPERATIONAL_POLICY.md` |
 | 5 | Playwright Docker Chezmoi symlink | Legacy hook or missing `~/.local/bin` entry | `system/playwright-docker.bats` (**wired in `bats-system`**), `chezmoi/smoke.bats` | `docs/adr/0007-playwright-docker-via-chezmoi-bin.md` |
 | 6 | Node shadowed by Cursor IDE | GitNexus/analyze on Node &lt; 22 | `system/update-workflow.bats`, `system/update-node-runtime.bats` (**wired in `bats-system`**), `zsh/gitnexus_aliases.bats` | `docs/SCRIPT_CONVENTIONS.md`, update scripts |
 | 7 | `mcp-server-fetch` persistent uv tool | Drift from uvx runtime-managed contract | `docs/mcp-taxonomy-consistency.bats`, `system/update-workflow.bats` | `docs/MCP_TAXONOMY.md` |
