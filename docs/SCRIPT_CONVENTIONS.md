@@ -125,7 +125,7 @@ See [CHEZMOI.md](CHEZMOI.md) § `dotfiles-apply`.
 | `tests/bats/system/dry-run-guard.bats` | `DRY_RUN=1` vs hyphen variants; mutating command guards |
 | `tests/bats/system/dotfiles-apply.bats` | Chezmoi safe preview/apply |
 | `tests/bats/system/shell-audit-check.bats` | Focused shell audit scope, exclusions, and read-only behavior |
-| `tests/bats/git-hooks/hooks.bats` | `treegen --check` drift without writes |
+| `tests/bats/git-hooks/hooks.bats` | GitNexus post-commit and hooksPath contract |
 | `tests/bats/system/install-*.bats` | per-installer `DRY_RUN` / `--dry-run` |
 | `tests/bats/system/github-identity-check.bats` | GitHub identity diagnostics, token masking, offline mode |
 | `tests/bats/system/clean-runtime-skills.bats` | Runtime skills dry-run and double-confirmed prune |
