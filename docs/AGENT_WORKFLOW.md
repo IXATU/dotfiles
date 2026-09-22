@@ -27,7 +27,7 @@ Cada handoff debe declarar el modo. Si no está claro, asumir **PLAN** hasta que
 - **Cambios pequeños y testeables** — un BUILD acotado por objetivo.
 - **No destructivo por defecto** — preferir validación read-only antes de mutar HOME o sistema; usar `--check` o `DRY_RUN=1` según [SCRIPT_CONVENTIONS.md](SCRIPT_CONVENTIONS.md).
 - **Referencias, no duplicación** — enlazar docs canónicos existentes en lugar de copiar bloques largos.
-- **Respetar contratos del repo** — Chezmoi, taxonomía MCP, skills canónicas, hooks Git, [STRUCTURE.md](../STRUCTURE.md) y ADRs en [docs/adr/](adr/README.md).
+- **Respetar contratos del repo** — Chezmoi, taxonomía MCP, skills canónicas, hooks Git y ADRs en [docs/adr/](adr/README.md).
 - **Secretos** — nunca commitear credenciales en claro; ver [CHEZMOI.md](CHEZMOI.md) y [SECRETS_EXAMPLES.md](SECRETS_EXAMPLES.md). No exportar `GH_TOKEN`/`GITHUB_TOKEN` en shells interactivas; `gh` usa `gh auth switch` — ver [TOKEN_GITHUB_GH.md](TOKEN_GITHUB_GH.md). Superficie local sensible: `~/.codex/shell_snapshots/` (auditar con `scripts/diagnose-secret-surfaces.sh`; borrar snapshots contaminados manualmente).
 - **GitNexus** — seguir [GITNEXUS_OPERATIONAL_POLICY.md](GITNEXUS_OPERATIONAL_POLICY.md); no auto-refrescar el índice.
 
@@ -121,14 +121,14 @@ Skills: `ai/assets/skills/gitnexus/`.
 
 ---
 
-## 8. STRUCTURE.md
+## 8. Descubrimiento de estructura
 
-[STRUCTURE.md](../STRUCTURE.md) es el inventario estructural del repo, generado por `scripts/treegen.sh`.
+No se mantiene un snapshot estático del árbol del repositorio. Los agentes deben descubrir la estructura **dinámicamente** con navegación normal del repo, Serena, GitNexus, `rg`/`ast-grep` o búsqueda de ficheros según la tarea.
 
-- **No editar a mano** — se regenera vía pre-commit hook (`scripts/hooks/pre-commit-treegen.sh`).
-- **Comprobar drift sin escribir** — `scripts/treegen.sh --check .` (exit 0 si está al día).
-- Si añades carpetas o archivos visibles, el hook actualiza y stagea STRUCTURE.md automáticamente.
-- Para **intención y contratos por zona**, usar [AI_REPO_MAP.md](AI_REPO_MAP.md), no STRUCTURE.md.
+- Para **intención, contratos y riesgos por zona**, usar [AI_REPO_MAP.md](AI_REPO_MAP.md).
+- No generar ni mantener artefactos tipo `STRUCTURE.md` como parte de un BUILD o handoff.
+- Documentar una ruta nueva solo cuando cambie un contrato operativo, no por el mero hecho de existir.
+
 
 ---
 
@@ -206,7 +206,6 @@ Separar claramente lo **implementado**, lo **validado** y lo **pendiente**.
 | [GITNEXUS_OPERATIONAL_POLICY.md](GITNEXUS_OPERATIONAL_POLICY.md) | Política GitNexus |
 | [MCP_TAXONOMY.md](MCP_TAXONOMY.md) | Taxonomía MCP |
 | [adr/README.md](adr/README.md) | Memoria arquitectónica (decisiones ADR) |
-| [STRUCTURE.md](../STRUCTURE.md) | Árbol del repositorio |
 | [ai/AGENT_WORKFLOW_FOR_AGENTS.md](../ai/AGENT_WORKFLOW_FOR_AGENTS.md) | Loop vault → spec → issues |
 | [ai/assets/handoffs/README.md](../ai/assets/handoffs/README.md) | Plantillas handoff PLAN/BUILD/AUDIT |
 | [dotfiles-agent-review](../ai/assets/skills/ops/dotfiles-agent-review/SKILL.md) | Skill revisión post-cambio |
