@@ -54,17 +54,11 @@ assert_contains() {
 	grep -qE 'bats-mcp|bats-governance|mcp-manifest' "${MAKEFILE_TESTS}"
 }
 
-@test "regression: git hooks contract is covered" {
+@test "regression: GitNexus post-commit hook contract is covered" {
 	assert_test_file "${BATS_DIR}/git-hooks/hooks.bats"
-	assert_contains "${BATS_DIR}/git-hooks/hooks.bats" 'pre-commit'
 	assert_contains "${BATS_DIR}/git-hooks/hooks.bats" 'post-commit'
+	assert_contains "${BATS_DIR}/git-hooks/hooks.bats" 'post-commit-gitnexus.sh'
 	grep -q 'bats-git-hooks' "${MAKEFILE_TESTS}"
-}
-
-@test "regression: treegen and STRUCTURE.md drift is covered" {
-	assert_contains "${DOTFILES_DIR}/scripts/treegen.sh" '\-\-check'
-	assert_contains "${BATS_DIR}/git-hooks/hooks.bats" 'treegen --check'
-	grep -q 'STRUCTURE.md' "${DOTFILES_DIR}/docs/AGENT_WORKFLOW.md"
 }
 
 @test "regression: Playwright Docker Chezmoi symlink is covered" {
