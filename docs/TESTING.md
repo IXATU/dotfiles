@@ -138,7 +138,7 @@ Some Bats files exist under `tests/bats/` but are **not wired** into `test-bats`
 
 `dotfiles-apply` is the safe Chezmoi wrapper (preview by default). Tests: `tests/bats/system/dotfiles-apply.bats` (stub `chezmoi`, no real HOME mutation).
 
-Flag conventions (`--check`, `--dry-run`, `DRY_RUN=1`, `--yes`): [SCRIPT_CONVENTIONS.md](SCRIPT_CONVENTIONS.md). Contract tests: `tests/bats/system/dry-run-guard.bats`, `dotfiles-apply.bats`, `git-hooks/hooks.bats` (`treegen --check`).
+Flag conventions (`--check`, `--dry-run`, `DRY_RUN=1`, `--yes`): [SCRIPT_CONVENTIONS.md](SCRIPT_CONVENTIONS.md). Contract tests: `tests/bats/system/dry-run-guard.bats`, `dotfiles-apply.bats`.
 
 Agent-first regression index (meta-tests, no HOME mutation): `make bats-agent` or `bats tests/bats/agent/regression.bats`. Scenario map: [tests/bats/agent/README.md](../tests/bats/agent/README.md). Included in `make agent-validate`.
 
