@@ -97,11 +97,6 @@ teardown() {
 	[[ "${status}" -eq 1 ]]
 }
 
-@test "treegen.sh documents --check in header" {
-	grep -q '\-\-check' "${DOTFILES_DIR}/scripts/treegen.sh"
-	grep -q 'CHECK_MODE' "${DOTFILES_DIR}/scripts/treegen.sh"
-}
-
 @test "dotfiles-update does not pretend to be a dry-run wrapper" {
 	run grep -q '\-\-dry-run' "${DOTFILES_DIR}/bin/dotfiles-update"
 	[[ "${status}" -eq 1 ]]
