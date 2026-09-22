@@ -2,6 +2,22 @@
 
 Este archivo contiene las últimas 5 releases. Para el historial completo, consulta los archivos en el directorio `releases/`.
 
+## [v0.2.0] - 2026-09-22
+
+## Changes
+
+### Changed
+- 2026-09-22 [1dbe61d](https://github.com/IXATU/dotfiles/commit/1dbe61d3e25d843b125a1958a69cfac45bf47dd5) feat(tooling): manage Gitleaks and converge Node 24 baseline (#9)
+  - Node 24 becomes the workstation baseline while Node >=22 remains the compatibility floor.
+  - Gitleaks is managed from official releases with SHA-256 verification and update-snapshot coverage.
+- 2026-09-22 [eb558ab](https://github.com/IXATU/dotfiles/commit/eb558ab458119b2343ac625bb69e58bbf1ebfcfd) refactor(agent): retire treegen and static STRUCTURE workflow (#10)
+  - Removes `STRUCTURE.md`, `treegen`, the treegen alias and pre-commit snapshot hook.
+  - Repository discovery becomes dynamic via Serena, GitNexus and normal code/file search.
+  - Git hooks are reduced to the GitNexus post-commit contract.
+
+### Maintenance
+- Repository branch inventory cleaned so `main` is the single active branch.
+
 ## [v0.1.0] - 2026-09-21
 
 ## Changes
