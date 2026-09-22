@@ -68,7 +68,7 @@ If inputs are incomplete, state assumptions explicitly in the report.
 
 ### Hooks
 
-- [ ] Git hooks (`scripts/hooks/`, `.githooks/`) preserve treegen and GitNexus post-commit contracts
+- [ ] Git hooks (`scripts/hooks/`, `.githooks/`) preserve the GitNexus post-commit contract
 - [ ] Chezmoiscripts hooks do not introduce silent HOME mutation without documentation
 
 ### GitNexus
@@ -77,10 +77,10 @@ If inputs are incomplete, state assumptions explicitly in the report.
 - [ ] No agent-triggered `gnx-analyze-here` without explicit user request
 - [ ] Symbol edits considered for `gitnexus_impact` if applicable
 
-### STRUCTURE.md
+### Repository structure
 
-- [ ] Structural tree changes will be picked up by pre-commit treegen (not hand-edited)
-- [ ] New top-level dirs documented in AI_REPO_MAP if they change agent contracts
+- [ ] New top-level dirs are documented in AI_REPO_MAP only when they change agent contracts
+- [ ] Review relies on dynamic repository discovery; no static tree snapshot is required
 
 ### Shell scripts
 
