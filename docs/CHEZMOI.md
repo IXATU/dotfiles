@@ -430,4 +430,3 @@ Esto **no** sustituye un `chezmoi apply` global y **no** toca Codex ni secretos.
 - [MIGRATION_MCP_ITER3.md](MIGRATION_MCP_ITER3.md) — layout de servidores MCP
 - [codex/README-mcp.md](../codex/README-mcp.md) — MCPs locales y smoke tests
 - [ai/README.md](../ai/README.md) — arquitectura AI Workstation
-- [STRUCTURE.md](../STRUCTURE.md) — árbol del repo
