@@ -173,10 +173,8 @@ Política completa: [GITNEXUS_OPERATIONAL_POLICY.md](GITNEXUS_OPERATIONAL_POLICY
 make install-git-hooks
 ```
 
-Configura `core.hooksPath=.githooks` solo para este checkout. El pre-commit
-ejecuta `treegen` antes de cada commit; si regenera `STRUCTURE.md`, stagea
-automáticamente solo ese fichero y deja continuar el commit. No stagea otros
-cambios del workspace. El post-commit refresca GitNexus con `--force --skip-agents-md` de forma síncrona,
+Configura `core.hooksPath=.githooks` solo para este checkout. El único hook
+versionado es el post-commit, que refresca GitNexus con `--force --skip-agents-md` de forma síncrona,
 best-effort y no fatal. Si detecta MCP/lock activo o permisos no escribibles en
 `~/.gitnexus` / `registry.json`, omite el refresh con `WARN` (el índice puede
 quedar STALE). Si no hay contención y el analyze falla o expira tras 30 segundos,
@@ -184,8 +182,7 @@ refresca manualmente con `make gitnexus-status` y
 `gnx-analyze-here --force --skip-agents-md`. Si hay varios procesos
 `gitnexus mcp`, cierra sesiones duplicadas de Cursor antes de refrescar.
 
-Escapes: `DOTFILES_SKIP_HOOKS=1`, `DOTFILES_SKIP_TREEGEN=1`,
-`DOTFILES_SKIP_GITNEXUS=1`.
+Escapes: `DOTFILES_SKIP_HOOKS=1`, `DOTFILES_SKIP_GITNEXUS=1`.
 
 ### Refresh humano del índice
 
@@ -276,7 +273,6 @@ Detalle: [TESTING.md](TESTING.md).
 | `dotfiles-apply` | No | No | Preview Chezmoi: `diff` + `status` (default seguro) |
 | `dotfiles-apply --apply` | Sí | Sí | Apply interactivo (confirmar escribiendo `APPLY`) |
 | `dotfiles-apply --apply --yes` | Sí | Sí | Apply no interactivo — solo humano/CI explícito |
-| `scripts/treegen.sh --check .` | No | No | Comprobar drift de `STRUCTURE.md` sin escribir |
 | `make install DRY_RUN=1` | No | No | Simular instalación APT (ver [SCRIPT_CONVENTIONS.md](SCRIPT_CONVENTIONS.md)) |
 | `make agent-validate-changed` | No | No | Solo archivos cambiados (local; sin OSV online) |
 | `make agent-validate-audit` | No | No* | Auditoría full-repo (lint + security; OSV best-effort salvo `SECURITY_ONLINE=1`) |
