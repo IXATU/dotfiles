@@ -207,10 +207,14 @@ mcps:
     paths_probe: []
     notes: >
       Installed as the pinned uv tool serena-agent==1.7.0. Each client starts
-      its own stdio process; no shared daemon. Codex and OpenCode inherit a
-      project cwd and use --project-from-cwd. Cursor GUI cwd is not assumed to
-      be the workspace, so agents activate the project through Serena when
-      needed. Project language servers remain owned by .serena/project.yml.
+      its own stdio process; no shared daemon. Cursor, Codex, and OpenCode use
+      --project-from-cwd so Serena activates the process project; the opt-in
+      Claude adapter registers the same behavior. Every generated recipe sets
+      --enable-web-dashboard true and --open-web-dashboard false explicitly
+      without rewriting ~/.serena/serena_config.yml. If a client process does
+      not inherit the intended project cwd, agents activate the project through
+      Serena explicitly. Project language servers remain owned by
+      .serena/project.yml.
 
   - id: filesystem
     display_name: Filesystem MCP

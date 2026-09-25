@@ -94,6 +94,61 @@ probe_cmd_missing_strict() {
 	fi
 }
 
+check_cursor_serena_runtime() {
+	[[ -f "${CURSOR_MCP}" ]] || return 0
+	local status
+	status="$(
+		python3 - "${CURSOR_MCP}" <<-'PY' 2>/dev/null || true
+			import json
+			import sys
+
+			path = sys.argv[1]
+			expected = [
+			    "start-mcp-server",
+			    "--context=ide",
+			    "--project-from-cwd",
+			    "--enable-web-dashboard",
+			    "true",
+			    "--open-web-dashboard",
+			    "false",
+			]
+			try:
+			    with open(path, encoding="utf-8") as handle:
+			        data = json.load(handle)
+			except (OSError, json.JSONDecodeError) as exc:
+			    print(f"FAIL\tSerena MCP config could not be parsed: {exc}")
+			    raise SystemExit(0)
+
+			entry = (data.get("mcpServers") or {}).get("serena")
+			if not isinstance(entry, dict):
+			    print("MISSING")
+			    raise SystemExit(0)
+			if entry.get("command") != "serena" or entry.get("args") != expected:
+			    print("FAIL\truntime drift; expected command 'serena' with project-from-cwd and explicit dashboard flags")
+			    raise SystemExit(0)
+			print("OK")
+		PY
+	)"
+	case "$status" in
+	OK)
+		line OK "Cursor HOME Serena MCP canonical project and dashboard arguments present"
+		;;
+	MISSING)
+		if [[ ${strict_mode} -eq 1 ]]; then
+			line FAIL "Cursor HOME Serena MCP entry missing — run make ai-mcp-generate APPLY=1, then chezmoi apply"
+		else
+			line WARN "Cursor HOME Serena MCP entry missing — run make ai-mcp-generate APPLY=1, then chezmoi apply"
+		fi
+		;;
+	FAIL$'\t'*)
+		line FAIL "Cursor HOME Serena MCP ${status#FAIL	}"
+		;;
+	*)
+		line WARN "Cursor HOME Serena MCP runtime could not be checked safely"
+		;;
+	esac
+}
+
 check_excalidraw_surface() {
 	local label="$1"
 	local path="$2"
@@ -695,6 +750,7 @@ elif [[ -n "${herr}" && "${herr}" != "missing_file" ]]; then
 	line FAIL "\$HOME/.cursor/mcp.json is not valid JSON: ${herr}"
 else
 	line OK "\$HOME/.cursor/mcp.json present and valid JSON"
+	check_cursor_serena_runtime
 	if [[ "${hn}" -ge 0 && "${ct}" -gt 0 && "${hn}" -ne "${ct}" ]]; then
 		line WARN "Cursor MCP count mismatch: home=${hn} template=${ct} (re-run chezmoi apply if you changed dot_cursor/mcp.json.tmpl)"
 	fi

@@ -109,3 +109,48 @@ PY
 	grep -q -- '--context=codex' "${DOTFILES_DIR}/build/mcps/dot_codex/mcp_servers.toml.tmpl"
 	grep -q -- '--project-from-cwd' "${DOTFILES_DIR}/build/mcps/dot_config/opencode/opencode.json.tmpl"
 }
+
+@test "rendered Serena recipes use canonical project and dashboard arguments" {
+	if ! python3 -c "import yaml" 2>/dev/null; then
+		skip "PyYAML not installed"
+	fi
+	run python3 "${DOTFILES_DIR}/scripts/generate-mcp-configs.py" render
+	[[ "${status}" -eq 0 ]]
+	run python3 - "${DOTFILES_DIR}/build/mcps" <<'PY'
+import json
+import pathlib
+import sys
+import tomllib
+
+root = pathlib.Path(sys.argv[1])
+dashboard_args = [
+    "--enable-web-dashboard",
+    "true",
+    "--open-web-dashboard",
+    "false",
+]
+expected = {
+    "cursor": ["start-mcp-server", "--context=ide", "--project-from-cwd", *dashboard_args],
+    "codex": ["start-mcp-server", "--project-from-cwd", "--context=codex", *dashboard_args],
+    "opencode": ["start-mcp-server", "--project-from-cwd", "--context=ide", *dashboard_args],
+}
+
+cursor = json.loads((root / "dot_cursor/mcp.json.tmpl").read_text(encoding="utf-8"))
+opencode = json.loads((root / "dot_config/opencode/opencode.json.tmpl").read_text(encoding="utf-8"))
+codex = tomllib.loads((root / "dot_codex/mcp_servers.toml.tmpl").read_text(encoding="utf-8"))
+actual = {
+    "cursor": cursor["mcpServers"]["serena"],
+    "codex": codex["mcp_servers"]["serena"],
+    "opencode": opencode["mcp"]["serena"],
+}
+for surface, recipe in actual.items():
+    if surface == "opencode":
+        assert recipe["command"][0] == "serena"
+        actual_args = recipe["command"][1:]
+    else:
+        assert recipe["command"] == "serena"
+        actual_args = recipe["args"]
+    assert actual_args == expected[surface]
+PY
+	[[ "${status}" -eq 0 ]]
+}

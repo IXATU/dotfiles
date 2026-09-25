@@ -2,6 +2,15 @@
 # Register Serena in Claude Code without replacing any mutable Claude config.
 set -euo pipefail
 
+serena_args=(
+	start-mcp-server
+	--context claude-code
+	--project-from-cwd
+	--enable-web-dashboard true
+	--open-web-dashboard false
+)
+plugin_id="serena@claude-plugins-official"
+
 dry_run=0
 case "${1:-}" in
 --dry-run) dry_run=1 ;;
@@ -16,7 +25,8 @@ case "${DRY_RUN:-}" in
 esac
 
 if [[ "$dry_run" -eq 1 ]]; then
-	printf '[DRY_RUN] Would run: claude mcp add --scope user serena -- serena start-mcp-server --context claude-code --project-from-cwd\n'
+	printf '[DRY_RUN] Would run: claude mcp add --scope user serena -- serena %s\n' "${serena_args[*]}"
+	printf '[DRY_RUN] Would run: claude plugin disable -s user %s\n' "$plugin_id"
 	exit 0
 fi
 
@@ -26,7 +36,17 @@ command -v claude >/dev/null 2>&1 || {
 }
 if claude mcp get serena >/dev/null 2>&1; then
 	printf 'OK Claude MCP serena is already registered; existing configuration preserved\n'
-	exit 0
+else
+	claude mcp add --scope user serena -- serena "${serena_args[@]}"
+	printf 'OK Claude MCP serena registered at user scope\n'
 fi
-claude mcp add --scope user serena -- serena start-mcp-server --context claude-code --project-from-cwd
-printf 'OK Claude MCP serena registered at user scope\n'
+
+if claude plugin disable -s user "$plugin_id"; then
+	printf 'OK Claude duplicate Serena plugin disabled: %s\n' "$plugin_id"
+else
+	status=$?
+	printf 'FAIL Claude could not disable duplicate Serena plugin: %s\n' "$plugin_id" >&2
+	exit "$status"
+fi
+
+printf 'OK Claude canonical Serena ready (user MCP; duplicate plugin disabled)\n'
