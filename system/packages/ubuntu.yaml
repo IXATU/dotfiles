@@ -7,6 +7,11 @@ packages:
     required: true
     capability: build
     note: Metapackage for compilers and libc dev headers used by native Python wheels and builds.
+  - package: libicu78
+    command: ldconfig
+    required: true
+    capability: dotnet
+    note: ICU runtime for the .NET-based Azure MCP on Ubuntu 26.04; ldconfig is a representative loader command because ICU has no standalone CLI.
   - package: python3-venv
     command: python3
     required: true

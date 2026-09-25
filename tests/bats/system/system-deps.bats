@@ -130,6 +130,19 @@ EOF
 	[[ "${output}" == *$'optional\tvisidata\tvd\tubuntu\tdata\tapt'* ]]
 }
 
+@test "repo inventory declares ICU runtime for Azure MCP" {
+	run python3 "${HELPER_SCRIPT}" list --inventory "${DOTFILES_DIR}/system/packages/ubuntu.yaml"
+	[[ "${status}" -eq 0 ]]
+	[[ "${output}" == *$'required\tlibicu78\tldconfig\tubuntu\tdotnet\tapt'* ]]
+}
+
+@test "APT bootstrap resolves ICU runtime for Azure MCP" {
+	run bash "${DOTFILES_DIR}/scripts/install-system-packages.sh" --dry-run --inventory "${DOTFILES_DIR}/system/packages/ubuntu.yaml"
+	[[ "${status}" -eq 0 ]]
+	[[ "${output}" == *"- libicu78"* ]]
+	[[ "${output}" == *"install -y"* ]]
+}
+
 @test "actions helper routes agent tools to canonical installers" {
 	cat >"${TEST_INVENTORY}" <<'EOF'
 schema_version: 1
