@@ -129,6 +129,7 @@ opt-in targets such as `make install-node-stack`, `make install-chezmoi`,
 ## Current operational examples
 
 - APT baseline: `git`, `zsh`, `tmux`, `python3`, `python3-pip`, `bubblewrap`, `ripgrep`, `fd-find`, `age`.
+- APT runtime: `libicu78` — ICU runtime for the .NET-based Azure MCP on Ubuntu 26.04; `ldconfig` is a representative loader command because ICU has no standalone CLI.
 - APT optional (shell): `zoxide` — directory jumper via `zsh/25-zoxide.zsh`; install with `make deps-install DEPS_INSTALL_ARGS=--include-optional`.
 - APT optional (cli): `fzf` — fuzzy finder via `zsh/26-fzf.zsh`; install with `make deps-install DEPS_INSTALL_ARGS=--include-optional`.
 - APT optional (data): `lnav` — log navigator for local/Docker logs; install with `make deps-install DEPS_INSTALL_ARGS=--include-optional`.
