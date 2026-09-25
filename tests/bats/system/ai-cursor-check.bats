@@ -376,3 +376,45 @@ SH
 	[[ "${output}" == *"Excalidraw MCP Docker image present"* ]]
 	[[ "${output}" == *"Excalidraw canvas Docker image present"* ]]
 }
+
+@test "ai-cursor-check accepts canonical Serena project and dashboard arguments" {
+	local fake_home
+	fake_home="$(mktemp -d)"
+	mkdir -p "${fake_home}/.cursor"
+	cat >"${fake_home}/.cursor/mcp.json" <<'JSON'
+{
+  "mcpServers": {
+    "serena": {
+      "command": "serena",
+      "args": ["start-mcp-server", "--context=ide", "--project-from-cwd", "--enable-web-dashboard", "true", "--open-web-dashboard", "false"],
+      "env": {}
+    }
+  }
+}
+JSON
+	run env HOME="${fake_home}" bash "${AI_CURSOR_CHECK}"
+	rm -rf "${fake_home}"
+	[[ "${status}" -eq 0 ]]
+	[[ "${output}" == *"Cursor HOME Serena MCP canonical project and dashboard arguments present"* ]]
+}
+
+@test "ai-cursor-check fails on Serena runtime argument drift" {
+	local fake_home
+	fake_home="$(mktemp -d)"
+	mkdir -p "${fake_home}/.cursor"
+	cat >"${fake_home}/.cursor/mcp.json" <<'JSON'
+{
+  "mcpServers": {
+    "serena": {
+      "command": "serena",
+      "args": ["start-mcp-server", "--context=ide"],
+      "env": {}
+    }
+  }
+}
+JSON
+	run env HOME="${fake_home}" bash "${AI_CURSOR_CHECK}"
+	rm -rf "${fake_home}"
+	[[ "${status}" -eq 1 ]]
+	[[ "${output}" == *"Cursor HOME Serena MCP runtime drift"* ]]
+}

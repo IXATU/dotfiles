@@ -27,7 +27,7 @@ Serena complements GitNexus; it does not replace the architecture and impact gra
 
 Serena supports multiple language servers simultaneously. Do not switch engines or restart Serena merely because work moves between Python, TypeScript, YAML, or TOML.
 
-Cursor may start with a GUI cwd unrelated to the workspace, so activate the project explicitly when needed. Codex, OpenCode, and Claude use `--project-from-cwd` because their CLI sessions normally inherit the repository cwd.
+Cursor, Codex, OpenCode, and the opt-in Claude Serena recipe use `--project-from-cwd` so normal project-scoped processes activate their current Serena project automatically. If a client process does not inherit the intended project cwd, activate the project explicitly. Generated recipes enable the web dashboard but do not open it automatically.
 
 ## Project Commands Win
 

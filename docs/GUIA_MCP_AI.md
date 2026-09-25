@@ -170,7 +170,7 @@ chezmoi --source="$HOME/dotfiles" apply ~/.config/ai/runtime
 
 ### Serena
 
-`make install-serena` instala o converge la versión canónica. Cursor usa contexto `ide` y no presupone que el cwd de la GUI sea el workspace; activa el proyecto desde Serena cuando sea necesario. Codex y OpenCode usan `--project-from-cwd`; Claude se registra de forma opt-in con `make configure-claude-serena` mediante `claude mcp add --scope user`, sin gestionar `~/.claude.json` ni borrar otros MCPs.
+`make install-serena` instala o converge la versión canónica. Las recetas generadas de Cursor, Codex y OpenCode usan `--project-from-cwd` y fijan explícitamente `--enable-web-dashboard true --open-web-dashboard false`, sin modificar `~/.serena/serena_config.yml`. Si el proceso no hereda el cwd del proyecto, el agente activa el proyecto explícitamente. Claude se registra de forma opt-in con `make configure-claude-serena`; el adapter conserva un MCP user-scoped existente, registra el payload canónico cuando falta y desactiva el plugin duplicado `serena@claude-plugins-official`, sin gestionar `~/.claude.json` completo ni borrar otros MCPs.
 
 GitNexus se registra en Claude de la misma forma opt-in con `make configure-claude-gitnexus`, que añade el MCP user-scoped `gitnexus` apuntando a `mcp-gitnexus-launcher` (no usa `npx` ni invoca `gitnexus mcp` directamente). Ambos adapters son idempotentes.
 
