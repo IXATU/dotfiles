@@ -27,7 +27,7 @@ export DOTFILES_APPLY
 # Optional passthrough to the declarative APT installer (same as deps-install).
 DEPS_INSTALL_ARGS ?=
 
-.PHONY: install-check install-apt install-external install-dotfiles install-verify install install-zsh-stack install-fonts install-uv install-serena install-taplo configure-claude-serena configure-claude-gitnexus install-sops install-chezmoi install-node-stack install-docker-desktop-helper install-azure-cli install-agent-tools install-mattpocock-skills install-mcp-github install-git-hooks set-default-shell-zsh secrets-check ai-cursor-check chezmoi-drift-report mcp-launcher-contract-check gitnexus-status ai-mcp-validate ai-mcp-render ai-mcp-drift ai-mcp-governance ai-mcp-generate
+.PHONY: install-check install-apt install-external install-dotfiles install-verify install install-zsh-stack install-fonts install-uv install-serena install-herdr install-taplo configure-claude-serena configure-claude-gitnexus install-sops install-chezmoi install-node-stack install-docker-desktop-helper install-azure-cli install-agent-tools install-mattpocock-skills install-mcp-github install-git-hooks set-default-shell-zsh secrets-check ai-cursor-check chezmoi-drift-report mcp-launcher-contract-check gitnexus-status ai-mcp-validate ai-mcp-render ai-mcp-drift ai-mcp-governance ai-mcp-generate
 
 install-check:
 	@bash $(DOTFILES_DIR)/scripts/install-check.sh
@@ -73,6 +73,12 @@ install-uv:
 # ~/.config/ai/runtime/.venv used by repo-owned Python MCP servers.
 install-serena:
 	@bash $(DOTFILES_DIR)/scripts/install-serena.sh $(if $(filter 1 true yes on,$(DRY_RUN)),--dry-run,)
+
+# Optional direct Herdr runtime installer. It stays on the stable channel and
+# installs only integrations for agent CLIs already present on PATH. It does
+# not install agents, mise, or Pi and is intentionally outside `make install`.
+install-herdr:
+	@bash $(DOTFILES_DIR)/scripts/install-herdr.sh $(if $(filter 1 true yes on,$(DRY_RUN)),--dry-run,)
 
 # Taplo is an official pinned binary with a repository-owned SHA-256 checksum;
 # no Rust/Cargo toolchain is required.
