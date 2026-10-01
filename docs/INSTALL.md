@@ -40,6 +40,7 @@ make install-sops    # descarga sops oficial (getsops/sops v3.9.4) a ~/.local/bi
 make install-node-stack  # Node.js LTS vía NodeSource (sudo/apt; requerido para MCPs npx)
 make install-agent-tools # ast-grep, actionlint, osv-scanner (opt-in corporativo)
 make install-uv      # uv (Astral) en ~/.local/bin
+make install-herdr   # Herdr directo en ~/.local/bin, canal stable e integraciones detectadas
 make install-zsh-stack   # Oh My Zsh + Powerlevel10k + plugins (no toca ~/.zshrc)
 # zoxide (salto de directorios, reemplaza plugin OMZ z): make deps-install DEPS_INSTALL_ARGS=--include-optional
 # fzf (fuzzy finder, integración shell en zsh/26-fzf.zsh), lnav (logs) y visidata/vd (CSV/JSON): make deps-install DEPS_INSTALL_ARGS=--include-optional
@@ -64,6 +65,21 @@ make install-dotfiles DOTFILES_APPLY=1
 # 7. Validar Cursor/MCPs/skills/commands (no-mutante)
 make ai-cursor-check
 ```
+
+### Herdr (runtime de agentes, opt-in)
+
+`make install-herdr` instala Herdr con su instalador oficial verificado o
+actualiza una instalación directa existente, fuerza el canal `stable` y
+comprueba la versión resultante. `DRY_RUN=1 make install-herdr` muestra el plan
+sin descargar ni escribir. No instala `mise`, no modifica RC files y no forma
+parte de `make install`.
+
+Después converge únicamente las integraciones de Claude Code, Codex, OpenCode
+y Cursor cuyos comandos (`claude`, `codex`, `opencode`, `cursor-agent`) ya
+existan en `PATH`. Usa `herdr integration install`, que conserva preferencias y
+plugins ajenos; no instala los agentes ni sus runtimes. Pi queda fuera de este
+flujo. Un Herdr gestionado por Homebrew, mise o Nix debe actualizarse con su
+gestor y el target se detendrá sin sobrescribirlo.
 
 > **DRY_RUN convention.** Usa `DRY_RUN=1` (con guion bajo). El instalador
 > aborta fast con mensaje claro si pasas `DRY-RUN=1`, `dry-run=1`,

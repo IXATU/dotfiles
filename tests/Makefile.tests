@@ -87,6 +87,7 @@ help:
 	@echo "  make deps-install                HUMAN: install APT dependencies (sudo)"
 	@echo "  make install-agent-tools         HUMAN: install non-APT validation CLIs"
 	@echo "  make install-serena             HUMAN: converge Serena to pinned uv tool version"
+	@echo "  make install-herdr              HUMAN: converge direct Herdr stable runtime and detected integrations"
 	@echo "  make install-taplo              HUMAN: install checksum-verified Taplo binary"
 	@echo "  make configure-claude-serena    HUMAN: add missing Serena user MCP to Claude"
 	@echo "  make configure-claude-gitnexus  HUMAN: add missing GitNexus user MCP to Claude"
@@ -444,6 +445,7 @@ bats-system: bats-zsh
 	@$(call run_bats,$(BATS_DIR)/system/install-dotfiles.bats)
 	@$(call run_bats,$(BATS_DIR)/system/install-uv.bats)
 	@$(call run_bats,$(BATS_DIR)/system/install-serena.bats)
+	@$(call run_bats,$(BATS_DIR)/system/install-herdr.bats)
 	@$(call run_bats,$(BATS_DIR)/system/install-taplo.bats)
 	@$(call run_bats,$(BATS_DIR)/system/configure-claude-serena.bats)
 	@$(call run_bats,$(BATS_DIR)/system/configure-claude-gitnexus.bats)
