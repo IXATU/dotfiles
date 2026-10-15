@@ -84,6 +84,39 @@ El parser operativo de resultados por paquete vive en `scripts/update/update-win
 
 `wsl --shutdown` no se ejecuta automáticamente. Si `wsl --update` indica que conviene reiniciar WSL, el resumen lo muestra como acción posterior para ejecutar manualmente desde PowerShell cuando la sesión WSL haya terminado.
 
+## Cursor Agent CLI (WSL)
+
+`dotfiles-update` instala o actualiza **Cursor Agent CLI** desde el instalador oficial
+de Cursor, a traves de `scripts/install-cursor-agent.sh`. Se ejecuta en la fase
+**Cursor Agent**, despues de OpenCode, y su version aparece en `Tool snapshot`
+como **Cursor Agent CLI**. El mismo resumen muestra tambien la version de
+**Claude Code CLI** (solo diagnostico; se actualiza por su propio mecanismo).
+Los ejecutables `agent` y `cursor-agent` quedan
+en `~/.local/bin`; no cambia el Cursor de Windows, ni `.zshrc`, ni credenciales.
+
+Instalacion o mantenimiento acotado (sin APT ni Windows):
+
+```bash
+cd ~/dotfiles
+bash scripts/install-cursor-agent.sh
+agent --version
+agent status
+```
+
+La instalacion no autentica automaticamente la CLI. Para vincularla con tu
+cuenta Cursor mediante el navegador, ejecuta `agent login` en tu terminal WSL;
+despues valida con `agent status`. No introduzcas API keys en el repositorio,
+en prompts, ni en `dotfiles-update`. El estado de autenticacion no se incluye
+en el snapshot: solo se muestran versiones. Si se necesita automatizar desde
+el Director (DC), `agent -p --output-format text --model auto` permite un flujo
+no interactivo **solo despues de completar login** y con permisos de ejecucion
+limitados a la wave autorizada. No usar `--force` por defecto.
+
+El wrapper instala desde `https://cursor.com/install` por HTTPS cuando falta
+el agente; si ya esta instalado ejecuta `agent update` del fabricante. Los tests
+Bats de esta ruta son `tests/bats/system/cursor-agent-update.bats`. La descarga
+no consume llamadas a modelos; una invocacion `agent -p` si puede consumir cuota.
+
 ## Node y GitNexus
 
 La política del repo exige Node `>=22`. `make install-node-stack` instala NodeSource `24.x`, una fuente externa de paquetes APT firmada y configurada con `signed-by`. Esto evita depender de `nvm`/`fnm` en shells no interactivos y mantiene `node`, `npm` y `npx` disponibles para Make, MCPs y GitNexus.
