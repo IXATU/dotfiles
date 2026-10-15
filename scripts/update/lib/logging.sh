@@ -16,6 +16,7 @@ section_id_for_title() {
 	"APT") printf 'apt' ;;
 	"Node and AI tools") printf 'node' ;;
 	"OpenCode") printf 'opencode' ;;
+	"Cursor Agent") printf 'cursor' ;;
 	"Shell") printf 'shell' ;;
 	"MCPs and Docker") printf 'mcp' ;;
 	"Update summary") printf 'summary' ;;

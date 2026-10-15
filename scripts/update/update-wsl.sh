@@ -52,6 +52,9 @@ normalize_component_version() {
 	*osv-scanner*)
 		version="$(printf '%s\n' "$version" | sed -E 's/^osv-scanner[[:space:]]+(version:?[[:space:]]*)?//; s/^version:?[[:space:]]*//; s/^v([0-9])/\1/')"
 		;;
+	*cursor\ agent\ cli*)
+		version="$(printf '%s\n' "$version" | sed -E 's/^[Cc]ursor([[:space:]]+[Aa]gent)?[[:space:]]+//')"
+		;;
 	*opencode*)
 		version="$(printf '%s\n' "$version" | sed -E 's/^[Oo]pen[Cc]ode[[:space:]]+//')"
 		;;
@@ -528,6 +531,8 @@ capture_workstation_snapshot() {
 	snapshot_current_tool "osv-scanner" osv-scanner --version
 	snapshot_current_tool "Codex CLI" codex --version
 	snapshot_current_tool "OpenCode" opencode --version
+	snapshot_current_tool "Claude Code CLI" claude --version
+	snapshot_current_tool "Cursor Agent CLI" agent --version
 }
 
 ingest_agent_tools_results() {
@@ -640,6 +645,15 @@ run_tools() {
 	fi
 }
 
+run_cursor_agent() {
+	section "Cursor Agent"
+	if is_truthy "${DOTFILES_UPDATE_MOCK:-}"; then
+		result_ok "WSL" "Cursor Agent CLI" "mocked"
+		return 0
+	fi
+	run_versioned_step run_step "WSL" "Cursor Agent CLI" "${LOG_DIR}/wsl-cursor-agent.log" agent --version -- "${DOTFILES_ROOT}/scripts/install-cursor-agent.sh"
+}
+
 run_opencode() {
 	section "OpenCode"
 	if is_truthy "${DOTFILES_UPDATE_MOCK:-}"; then
@@ -734,6 +748,7 @@ run_services() {
 want_section apt && run_apt
 want_section tools && run_tools
 want_section tools && run_opencode
+want_section tools && run_cursor_agent
 want_section shell && run_shell
 want_section shell && run_uv_update
 want_section mcp && run_mcp

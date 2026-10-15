@@ -40,6 +40,7 @@ flowchart LR
 | Solo recargar aliases/PATH en la sesión | `source ~/.zshrc` |
 | Editar token GitHub, DSN Postgres, MinIO | `sops secrets.sops.yaml` → `chezmoi apply -i scripts` |
 | Actualizar Windows/WSL, APT, npm, OMZ, MCPs | `dotfiles-update` (o `make update` desde el repo) |
+| Instalar/actualizar Cursor Agent CLI en WSL | `dotfiles-update` o `bash scripts/install-cursor-agent.sh` (login independiente con `agent login`) |
 | Diagnosticar readiness para agentes IA | `make ai-doctor` |
 | Validar Cursor/MCP/skills en HOME | `make ai-cursor-check` |
 | Validar MANIFEST ↔ plantillas en repo | `make ai-mcp-governance` |
