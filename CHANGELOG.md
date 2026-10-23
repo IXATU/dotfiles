@@ -2,6 +2,20 @@
 
 Este archivo contiene las últimas 5 releases. Para el historial completo, consulta los archivos en el directorio `releases/`.
 
+## [v0.3.0] - 2026-10-23
+
+### Added
+- Cursor Agent CLI and Herdr runtime integrations managed reproducibly from dotfiles (PRs #20, #18).
+- Powerlevel10k Classic / Lightest theme, with original prompt segments, icons and full terminal paths retained (PR #21).
+- Regression tests integrated into `make bats-zsh` for prompt style and Docker aliases (PR #21).
+
+### Fixed
+- Serena/Cursor configuration reconciliation and Azure MCP ICU runtime dependency (PRs #14, #16).
+- Docker cleanup aliases no longer run queries while starting Zsh or attempt to delete all images (PR #21).
+- Unambiguous Git branch and path rendering in Powerlevel10k.
+
+See `releases/v0.3.0.md` for details and verification.
+
 ## [v0.2.0] - 2026-09-22
 
 ## Changes
