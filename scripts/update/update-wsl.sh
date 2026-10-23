@@ -663,6 +663,20 @@ run_opencode() {
 	run_versioned_step run_step "WSL" "OpenCode" "${LOG_DIR}/wsl-opencode.log" opencode --version -- bash -c 'curl -fsSL https://opencode.ai/install | bash -s -- --no-modify-path'
 }
 
+run_ai_workspace() (
+	section "Claude Code and Herdr"
+	if is_truthy "${DOTFILES_UPDATE_MOCK:-}"; then
+		result_ok "WSL" "Claude Code CLI" "mocked"
+		result_ok "WSL" "Herdr" "mocked"
+		return 0
+	fi
+	# Process-local PATH only: discover native binaries after first bootstrap,
+	# while preserving any working Claude installation already on PATH.
+	export PATH="$PATH:$HOME/.local/bin"
+	run_versioned_step run_step "WSL" "Claude Code CLI" "${LOG_DIR}/wsl-claude-code.log" claude --version -- bash "${DOTFILES_ROOT}/scripts/install-claude-code.sh"
+	run_versioned_step run_step "WSL" "Herdr" "${LOG_DIR}/wsl-herdr.log" "${HERDR_INSTALL_DIR:-$HOME/.local/bin}/herdr" --version -- bash "${DOTFILES_ROOT}/scripts/install-herdr.sh" --skip-update
+)
+
 run_shell() {
 	section "Shell"
 	if is_truthy "${DOTFILES_UPDATE_MOCK:-}"; then
@@ -749,6 +763,7 @@ want_section apt && run_apt
 want_section tools && run_tools
 want_section tools && run_opencode
 want_section tools && run_cursor_agent
+want_section tools && run_ai_workspace
 want_section shell && run_shell
 want_section shell && run_uv_update
 want_section mcp && run_mcp

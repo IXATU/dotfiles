@@ -90,7 +90,7 @@ El parser operativo de resultados por paquete vive en `scripts/update/update-win
 de Cursor, a traves de `scripts/install-cursor-agent.sh`. Se ejecuta en la fase
 **Cursor Agent**, despues de OpenCode, y su version aparece en `Tool snapshot`
 como **Cursor Agent CLI**. El mismo resumen muestra tambien la version de
-**Claude Code CLI** (solo diagnostico; se actualiza por su propio mecanismo).
+**Claude Code CLI** (bootstrap si falta; conserva una instalación funcional).
 Los ejecutables `agent` y `cursor-agent` quedan
 en `~/.local/bin`; no cambia el Cursor de Windows, ni `.zshrc`, ni credenciales.
 
@@ -116,6 +116,43 @@ El wrapper instala desde `https://cursor.com/install` por HTTPS cuando falta
 el agente; si ya esta instalado ejecuta `agent update` del fabricante. Los tests
 Bats de esta ruta son `tests/bats/system/cursor-agent-update.bats`. La descarga
 no consume llamadas a modelos; una invocacion `agent -p` si puede consumir cuota.
+
+## Claude Code y Herdr (Ubuntu/WSL)
+
+El lunes, en cada workstation WSL, ejecuta `dotfiles-update`. En la fase Linux
+`tools`, después de Codex/OpenCode/Cursor, se instala Claude Code si falta y se
+convergen los hooks Herdr de los agentes presentes: Claude, Codex, OpenCode y
+Cursor (`cursor-agent`). Esta integración pertenece al flujo WSL; no instala
+Claude ni Herdr en Windows. Sus pasos registran estado, logs y versiones; un
+fallo no bloquea las demás herramientas.
+
+Bootstrap manual acotado, sin APT ni mantenimiento integral:
+
+```bash
+make install-ai-workspace DRY_RUN=1  # preview sin descargas ni escrituras
+make install-ai-workspace           # Claude primero; Herdr después
+make install-claude-code            # solo Claude, si falta
+make install-herdr                  # mantenimiento explícito de Herdr stable
+```
+
+Estos targets siguen fuera de `make install`. Claude usa el
+[instalador nativo oficial](https://code.claude.com/docs/en/setup) descargado a
+un temporal, validado con `bash -n` y ejecutado con `bash <installer> stable`;
+el instalador de Anthropic verifica el checksum del binario. La presencia de
+`~/.claude` no basta: se comprueba el ejecutable y `--version`. Si ya funciona,
+se conserva su instalación y canal; si existe pero falla, se informa del error
+para repararlo manualmente. El wrapper no edita configuración ni archivos rc.
+
+El updater llama a Herdr con `--skip-update`: instala el runtime stable si falta,
+pero no actualiza ni cambia el canal de un runtime existente. Un canal preview
+produce un fallo con indicación de ejecutar `make install-herdr` manualmente
+cuando convenga; ese target conserva su actualización explícita habitual.
+Los hooks se instalan/refrescan mediante la CLI de Herdr solo cuando no están
+actualizados. No se paran procesos ni se eliminan PID/locks. No se instalan
+Firstmate, Pi, mise ni otros agentes mediante estos nuevos targets.
+
+No se inicia autenticación interactiva ni se guardan credenciales en el repo.
+El login sigue siendo una acción humana en cada máquina cuando sea necesario.
 
 ## Node y GitNexus
 

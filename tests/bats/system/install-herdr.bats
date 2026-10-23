@@ -205,3 +205,159 @@ EOF
 	[[ "$output" != *"install-herdr"* ]]
 	grep -q 'system/install-herdr\.bats' "${DOTFILES_DIR}/tests/Makefile.tests"
 }
+
+@test "Herdr skip-update converges all detected hooks without replacing stable runtime" {
+	local fake_home="${TEST_TEMP_DIR}/home" state="${TEST_TEMP_DIR}/state"
+	local bin="${fake_home}/.local/bin"
+	write_herdr_stub "$bin" "$state"
+	printf '0.9.1\n' >"$state/version"
+	printf 'stable\n' >"$state/channel"
+	: >"$state/integrations"
+	local agent
+	for agent in claude codex opencode cursor-agent; do write_agent_stub "$bin" "$agent"; done
+	run env HOME="$fake_home" PATH="$bin:/usr/bin:/bin" bash "$INSTALL_HERDR" --skip-update
+	[[ "$status" -eq 0 ]]
+	[[ "$(cat "$state/version")" == 0.9.1 ]]
+	[[ "$(cat "$state/installed.log")" == $'claude\ncodex\nopencode\ncursor' ]]
+	run grep -Eq '^(update|channel set)' "$state/commands.log"
+	[[ "$status" -ne 0 ]]
+	for agent in claude codex opencode cursor; do printf '%s: current\n' "$agent"; done >"$state/integrations"
+	run env HOME="$fake_home" PATH="$bin:/usr/bin:/bin" bash "$INSTALL_HERDR" --skip-update
+	[[ "$status" -eq 0 ]]
+	[[ "$(wc -l <"$state/installed.log")" -eq 4 ]]
+}
+
+@test "Herdr skip-update refuses preview without channel change or update" {
+	local fake_home="${TEST_TEMP_DIR}/home" state="${TEST_TEMP_DIR}/state"
+	local bin="${fake_home}/.local/bin"
+	write_herdr_stub "$bin" "$state"
+	printf '0.9.2-preview\n' >"$state/version"
+	printf 'preview\n' >"$state/channel"
+	run env HOME="$fake_home" PATH="$bin:/usr/bin:/bin" bash "$INSTALL_HERDR" --skip-update
+	[[ "$status" -ne 0 && "$output" == *'make install-herdr manually'* ]]
+	run grep -Eq '^(update|channel set|integration install)' "$state/commands.log"
+	[[ "$status" -ne 0 ]]
+}
+
+@test "Herdr skip-update combines with dry-run in either order" {
+	local order
+	for order in '--skip-update --dry-run' '--dry-run --skip-update'; do
+		# Intentional splitting: test both supported flag orders.
+		# shellcheck disable=SC2086
+		run env HOME="${TEST_TEMP_DIR}/missing" PATH=/usr/bin:/bin bash "$INSTALL_HERDR" $order
+		[[ "$status" -eq 0 && "$output" == *DRY_RUN* ]]
+		[[ ! -e "${TEST_TEMP_DIR}/missing" ]]
+	done
+}
+
+@test "WSL workspace mock skips installers and is wired after Cursor in tools only" {
+	local updater="${DOTFILES_DIR}/scripts/update/update-wsl.sh"
+	# Expansion belongs to the child shell.
+	# shellcheck disable=SC2016
+	run env UPDATER="$updater" HOME="${TEST_TEMP_DIR}/home" PATH=/usr/bin:/bin DOTFILES_UPDATE_MOCK=1 DOTFILES_UPDATE_RUN_DIR="${TEST_TEMP_DIR}/run" bash -c '
+		set -- --section none
+		source "$UPDATER"
+		run_ai_workspace
+	'
+	[[ "$status" -eq 0 ]]
+	grep -q $'OK\tWSL\tClaude Code CLI\tmocked' "${TEST_TEMP_DIR}/run/wsl-results.tsv"
+	grep -q $'OK\tWSL\tHerdr\tmocked' "${TEST_TEMP_DIR}/run/wsl-results.tsv"
+	[[ ! -e "${TEST_TEMP_DIR}/home" ]]
+	[[ "$(grep '^want_section tools' "$updater" | tail -2)" == $'want_section tools && run_cursor_agent\nwant_section tools && run_ai_workspace' ]]
+}
+
+write_workspace_fixture() {
+	export HOME="${TEST_TEMP_DIR}/home"
+	export UPDATER="${DOTFILES_DIR}/scripts/update/update-wsl.sh"
+	export DOTFILES_UPDATE_RUN_DIR="${TEST_TEMP_DIR}/run"
+	export HERDR_STUB_SOURCE="${TEST_TEMP_DIR}/source/herdr"
+	export PATH="${TEST_TEMP_DIR}/bin:/usr/bin:/bin"
+	mkdir -p "$HOME/.claude" "${TEST_TEMP_DIR}/bin"
+	write_herdr_stub "${TEST_TEMP_DIR}/source" "${TEST_TEMP_DIR}/state"
+	printf 'stable\n' >"${TEST_TEMP_DIR}/state/channel"
+	printf '0.9.1\n' >"${TEST_TEMP_DIR}/state/version"
+	: >"${TEST_TEMP_DIR}/state/integrations"
+	cat >"${TEST_TEMP_DIR}/bin/curl" <<'CURL'
+#!/usr/bin/env bash
+set -euo pipefail
+url="$2"
+while [[ "$1" != -o ]]; do shift; done
+case "$url" in
+https://claude.ai/install.sh)
+	[[ "${FAIL_CLAUDE:-0}" == 0 ]] || exit 22
+	cat >"$2" <<'INSTALL'
+#!/usr/bin/env bash
+set -euo pipefail
+[[ "$1" == stable ]]
+mkdir -p "$HOME/.local/bin"
+printf '#!/usr/bin/env bash\necho 2.1.0\n' >"$HOME/.local/bin/claude"
+chmod +x "$HOME/.local/bin/claude"
+INSTALL
+	;;
+https://herdr.dev/install.sh)
+	cat >"$2" <<'INSTALL'
+#!/bin/sh
+set -eu
+mkdir -p "$HERDR_INSTALL_DIR"
+cp "$HERDR_STUB_SOURCE" "$HERDR_INSTALL_DIR/herdr"
+INSTALL
+	;;
+*) exit 90 ;;
+esac
+CURL
+	chmod +x "${TEST_TEMP_DIR}/bin/curl"
+}
+
+@test "WSL workspace bootstraps Claude before Herdr hooks and records versions without runtime update" {
+	write_workspace_fixture
+	run bash -c '
+		set -- --section none
+		source "$UPDATER"
+		run_ai_workspace
+	'
+	[[ "$status" -eq 0 ]]
+	grep -qx 'integration install claude' "${TEST_TEMP_DIR}/state/commands.log"
+	run grep -Eq '^(update|channel set)' "${TEST_TEMP_DIR}/state/commands.log"
+	[[ "$status" -ne 0 ]]
+	grep -q $'OK\tWSL\tClaude Code CLI\t' "$DOTFILES_UPDATE_RUN_DIR/wsl-results.tsv"
+	grep -q $'OK\tWSL\tHerdr\t' "$DOTFILES_UPDATE_RUN_DIR/wsl-results.tsv"
+	grep -q $'Claude Code CLI\t.*2.1.0' "$DOTFILES_UPDATE_RUN_DIR/tool-snapshot.tsv"
+	grep -q $'Herdr\t.*0.9.1' "$DOTFILES_UPDATE_RUN_DIR/tool-snapshot.tsv"
+}
+
+@test "WSL workspace isolates Claude download failure and continues Herdr and later steps" {
+	write_workspace_fixture
+	# Expansion belongs to the child shell.
+	# shellcheck disable=SC2016
+	run env FAIL_CLAUDE=1 bash -c '
+		set -- --section none
+		source "$UPDATER"
+		run_ai_workspace
+		run_step WSL Later "$LOG_DIR/later.log" true
+	'
+	[[ "$status" -eq 0 ]]
+	grep -q $'FAIL\tWSL\tClaude Code CLI\t' "$DOTFILES_UPDATE_RUN_DIR/wsl-results.tsv"
+	grep -q $'OK\tWSL\tHerdr\t' "$DOTFILES_UPDATE_RUN_DIR/wsl-results.tsv"
+	grep -q $'OK\tWSL\tLater\t' "$DOTFILES_UPDATE_RUN_DIR/wsl-results.tsv"
+	run grep -q '^integration install claude' "${TEST_TEMP_DIR}/state/commands.log"
+	[[ "$status" -ne 0 ]]
+}
+
+@test "WSL workspace isolates Herdr preview failure and continues later steps" {
+	write_workspace_fixture
+	mkdir -p "$HOME/.local/bin"
+	cp "$HERDR_STUB_SOURCE" "$HOME/.local/bin/herdr"
+	printf 'preview\n' >"${TEST_TEMP_DIR}/state/channel"
+	run bash -c '
+		set -- --section none
+		source "$UPDATER"
+		run_ai_workspace
+		run_step WSL Later "$LOG_DIR/later.log" true
+	'
+	[[ "$status" -eq 0 ]]
+	grep -q $'OK\tWSL\tClaude Code CLI\t' "$DOTFILES_UPDATE_RUN_DIR/wsl-results.tsv"
+	grep -q $'FAIL\tWSL\tHerdr\t' "$DOTFILES_UPDATE_RUN_DIR/wsl-results.tsv"
+	grep -q $'OK\tWSL\tLater\t' "$DOTFILES_UPDATE_RUN_DIR/wsl-results.tsv"
+	run grep -Eq '^(update|channel set|integration install)' "${TEST_TEMP_DIR}/state/commands.log"
+	[[ "$status" -ne 0 ]]
+}

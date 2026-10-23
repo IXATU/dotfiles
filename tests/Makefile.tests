@@ -446,6 +446,7 @@ bats-system: bats-zsh
 	@$(call run_bats,$(BATS_DIR)/system/install-uv.bats)
 	@$(call run_bats,$(BATS_DIR)/system/install-serena.bats)
 	@$(call run_bats,$(BATS_DIR)/system/install-herdr.bats)
+	@$(call run_bats,$(BATS_DIR)/system/install-claude-code.bats)
 	@$(call run_bats,$(BATS_DIR)/system/install-taplo.bats)
 	@$(call run_bats,$(BATS_DIR)/system/configure-claude-serena.bats)
 	@$(call run_bats,$(BATS_DIR)/system/configure-claude-gitnexus.bats)
