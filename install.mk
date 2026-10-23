@@ -80,6 +80,17 @@ install-serena:
 install-herdr:
 	@bash $(DOTFILES_DIR)/scripts/install-herdr.sh $(if $(filter 1 true yes on,$(DRY_RUN)),--dry-run,)
 
+.PHONY: install-claude-code install-ai-workspace
+
+# Explicit native stable bootstrap; a working Claude installation is preserved.
+install-claude-code:
+	@bash $(DOTFILES_DIR)/scripts/install-claude-code.sh
+
+# Keep ordering even under make -j; expose newly installed native CLIs to Herdr.
+# These targets remain opt-in and are not dependencies of `make install`.
+install-ai-workspace: install-claude-code
+	@PATH="$$PATH:$$HOME/.local/bin" $(MAKE) install-herdr
+
 # Taplo is an official pinned binary with a repository-owned SHA-256 checksum;
 # no Rust/Cargo toolchain is required.
 install-taplo:

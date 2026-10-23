@@ -5,6 +5,7 @@
 #   - DRY_RUN=1 or --dry-run prints mutating commands and writes nothing.
 #   - Uses Herdr's checksum-verifying direct installer under ~/.local/bin.
 #   - Keeps the direct install on the stable channel and verifies its version.
+#   - --skip-update preserves an existing stable runtime (daily updater).
 #   - Installs only integrations for agent CLIs already present on PATH.
 #   - Uses Herdr's supported integration CLI so unrelated agent settings survive.
 #   - Never installs mise, agent CLIs, or Pi, and never edits shell rc files.
@@ -18,25 +19,28 @@ HERDR_INSTALLER_URL="https://herdr.dev/install.sh"
 HERDR_INSTALL_DIR="${HERDR_INSTALL_DIR:-${HOME}/.local/bin}"
 HERDR_TARGET="${HERDR_INSTALL_DIR}/herdr"
 dry_run=0
+skip_update=0
 
 usage() {
-	printf 'Usage: %s [--dry-run]\n' "$0"
+	printf 'Usage: %s [--dry-run] [--skip-update]\n' "$0"
 }
 
-case "${1:-}" in
---dry-run)
-	dry_run=1
-	;;
--h | --help)
-	usage
-	exit 0
-	;;
-"") ;;
-*)
-	usage >&2
-	exit 2
-	;;
-esac
+for arg in "$@"; do
+	case "$arg" in
+	--dry-run)
+		dry_run=1
+		;;
+	-h | --help)
+		usage
+		exit 0
+		;;
+	--skip-update) skip_update=1 ;;
+	*)
+		usage >&2
+		exit 2
+		;;
+	esac
+done
 
 dry() {
 	[[ "$dry_run" -eq 1 ]] || install_is_truthy "${DRY_RUN:-}"
@@ -109,11 +113,15 @@ converge_runtime() {
 	stable)
 		if [[ "$installed_now" -eq 1 ]]; then
 			install_label OK "Herdr bootstrap selected stable channel"
-		else
+		elif [[ "$skip_update" -eq 0 ]]; then
 			run_or_plan "$herdr_bin" update
 		fi
 		;;
 	preview)
+		if [[ "$skip_update" -eq 1 ]]; then
+			install_label FAIL "Herdr is on preview; run make install-herdr manually when ready to switch to stable."
+			return 1
+		fi
 		# Setting the direct-install channel also installs its latest release.
 		run_or_plan "$herdr_bin" channel set stable
 		;;
