@@ -53,7 +53,11 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="show reconciliation decisions without creating sessions or processes",
     )
-    return parser.parse_args()
+    parser.add_argument("--run-task", metavar="TASK", help=argparse.SUPPRESS)
+    args = parser.parse_args()
+    if args.dry_run and args.run_task:
+        parser.error("--dry-run and --run-task cannot be combined")
+    return args
 
 
 def load_config(path: Path) -> tuple[str, list[Space]]:
@@ -373,20 +377,46 @@ def claim_daily_task(path: Path, payload: dict[str, Any]) -> bool:
     return True
 
 
-def tracked_command(space: Space, claim: Path) -> str:
+def run_claimed_task(spaces: list[Space], task: str, state_dir: Path) -> int:
+    """Run only a previously claimed, configured daily task from a Herdr pane."""
+    matches = [space for space in spaces if space.daily and space.task == task]
+    if len(matches) != 1 or not matches[0].command:
+        raise WorkdayError(f"unknown daily workday task: {task}")
+    space = matches[0]
+    claim = state_dir / device_id() / local_date() / f"{task}.json"
     result = claim.with_suffix(".result")
-    result_template = f"{result}.tmp.XXXXXX"
-    return (
-        f"( cd {shlex.quote(str(space.cwd))} && {space.command}; "
-        "ixatu_status=$?; "
-        'if [ "$ixatu_status" -eq 0 ]; then ixatu_result=success; '
-        "else ixatu_result=failed; fi; "
-        f"ixatu_tmp=$(mktemp {shlex.quote(result_template)}); "
-        "printf 'status=%s\\nexit_code=%s\\n' "
-        '"$ixatu_result" "$ixatu_status" >"$ixatu_tmp"; '
-        f'mv -f -- "$ixatu_tmp" {shlex.quote(str(result))}; '
-        'exit "$ixatu_status" )'
-    )
+    if not claim.is_file():
+        raise WorkdayError(f"task {task} has not been scheduled for today")
+    if result.exists():
+        raise WorkdayError(
+            f"task {task} already finished today; run the command manually"
+        )
+    if not space.cwd.is_dir():
+        raise WorkdayError(f"task {task} directory is missing: {space.cwd}")
+
+    print(f"IXATU Workday | {space.name} / {space.tab}")
+    print(f"$ {space.command}", flush=True)
+    try:
+        completed = subprocess.run(
+            space.command,
+            cwd=space.cwd,
+            shell=True,
+            executable="/bin/bash",
+            check=False,
+        )
+        returncode = completed.returncode
+    except OSError as exc:
+        print(f"ERROR: cannot run {task}: {exc}", file=sys.stderr)
+        returncode = 1
+    state = "success" if returncode == 0 else "failed"
+    temporary = result.with_name(f".{result.name}.{os.getpid()}.tmp")
+    with temporary.open("w", encoding="utf-8") as stream:
+        stream.write(f"status={state}\nexit_code={returncode}\n")
+        stream.flush()
+        os.fsync(stream.fileno())
+    os.replace(temporary, result)
+    print(f"Workday task {task}: {state} (exit {returncode})")
+    return returncode
 
 
 def device_id() -> str:
@@ -435,7 +465,7 @@ def schedule_daily(
         print(f"SKIP   {space.tab}: concurrent invocation already claimed it")
         return
     try:
-        herdr.pane_run(pane_id, tracked_command(space, claim))
+        herdr.pane_run(pane_id, f"ixatu-day --run-task {shlex.quote(space.task)}")
     except WorkdayError:
         payload["status"] = "failed"
         payload["failure"] = "herdr-pane-run"
@@ -543,6 +573,11 @@ def main() -> int:
         )
     )
     session, spaces = load_config(config_path)
+    if args.run_task:
+        state_dir = Path(
+            os.environ.get("IXATU_STATE_DIR", str(Path.home() / ".local/state/ixatu"))
+        ).resolve(strict=False)
+        return run_claimed_task(spaces, args.run_task, state_dir)
     herdr = Herdr(os.environ.get("HERDR_BIN", "herdr"), session)
 
     if args.dry_run:

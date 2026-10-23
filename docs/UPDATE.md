@@ -185,7 +185,9 @@ procesos. Desktop Commander se detecta también fuera de Herdr mediante `/proc`;
 si ya está activo, el tab muestra un aviso en vez de iniciar otra instancia.
 
 `dotfiles-update` y `uv run devx vault status` se admiten en sus tabs una sola
-vez por fecha local y dispositivo. El claim y el resultado se guardan bajo
+vez por fecha local y dispositivo. Herdr envía al tab una orden corta de
+`ixatu-day` en lugar de un comando de seguimiento largo, para que la salida
+resulte legible con Powerlevel10k. El claim y el resultado se guardan bajo
 `~/.local/state/ixatu/` con escrituras atómicas, por lo que dos invocaciones
 concurrentes no duplican las tareas. Un intento fallido queda registrado y no se
 repite automáticamente ese día. Para relanzarlo manualmente, ejecutar el comando

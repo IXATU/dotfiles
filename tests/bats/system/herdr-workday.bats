@@ -266,7 +266,7 @@ PYCODE
 	run_ixatu_day
 	[[ "$status" -eq 0 ]]
 	[[ "$(count_log_matching 'dotfiles-update')" -eq 1 ]]
-	[[ "$(count_log_matching 'uv run devx vault status')" -eq 1 ]]
+	[[ "$(count_log_matching '--run-task devx-vault-status')" -eq 1 ]]
 	[[ -f "$IXATU_STATE_DIR/test-device/2026-10-23/dotfiles-update.json" ]]
 	[[ -f "$IXATU_STATE_DIR/test-device/2026-10-23/devx-vault-status.json" ]]
 }
@@ -279,7 +279,7 @@ PYCODE
 	run_ixatu_day
 	[[ "$status" -eq 0 ]]
 	[[ "$(count_log_matching 'dotfiles-update')" -eq 2 ]]
-	[[ "$(count_log_matching 'uv run devx vault status')" -eq 2 ]]
+	[[ "$(count_log_matching '--run-task devx-vault-status')" -eq 2 ]]
 }
 
 @test "pane run accepts real Herdr 0.9.5 empty stdout for DC and daily tasks" {
@@ -290,6 +290,51 @@ PYCODE
     [[ "$output" == *"RUN    01 · Dotfiles / Updates"* ]]
     [[ "$output" == *"RUN    02 · DevX / Vault Status"* ]]
     [[ "$(count_log_matching 'pane run')" -eq 3 ]]
+    [[ "$(count_log_matching '--run-task dotfiles-update')" -eq 1 ]]
+    [[ "$(count_log_matching '--run-task devx-vault-status')" -eq 1 ]]
+}
+
+@test "daily task runner prints a short command and writes real success status" {
+    create_all_directories
+    cat >"${TEST_TEMP_DIR}/bin/dotfiles-update" <<'EOF'
+#!/usr/bin/env bash
+printf 'SIMULATED UPDATE PASSED\n'
+EOF
+    chmod +x "${TEST_TEMP_DIR}/bin/dotfiles-update"
+    run_ixatu_day
+    [[ "$status" -eq 0 ]]
+    run env IXATU_DOTFILES_DIR="$DOTFILES_DIR" bash "$LAUNCHER" --run-task dotfiles-update
+    [[ "$status" -eq 0 ]]
+    [[ "$output" == *"$ dotfiles-update"*"SIMULATED UPDATE PASSED"* ]]
+    grep -q '^status=success$' "$IXATU_STATE_DIR/test-device/2026-10-23/dotfiles-update.result"
+    run env IXATU_DOTFILES_DIR="$DOTFILES_DIR" bash "$LAUNCHER" --run-task dotfiles-update
+    [[ "$status" -ne 0 ]]
+    [[ "$output" == *"already finished"* ]]
+}
+
+@test "daily task runner records real failures without retry" {
+    create_all_directories
+    cat >"${TEST_TEMP_DIR}/bin/uv" <<'EOF'
+#!/usr/bin/env bash
+printf 'SIMULATED VAULT FAILED\n'
+exit 23
+EOF
+    chmod +x "${TEST_TEMP_DIR}/bin/uv"
+    run_ixatu_day
+    [[ "$status" -eq 0 ]]
+    run env IXATU_DOTFILES_DIR="$DOTFILES_DIR" bash "$LAUNCHER" --run-task devx-vault-status
+    [[ "$status" -eq 23 ]]
+    [[ "$output" == *"$ uv run devx vault status"*"SIMULATED VAULT FAILED"* ]]
+    grep -q '^status=failed$' "$IXATU_STATE_DIR/test-device/2026-10-23/devx-vault-status.result"
+    grep -q '^exit_code=23$' "$IXATU_STATE_DIR/test-device/2026-10-23/devx-vault-status.result"
+}
+
+@test "unscheduled task runner refuses execution" {
+    create_all_directories
+    run env IXATU_DOTFILES_DIR="$DOTFILES_DIR" bash "$LAUNCHER" --run-task devx-vault-status
+    [[ "$status" -ne 0 ]]
+    [[ "$output" == *"not been scheduled"* ]]
+    [[ ! -e "$IXATU_STATE_DIR" ]]
 }
 
 @test "active Desktop Commander is not duplicated" {
@@ -305,13 +350,13 @@ PYCODE
 
 @test "pane admission failure is recorded and not retried indefinitely" {
 	create_all_directories
-	export HERDR_STUB_FAIL_RUN="uv run devx vault status"
+	export HERDR_STUB_FAIL_RUN="--run-task devx-vault-status"
 	run_ixatu_day
 	[[ "$status" -eq 0 ]]
 	[[ "$output" == *"failed to schedule"*"Vault Status"* ]]
 	run_ixatu_day
 	[[ "$status" -eq 0 ]]
-	[[ "$(count_log_matching 'uv run devx vault status')" -eq 1 ]]
+	[[ "$(count_log_matching '--run-task devx-vault-status')" -eq 1 ]]
 	grep -q '"status": "failed"' "$IXATU_STATE_DIR/test-device/2026-10-23/devx-vault-status.json"
 }
 
@@ -330,7 +375,7 @@ PYCODE
 	[[ "$status" -eq 0 ]]
 	[[ "$(count_log_matching 'workspace create')" -eq 6 ]]
 	[[ "$(count_log_matching 'dotfiles-update')" -eq 1 ]]
-	[[ "$(count_log_matching 'uv run devx vault status')" -eq 1 ]]
+	[[ "$(count_log_matching '--run-task devx-vault-status')" -eq 1 ]]
 }
 
 @test "dry-run reports decisions without starting sessions or writing state" {
