@@ -1,0 +1,39 @@
+session = "ixatu"
+
+[[spaces]]
+name = "00 · Tools"
+tab = "DC Remote"
+cwd = "~"
+command = "npx @wonderwhy-er/desktop-commander@latest remote"
+kind = "desktop-commander"
+
+[[spaces]]
+name = "01 · Dotfiles"
+tab = "Updates"
+cwd = "~/dotfiles"
+command = "dotfiles-update"
+daily = true
+task = "dotfiles-update"
+
+[[spaces]]
+name = "02 · DevX"
+tab = "Vault Status"
+cwd = "~/projects/devx"
+command = "uv run devx vault status"
+daily = true
+task = "devx-vault-status"
+
+[[spaces]]
+name = "03 · Operations"
+tab = "Shell"
+cwd = "~/projects/ixatu-operations"
+
+[[spaces]]
+name = "04 · Billing"
+tab = "Shell"
+cwd = "~/projects/energy-billing-automation"
+
+[[spaces]]
+name = "05 · Market Data"
+tab = "Shell"
+cwd = "~/projects/energy-market-data"

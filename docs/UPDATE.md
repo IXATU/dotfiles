@@ -22,6 +22,7 @@ make update
 | Comando | Uso |
 |---|---|
 | `dotfiles-update` | Rutina diaria desde cualquier directorio (delega en `make update`) |
+| `ixatu-day` | Prepara o recupera la sesión diaria declarativa `ixatu` de Herdr |
 | `make update` | Mismo flujo, invocado desde `~/dotfiles` |
 | `make update-windows` | Ejecuta WinGet y `wsl --update` desde PowerShell/Windows |
 | `make update-wsl` | Ejecuta APT, Node/tooling IA, OpenCode, shell, uv, MCPs e imágenes Docker |
@@ -153,6 +154,44 @@ Firstmate, Pi, mise ni otros agentes mediante estos nuevos targets.
 
 No se inicia autenticación interactiva ni se guardan credenciales en el repo.
 El login sigue siendo una acción humana en cada máquina cuando sea necesario.
+
+## Jornada IXATU con Herdr
+
+`ixatu-day` prepara o reutiliza la sesión persistente y aislada `ixatu`. No
+modifica la sesión experimental `ixatu-lab` ni cambia el comportamiento del
+comando normal `herdr`. La topología se declara en
+`config/herdr/workday.toml`: añadir o retirar un proyecto se hace en ese archivo,
+sin cambiar el launcher. Un directorio ausente se omite con un aviso y nunca se
+clona automáticamente.
+
+Antes de publicar el comando por primera vez en una máquina, revisar y aplicar
+solo su plantilla Chezmoi:
+
+```bash
+dotfiles-apply --check ~/.local/bin/ixatu-day
+dotfiles-apply --apply ~/.local/bin/ixatu-day
+```
+
+`dotfiles-update` no ejecuta este apply. Después de materializar el symlink:
+
+```bash
+ixatu-day --dry-run  # diagnóstico: no crea sesión, tabs ni procesos
+ixatu-day            # reconcilia y adjunta la sesión ixatu
+```
+
+La reconciliación crea solo workspaces y tabs ausentes, conserva la disposición
+existente y evita ejecutar comandos en panes ocupados por agentes u otros
+procesos. Desktop Commander se detecta también fuera de Herdr mediante `/proc`;
+si ya está activo, el tab muestra un aviso en vez de iniciar otra instancia.
+
+`dotfiles-update` y `uv run devx vault status` se admiten en sus tabs una sola
+vez por fecha local y dispositivo. Herdr envía al tab una orden corta de
+`ixatu-day` en lugar de un comando de seguimiento largo, para que la salida
+resulte legible con Powerlevel10k. El claim y el resultado se guardan bajo
+`~/.local/state/ixatu/` con escrituras atómicas, por lo que dos invocaciones
+concurrentes no duplican las tareas. Un intento fallido queda registrado y no se
+repite automáticamente ese día. Para relanzarlo manualmente, ejecutar el comando
+directamente en su tab; `ixatu-day` no ejecuta `devx vault publish`.
 
 ## Node y GitNexus
 
