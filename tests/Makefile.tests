@@ -516,6 +516,8 @@ bats-zsh:
 	@$(call run_bats,$(BATS_DIR)/zsh/fzf.bats)
 	@echo "$(BLUE)==>$(NC) Running Powerlevel10k cache key tests..."
 	@$(call run_bats,$(BATS_DIR)/zsh/p10k_cache_keys.bats)
+	@echo "$(BLUE)==>$(NC) Running Powerlevel10k Classic and Docker alias tests..."
+	@$(call run_bats,$(BATS_DIR)/zsh/p10k_classic_aliases.bats)
 	@echo "$(BLUE)==>$(NC) Running zsh local startup / secrets isolation tests..."
 	@$(call run_bats,$(BATS_DIR)/zsh/local_startup.bats)
 
