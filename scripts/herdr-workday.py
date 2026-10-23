@@ -160,6 +160,11 @@ class Herdr:
             raise WorkdayError(f"Herdr response has no result for {' '.join(args)}")
         return result
 
+    def pane_run(self, pane_id: str, command: str) -> None:
+        # Herdr 0.9.5 reports successful command admission as exit 0 with
+        # empty stdout, unlike the JSON-returning workspace/pane reads.
+        self._run(["pane", "run", pane_id, command])
+
     def session_running(self) -> bool:
         payload = self.json(["session", "list", "--json"], session=False)
         sessions = payload.get("sessions", [])
@@ -430,7 +435,7 @@ def schedule_daily(
         print(f"SKIP   {space.tab}: concurrent invocation already claimed it")
         return
     try:
-        herdr.result(["pane", "run", pane_id, tracked_command(space, claim)])
+        herdr.pane_run(pane_id, tracked_command(space, claim))
     except WorkdayError:
         payload["status"] = "failed"
         payload["failure"] = "herdr-pane-run"
@@ -460,7 +465,7 @@ def handle_desktop_commander(
             )
             return
         message = "Desktop Commander is active externally; no duplicate started."
-        herdr.result(["pane", "run", pane_id, f"printf '%s\\n' {shlex.quote(message)}"])
+        herdr.pane_run(pane_id, f"printf '%s\\n' {shlex.quote(message)}")
         print("REUSE  Desktop Commander is active externally")
         return
 
@@ -477,7 +482,7 @@ def handle_desktop_commander(
     if pane_id is None:
         print("WARN   occupied pane; not launching Desktop Commander")
         return
-    herdr.result(["pane", "run", pane_id, command])
+    herdr.pane_run(pane_id, command)
     state_dir.mkdir(parents=True, exist_ok=True)
     atomic_write_json(
         launch_marker,

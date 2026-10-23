@@ -152,7 +152,8 @@ elif args[:2] == ["pane", "run"]:
     if failure and failure in command:
         print(json.dumps({"error": {"code": "pane_busy", "message": "simulated failure"}}), file=sys.stderr)
         sys.exit(1)
-    print(json.dumps({"result": {"type": "pane_input", "accepted": True}}))
+    # Actual Herdr 0.9.5 pane run: exit 0 with no JSON/stdio output.
+    pass
 elif not args:
     pass
 else:
@@ -279,6 +280,16 @@ PYCODE
 	[[ "$status" -eq 0 ]]
 	[[ "$(count_log_matching 'dotfiles-update')" -eq 2 ]]
 	[[ "$(count_log_matching 'uv run devx vault status')" -eq 2 ]]
+}
+
+@test "pane run accepts real Herdr 0.9.5 empty stdout for DC and daily tasks" {
+    create_all_directories
+    run_ixatu_day
+    [[ "$status" -eq 0 ]]
+    [[ "$output" == *"RUN    00 · Tools / DC Remote"* ]]
+    [[ "$output" == *"RUN    01 · Dotfiles / Updates"* ]]
+    [[ "$output" == *"RUN    02 · DevX / Vault Status"* ]]
+    [[ "$(count_log_matching 'pane run')" -eq 3 ]]
 }
 
 @test "active Desktop Commander is not duplicated" {
