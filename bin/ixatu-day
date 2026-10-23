@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+DOTFILES_DIR="${IXATU_DOTFILES_DIR:-$HOME/dotfiles}"
+SCRIPT="${DOTFILES_DIR}/scripts/herdr-workday.py"
+
+if [[ ! -f "$SCRIPT" ]]; then
+	echo "ERROR: IXATU workday script not found: $SCRIPT" >&2
+	exit 1
+fi
+
+exec python3 "$SCRIPT" "$@"
