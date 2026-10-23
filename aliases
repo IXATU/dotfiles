@@ -108,8 +108,8 @@ alias cura="cursor-agent --help" # Ayuda de Cursor CLI
 # ------------------------------------
 alias dps="docker ps"                                # Listar contenedores
 alias di="docker images"                             # Listar imágenes
-alias drm="docker rm $(docker ps -a -q)"             # Eliminar contenedores parados
-alias dri="docker rmi $(docker images -q)"           # Eliminar imágenes sin usar
+alias drm='docker container prune'                    # Eliminar contenedores detenidos con confirmacion
+alias dri='docker image prune'                        # Eliminar imagenes sin usar con confirmacion
 alias dcompose="docker-compose"                      # Atajo para docker-compose
 
 # ------------------------------------
