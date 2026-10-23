@@ -132,7 +132,11 @@ elif args[:2] == ["pane", "list"]:
         panes.append(pane)
     print(json.dumps({"result": {"type": "pane_list", "panes": panes}}))
 elif args[:2] == ["pane", "process-info"]:
-    pane_id = args[2]
+    # Herdr 0.9.5 requires --pane ID; a positional pane ID is rejected.
+    if len(args) != 4 or args[2] != "--pane":
+        print("unknown option: " + (args[2] if len(args) > 2 else "<missing>"), file=sys.stderr)
+        sys.exit(2)
+    pane_id = args[3]
     occupied = False
     for workspace in state["workspaces"]:
         for tab in workspace["tabs"]:
@@ -235,6 +239,23 @@ PY
 	[[ "$status" -eq 0 ]]
 	[[ "$(count_log_matching 'workspace create')" -eq 6 ]]
 	[[ "$(count_log_matching 'tab rename')" -eq 6 ]]
+}
+
+@test "workday uses Herdr 0.9.5 pane process-info --pane selector" {
+    create_all_directories
+    run_ixatu_day
+    [[ "$status" -eq 0 ]]
+    run python3 - "$HERDR_STUB_LOG" <<'PYCODE'
+import json
+import sys
+from pathlib import Path
+calls = [json.loads(line) for line in Path(sys.argv[1]).read_text().splitlines()]
+infos = [args for args in calls if "process-info" in args]
+assert infos, "expected real pane process checks"
+assert all(args[:3] == ["--session", "ixatu", "pane"] for args in infos)
+assert all(args[3:5] == ["process-info", "--pane"] and len(args) == 6 for args in infos)
+PYCODE
+    [[ "$status" -eq 0 ]]
 }
 
 @test "daily commands are admitted once per local date and device" {

@@ -278,7 +278,7 @@ def reconcile_space(herdr: Herdr, space: Space) -> Target:
 
 
 def pane_process_info(herdr: Herdr, pane_id: str) -> dict[str, Any]:
-    result = herdr.result(["pane", "process-info", pane_id])
+    result = herdr.result(["pane", "process-info", "--pane", pane_id])
     info = result.get("process_info")
     return info if isinstance(info, dict) else {}
 
