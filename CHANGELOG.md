@@ -4,17 +4,22 @@ Este archivo contiene las últimas 5 releases. Para el historial completo, consu
 
 ## [v0.3.0] - 2026-10-23
 
+## Changes
 ### Added
-- Cursor Agent CLI and Herdr runtime integrations managed reproducibly from dotfiles (PRs #20, #18).
-- Powerlevel10k Classic / Lightest theme, with original prompt segments, icons and full terminal paths retained (PR #21).
-- Regression tests integrated into `make bats-zsh` for prompt style and Docker aliases (PR #21).
+- 2026-10-15 14:17 [69919f1](https://github.com/IXATU/dotfiles/commit/69919f1) feat(tooling): manage Cursor Agent CLI via dotfiles update (#20) (Jesús)
+- 2026-10-01 14:03 [331c244](https://github.com/IXATU/dotfiles/commit/331c244) feat: manage Herdr runtime reproducibly (#18) (Jesús)
 
 ### Fixed
-- Serena/Cursor configuration reconciliation and Azure MCP ICU runtime dependency (PRs #14, #16).
-- Docker cleanup aliases no longer run queries while starting Zsh or attempt to delete all images (PR #21).
-- Unambiguous Git branch and path rendering in Powerlevel10k.
+- 2026-10-23 10:44 [4527c90](https://github.com/IXATU/dotfiles/commit/4527c90) fix(zsh): Classic Lightest P10k and lazy Docker aliases (#21) (Jesús)
+  * fix(zsh): classic lightest prompt and safe lazy Docker aliases
+  * test(zsh): include Classic prompt regression checks in standard gate
+- 2026-09-25 11:49 [b66d2e0](https://github.com/IXATU/dotfiles/commit/b66d2e0) fix(azure-mcp): restore ICU runtime dependency (#16) (Jesús)
+- 2026-09-25 10:39 [7c8a9fa](https://github.com/IXATU/dotfiles/commit/7c8a9fa) fix(serena): converge Cursor runtime configuration (#14) (Jesús)
+- 2026-09-22 10:16 [a512e40](https://github.com/IXATU/dotfiles/commit/a512e40) fix(zsh): keep prompt paths and branches unambiguous (Jesús)
 
-See `releases/v0.3.0.md` for details and verification.
+### Documentation
+- 2026-10-23 10:47 [cf9a30a](https://github.com/IXATU/dotfiles/commit/cf9a30a) docs(release): prepare v0.3.0 workstation baseline (#22) (Jesús)
+
 
 ## [v0.2.0] - 2026-09-22
 
@@ -624,7 +629,3 @@ See `releases/v0.3.0.md` for details and verification.
 - 2020-12-23 19:14 `f555150` build(Tmux): Added beta tmux (jesuserro)
 - 2020-12-21 12:18 `f128ef8` build(Added theme powerlevel10k): (jesuserro)
 - 2020-12-20 09:11 `f9bbe1a` Initial commit (Jesús Erro)
-
-## [branch_feature_test-branch-changelog] - Unknown date
-
-## Changes
