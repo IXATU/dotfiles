@@ -2,6 +2,17 @@
 
 Este archivo contiene las últimas 5 releases. Para el historial completo, consulta los archivos en el directorio `releases/`.
 
+## [v0.4.0] - 2026-10-23
+
+## Changes
+### Added
+- 2026-10-23 [ca81eb4](https://github.com/IXATU/dotfiles/commit/ca81eb4) feat(tooling): bootstrap Claude and Herdr on WSL updates ([#23](https://github.com/IXATU/dotfiles/pull/23)).
+  Native Claude stable installation, automatic Herdr hook convergence for installed agent CLIs, session-safe routine updates, and `make install-ai-workspace`.
+
+### Documentation
+- v0.4.0 release notes in [`releases/v0.4.0.md`](releases/v0.4.0.md).
+
+
 ## [v0.3.0] - 2026-10-23
 
 ## Changes
