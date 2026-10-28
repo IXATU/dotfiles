@@ -57,6 +57,10 @@ When the task is **installing**, **updating**, or **troubleshooting** this dotfi
 
 Human SSOT: [docs/OPERATIONS.md](../docs/OPERATIONS.md). **Do not** recommend `rcup`/RCM (legacy).
 
+### Browser automation / Playwright (transversal)
+
+For agents directed to run Playwright in WSL, prefer the shared `playwright-docker` launcher from `~/dotfiles` (published as `~/.local/bin/playwright-docker`). Run the repository's existing browser test command inside this wrapper with the Playwright image/package versions aligned; use synthetic data by default. See `docs/OPERATIONS.md` (Playwright Docker section) and the active project's browser runbook before running. Do not install Chromium or its local Ubuntu dependencies as a workaround, and do not create a second wrapper. If Docker is unavailable, record the blocker and use the project's CI gate. This guidance does **not** authorize authenticated actions or writing live data; obtain separate approval for mutating probes.
+
 ## 4. Project-specific delegation
 
 - **Always inspect the active repository** when work touches implementation, tests, issue workflow, or project-local CLIs.
