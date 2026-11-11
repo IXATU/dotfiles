@@ -2,16 +2,14 @@
 
 Este archivo contiene las últimas 5 releases. Para el historial completo, consulta los archivos en el directorio `releases/`.
 
-## [v0.5.0] - 2026-10-23
+## [v0.6.0] - 2026-11-11
 
 ## Changes
 ### Added
-- 2026-10-23 14:23 [6cc75ec](https://github.com/IXATU/dotfiles/commit/6cc75ec) feat(herdr): add declarative IXATU workday launcher (#25) (Jesús)
-  Add six declarative Herdr workspaces, idempotent ixatu-day startup and safe per-day Dotfiles/DevX tasks. Validate live WSL Herdr 0.9.5 protocol and provide short readable commands, tests and Chezmoi launcher. Acceptance PASS on PC-IXATU-09.
+- 2026-11-11 11:38 [57420d9](https://github.com/IXATU/dotfiles/commit/57420d9) feat(update): maintain Azure CLI via official apt source (#28) (#29) (Jesús)
 
 ### Documentation
-- 2026-10-23 14:28 [3e5019c](https://github.com/IXATU/dotfiles/commit/3e5019c) docs(release): prepare v0.5.0 Herdr Workday (#26) (Jesús)
-  Record Herdr Workday v0.5.0 highlights, live Acceptance and replication procedure.
+- 2026-10-28 09:54 [e74ce73](https://github.com/IXATU/dotfiles/commit/e74ce73) docs(agents): prefer shared playwright-docker for browser tests (#27) (Jesús)
 
 
 ## [v0.3.0] - 2026-10-23
