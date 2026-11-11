@@ -29,7 +29,7 @@ make_install_stubs() {
 #!/usr/bin/env bash
 echo "curl $*" >>"${AZURE_TEST_LOG}"
 case "$*" in
-	*"dists/resolute/Release"*)
+	*"dists/futurecodename/Release"*)
 		exit 22
 		;;
 	*"dists/noble/Release"*)
@@ -103,6 +103,22 @@ done
 exit 0
 EOF
 	chmod +x "${stub_dir}/curl" "${stub_dir}/sudo" "${stub_dir}/apt-get" "${stub_dir}/dpkg" "${stub_dir}/gpg"
+	# Test-only isolation: a workstation with /usr/bin/az must still exercise
+	# the missing-tool installer path. Only the temporary stub can satisfy az.
+	cat >"${stub_dir}/isolate-az.bash" <<'AZENV'
+command() {
+	if [[ "${1:-}" == "-v" && "${2:-}" == "az" ]]; then
+		local found
+		found="$(builtin command -v az 2>/dev/null)" || return 1
+		case "${found}" in
+		"${AZURE_TEST_STUB_DIR}"/*) printf '%s\n' "${found}"; return 0 ;;
+		*) return 1 ;;
+		esac
+	fi
+	builtin command "$@"
+}
+AZENV
+	export BASH_ENV="${stub_dir}/isolate-az.bash"
 }
 
 @test "install-azure-cli.sh exists and passes bash -n" {
@@ -136,7 +152,7 @@ EOF
 	local source_dir="${TEST_TEMP_DIR}/sources"
 	local keyring="${TEST_TEMP_DIR}/keyrings/microsoft.gpg"
 	local log="${TEST_TEMP_DIR}/commands.log"
-	write_os_release "resolute"
+	write_os_release "futurecodename"
 	make_install_stubs "${stub_dir}"
 	mkdir -p "${source_dir}" "$(dirname "${keyring}")"
 	: >"${log}"
@@ -152,9 +168,9 @@ EOF
 
 	[[ "${status}" -ne 0 ]]
 	[[ "${output}" == *"Microsoft no publica Azure CLI"* ]]
-	[[ "${output}" == *"resolute"* ]]
+	[[ "${output}" == *"futurecodename"* ]]
 	[[ ! -e "${source_dir}/azure-cli.list" ]]
-	[[ "$(cat "${log}")" == *"dists/resolute/Release"* ]]
+	[[ "$(cat "${log}")" == *"dists/futurecodename/Release"* ]]
 	[[ "$(cat "${log}")" != *"apt-get update"* ]]
 	[[ "$(cat "${log}")" != *"apt-get install -y azure-cli"* ]]
 }
@@ -164,7 +180,7 @@ EOF
 	local source_dir="${TEST_TEMP_DIR}/sources"
 	local keyring="${TEST_TEMP_DIR}/keyrings/microsoft.gpg"
 	local log="${TEST_TEMP_DIR}/commands.log"
-	write_os_release "noble"
+	write_os_release "resolute"
 	make_install_stubs "${stub_dir}"
 	mkdir -p "${source_dir}" "$(dirname "${keyring}")"
 	: >"${log}"
@@ -179,11 +195,11 @@ EOF
 		bash "${INSTALL_AZURE}"
 
 	[[ "${status}" -eq 0 ]]
-	[[ "${output}" == *"Microsoft publica Azure CLI para 'noble'"* ]]
+	[[ "${output}" == *"Microsoft publica Azure CLI para 'resolute'"* ]]
 	[[ "${output}" == *"Azure CLI instalado"* ]]
 	[[ -f "${source_dir}/azure-cli.list" ]]
-	[[ "$(cat "${source_dir}/azure-cli.list")" == *" noble main"* ]]
-	[[ "$(cat "${log}")" == *"dists/noble/Release"* ]]
+	[[ "$(cat "${source_dir}/azure-cli.list")" == *" resolute main"* ]]
+	[[ "$(cat "${log}")" == *"dists/resolute/Release"* ]]
 	[[ "$(cat "${log}")" == *"apt-get install -y azure-cli"* ]]
 }
 
@@ -225,10 +241,10 @@ EOF
 	local source_dir="${TEST_TEMP_DIR}/sources"
 	local keyring="${TEST_TEMP_DIR}/keyrings/microsoft.gpg"
 	local log="${TEST_TEMP_DIR}/commands.log"
-	write_os_release "resolute"
+	write_os_release "futurecodename"
 	make_install_stubs "${stub_dir}"
 	mkdir -p "${source_dir}" "$(dirname "${keyring}")"
-	printf 'deb https://packages.microsoft.com/repos/azure-cli/ resolute main\n' >"${source_dir}/azure-cli.list"
+	printf 'deb https://packages.microsoft.com/repos/azure-cli/ futurecodename main\n' >"${source_dir}/azure-cli.list"
 	printf 'deb https://packages.microsoft.com/repos/edge/ stable main\n' >"${source_dir}/microsoft-edge.list"
 	: >"${log}"
 
@@ -355,7 +371,9 @@ EOF
 @test "deps-check default does not include optional azure-cli" {
 	run python3 "${HELPER_SCRIPT}" list --inventory "${DOTFILES_DIR}/system/packages/tooling.yaml"
 	[[ "${status}" -eq 0 ]]
-	[[ "${output}" != *"azure-cli"* ]]
+	# Match package-column boundaries, not the worktree path
+	# (which may itself be named azure-cli-update).
+	[[ "${output}" != *$'\tazure-cli\t'* ]]
 	[[ "${output}" != *$'\taz\t'* ]]
 }
 

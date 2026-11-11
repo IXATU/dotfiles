@@ -25,7 +25,7 @@ make update
 | `ixatu-day` | Prepara o recupera la sesión diaria declarativa `ixatu` de Herdr |
 | `make update` | Mismo flujo, invocado desde `~/dotfiles` |
 | `make update-windows` | Ejecuta WinGet y `wsl --update` desde PowerShell/Windows |
-| `make update-wsl` | Ejecuta APT, Node/tooling IA, OpenCode, shell, uv, MCPs e imágenes Docker |
+| `make update-wsl` | Ejecuta APT (incluido Azure CLI), Node/tooling IA, OpenCode, shell, uv, MCPs e imágenes Docker |
 | `make update-projects` | Actualiza proyectos personales como `~/proyectos/jesuserro` y RenderCV |
 | `make update-check` | Diagnóstico no mutante de requisitos de actualización y MCPs |
 | `make github-identity-check` / `github-identity-check` | Diagnóstico read-only de remotos, cuenta `gh` efectiva y tokens de entorno |
@@ -47,6 +47,20 @@ make update
 | Proyectos | `make update-projects` | Mantener repos personales fuera del flujo diario |
 
 `make update` no sustituye `chezmoi apply` y no regenera secretos.
+
+En la fase APT, una Azure CLI ya instalada se actualiza mediante el `apt-get
+upgrade` general. Si `az` no existe, el flujo llama al instalador idempotente
+`scripts/install-azure-cli.sh`; no inicia sesión ni toca `~/.azure`. El resumen
+registra la versión anterior y posterior, y conserva como incidente cualquier
+fallo de instalación sin detener el resto del mantenimiento.
+
+Para consultar la sesión y suscripción seleccionada sin modificar Azure:
+`bash scripts/check-azure-tools.sh`. Para autenticarte manualmente usa
+`az login --tenant cafb7744-aedc-4c62-8a02-0474058bbfaa` y verifica la
+suscripción con `az account show --query '{id:id,name:name,tenantId:tenantId}' --output table`.
+Si necesitas cambiarla, usa `az account set --subscription '<ID>'`
+**manualmente** y repite el diagnóstico. No sincronizar `~/.azure`,
+tokens ni caches entre equipos, y no registrar credenciales en los logs.
 
 ## Windows + WSL
 
