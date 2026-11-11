@@ -1,12 +1,14 @@
 #!/usr/bin/env bash
 # Read-only Azure workstation readiness check for WSL2/Linux.
 # This script never logs in, selects subscriptions, creates resources, or deletes
-# resources. It only checks local tooling and reports actionable next steps.
+# resources. Azure account output is restricted to subscription ID and name for
+# the expected tenant; users, credentials, and secrets are never printed.
 
 set -u
 
 critical_missing=0
 warnings=0
+EXPECTED_AZURE_TENANT_ID="cafb7744-aedc-4c62-8a02-0474058bbfaa"
 
 section() {
 	printf '\n==> %s\n' "$1"
@@ -129,17 +131,25 @@ check_any_recommended_command "lsb-release" lsb_release lsb-release --version
 
 section "Azure CLI"
 if command -v az >/dev/null 2>&1; then
-	if az account show --output table >/dev/null 2>&1; then
-		line "OK" "Sesión Azure activa:"
-		az account show --output table 2>/dev/null
+	active_tenant="$(az account show --query tenantId --output tsv 2>/dev/null || true)"
+	if [[ -z "${active_tenant}" ]]; then
+		warn "No hay sesión Azure activa o no se pudo verificar el tenant actual."
+		printf '       Para iniciar sesión manualmente usa Azure CLI login.\n'
+	elif [[ "${active_tenant}" != "${EXPECTED_AZURE_TENANT_ID}" ]]; then
+		warn "La sesión Azure activa no pertenece al tenant esperado."
 	else
-		warn "No hay sesión Azure activa o no se pudo leer la cuenta actual."
-		printf '       Para iniciar sesión manualmente: az %s\n' "login"
+		line "OK" "Tenant Azure esperado verificado."
+		selected_id="$(az account show --query id --output tsv 2>/dev/null || true)"
+		selected_name="$(az account show --query name --output tsv 2>/dev/null || true)"
+		if [[ -n "${selected_id}" && -n "${selected_name}" ]]; then
+			line "OK" "Suscripción seleccionada: ${selected_name} (${selected_id})"
+		else
+			warn "No fue posible identificar la suscripción seleccionada."
+		fi
 	fi
 
-	if az extension show --name containerapp --output table >/dev/null 2>&1; then
-		line "OK" "Extensión Azure CLI 'containerapp' disponible:"
-		az extension show --name containerapp --output table 2>/dev/null
+	if az extension show --name containerapp --query name --output tsv >/dev/null 2>&1; then
+		line "OK" "Extensión Azure CLI 'containerapp' disponible."
 	else
 		warn "Extensión Azure CLI 'containerapp' no disponible."
 		printf '       Recomendación: az extension add --name containerapp --upgrade\n'

@@ -6,6 +6,11 @@ setup() {
 	CHECK_SCRIPT="${DOTFILES_DIR}/scripts/check-azure-tools.sh"
 	AZURE_ALIASES="${DOTFILES_DIR}/zsh/55-aliases-azure.zsh"
 	AZURE_DOC="${DOTFILES_DIR}/docs/ops/azure-tooling.md"
+	setup_temp_dir
+}
+
+teardown() {
+	teardown_temp_dir
 }
 
 @test "check-azure-tools.sh exists" {
@@ -59,4 +64,68 @@ setup() {
 @test "zshrc loads azure aliases before local overrides" {
 	run grep -n '55-aliases-azure.zsh' "${DOTFILES_DIR}/zshrc"
 	[[ "${status}" -eq 0 ]]
+}
+
+@test "Azure account check verifies expected tenant and selected subscription" {
+	local stub_dir="${TEST_TEMP_DIR}/bin"
+	local az_log="${TEST_TEMP_DIR}/az.log"
+	mkdir -p "$stub_dir"
+	for cmd in git make jq curl; do
+		ln -s "$(command -v "$cmd")" "$stub_dir/$cmd"
+	done
+	cat >"${stub_dir}/docker" <<'EOF'
+#!/usr/bin/env bash
+exit 0
+EOF
+	cat >"${stub_dir}/az" <<'EOF'
+#!/usr/bin/env bash
+printf '%s\n' "$*" >>"${AZ_TEST_LOG}"
+case "$*" in
+  "version --query \"azure-cli\" --output tsv") printf '2.79.0\n' ;;
+  "account show --query tenantId --output tsv") printf 'cafb7744-aedc-4c62-8a02-0474058bbfaa\n' ;;
+  "account show --query id --output tsv") printf '00000000-0000-0000-0000-000000000001\n' ;;
+  "account show --query name --output tsv") printf 'Production\n' ;;
+  "extension show --name containerapp --query name --output tsv") printf 'containerapp\n' ;;
+esac
+EOF
+	chmod +x "${stub_dir}/az" "${stub_dir}/docker"
+
+	run env AZ_TEST_LOG="$az_log" PATH="${stub_dir}:/usr/bin:/bin" "$CHECK_SCRIPT"
+	[[ "$status" -eq 0 ]]
+	[[ "$output" == *"Production (00000000-0000-0000-0000-000000000001)"* ]]
+	[[ "$output" != *"Development"* ]]
+	[[ "$output" != *"operator@example.com"* ]]
+	[[ "$output" != *"client-secret"* ]]
+	grep -Fq "account show --query tenantId --output tsv" "$az_log"
+	grep -Fq "account show --query id --output tsv" "$az_log"
+}
+
+@test "Azure account check does not print account details for a different tenant" {
+	local stub_dir="${TEST_TEMP_DIR}/bin-mismatch"
+	mkdir -p "$stub_dir"
+	for cmd in git make jq curl; do
+		ln -s "$(command -v "$cmd")" "$stub_dir/$cmd"
+	done
+	cat >"${stub_dir}/docker" <<'EOF'
+#!/usr/bin/env bash
+exit 0
+EOF
+	cat >"${stub_dir}/az" <<'EOF'
+#!/usr/bin/env bash
+case "$*" in
+  "version --query \"azure-cli\" --output tsv") printf '2.79.0\n' ;;
+  "account show --query tenantId --output tsv") printf '11111111-1111-1111-1111-111111111111\n' ;;
+  "account show --query id --output tsv") printf 'SHOULD-NOT-PRINT\n' ;;
+  "account show --query name --output tsv") printf 'Secret Subscription\n' ;;
+  "extension show --name containerapp --query name --output tsv") printf 'containerapp\n' ;;
+esac
+EOF
+	chmod +x "${stub_dir}/az" "${stub_dir}/docker"
+
+	run env PATH="${stub_dir}:/usr/bin:/bin" "$CHECK_SCRIPT"
+	[[ "$status" -eq 0 ]]
+	[[ "$output" == *"no pertenece al tenant esperado"* ]]
+	[[ "$output" != *"SHOULD-NOT-PRINT"* ]]
+	[[ "$output" != *"Secret Subscription"* ]]
+	[[ "$output" != *"11111111-1111-1111-1111-111111111111"* ]]
 }

@@ -153,17 +153,26 @@ run_versioned_step() {
 
 run_apt() {
 	section "APT"
+	local azure_cli_before azure_cli_after
+	azure_cli_before="$(probe_named_version "Azure CLI" az version --query '"azure-cli"' --output tsv || true)"
 	if is_truthy "${DOTFILES_UPDATE_MOCK:-}"; then
 		result_ok "WSL" "APT" "mocked"
+		record_version_transition "WSL" "Azure CLI" "$azure_cli_before" "$azure_cli_before"
 		return 0
 	fi
 	if ! command -v sudo >/dev/null 2>&1; then
 		result_fail "WSL" "APT" "sudo not found"
+		record_version_transition "WSL" "Azure CLI" "$azure_cli_before" "$azure_cli_before"
 		return 0
 	fi
 	run_step "WSL" "APT update" "${LOG_DIR}/wsl-apt-update.log" sudo apt-get update -y
 	run_step "WSL" "APT upgrade" "${LOG_DIR}/wsl-apt-upgrade.log" sudo apt-get upgrade -y
 	run_step "WSL" "APT autoremove" "${LOG_DIR}/wsl-apt-autoremove.log" sudo apt-get autoremove -y
+	if ! command -v az >/dev/null 2>&1; then
+		run_step "WSL" "Azure CLI install" "${LOG_DIR}/wsl-azure-cli.log" "${DOTFILES_ROOT}/scripts/install-azure-cli.sh"
+	fi
+	azure_cli_after="$(probe_named_version "Azure CLI" az version --query '"azure-cli"' --output tsv || true)"
+	record_version_transition "WSL" "Azure CLI" "$azure_cli_before" "$azure_cli_after"
 }
 
 ensure_node_runtime() {
@@ -512,6 +521,7 @@ snapshot_current_tool() {
 }
 
 capture_workstation_snapshot() {
+	snapshot_current_tool "Azure CLI" az version --query '"azure-cli"' --output tsv
 	snapshot_current_tool "Python" python3 --version
 	snapshot_current_tool "Node.js" node --version
 	snapshot_current_tool "npm" npm --version

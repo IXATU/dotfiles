@@ -11,6 +11,28 @@ teardown() {
 	teardown_temp_dir
 }
 
+
+# Hermetic Azure CLI tests: production /usr/bin/az must never mask a missing
+# mock binary or make the test depend on workstation installation state.
+make_azure_cli_isolation() {
+	local shim="${TEST_TEMP_DIR}/azure-cli-isolation.bash"
+	cat >"$shim" <<'AZENV'
+az() {
+	[[ -x "${AZURE_MOCK_BIN}/az" ]] || return 127
+	"${AZURE_MOCK_BIN}/az" "$@"
+}
+command() {
+	if [[ "${1:-}" == "-v" && "${2:-}" == "az" ]]; then
+		[[ -x "${AZURE_MOCK_BIN}/az" ]] || return 1
+		printf '%s\n' "${AZURE_MOCK_BIN}/az"
+		return 0
+	fi
+	builtin command "$@"
+}
+AZENV
+	printf '%s\n' "$shim"
+}
+
 make_node_stub() {
 	local dir="$1" version="$2"
 	mkdir -p "$dir"
@@ -2146,6 +2168,128 @@ EOF
 	run grep -q 'uv tool install mcp-server-fetch' "${DOTFILES_DIR}/scripts/update/update-wsl.sh"
 	[[ "${status}" -eq 1 ]]
 	grep -q 'runtime-managed via uvx' "${DOTFILES_DIR}/scripts/update/update-wsl.sh"
+}
+
+@test "APT flow installs Azure CLI only when missing and snapshots the installed version" {
+	local runner="${TEST_TEMP_DIR}/azure-cli-install-runner.sh"
+	local stub_dir="${TEST_TEMP_DIR}/azure-cli-install-bin"
+	local run_dir="${TEST_TEMP_DIR}/run-azure-cli-install"
+	mkdir -p "$stub_dir"
+	cat >"${stub_dir}/sudo" <<'EOF'
+#!/usr/bin/env bash
+exit 0
+EOF
+	chmod +x "${stub_dir}/sudo"
+	cat >"$runner" <<EOF
+#!/usr/bin/env bash
+set -euo pipefail
+set -- --section none
+PATH="${stub_dir}:/usr/bin:/bin"
+DOTFILES_UPDATE_RUN_DIR="${run_dir}"
+source "${DOTFILES_DIR}/scripts/update/update-wsl.sh"
+run_step() {
+  local area="\$1" name="\$2" log_file="\$3"
+  shift 3
+  if [[ "\$name" == "Azure CLI install" ]]; then
+    [[ "\$1" == "${DOTFILES_DIR}/scripts/install-azure-cli.sh" ]]
+    cat >"${stub_dir}/az" <<'AZEOF'
+#!/usr/bin/env bash
+printf '2.79.0\n'
+AZEOF
+    chmod +x "${stub_dir}/az"
+  fi
+  RUN_STEP_LAST_RESULT_STATUS="OK"
+  result_ok "\$area" "\$name" "completed"
+}
+run_apt
+EOF
+	chmod +x "$runner"
+
+	run env BASH_ENV="$(make_azure_cli_isolation)" AZURE_MOCK_BIN="$stub_dir" "$runner"
+	[[ "$status" -eq 0 ]]
+	grep -q $'OK\tWSL\tAzure CLI install\tcompleted' "$run_dir/wsl-results.tsv"
+	grep -q $'INFO\tWSL\tAzure CLI version\tunavailable → 2.79.0' "$run_dir/wsl-results.tsv"
+	grep -q $'Azure CLI\t\t2.79.0\tinstalled' "$run_dir/tool-snapshot.tsv"
+}
+
+@test "APT flow leaves an existing Azure CLI to apt upgrade and records its transition" {
+	local runner="${TEST_TEMP_DIR}/azure-cli-upgrade-runner.sh"
+	local stub_dir="${TEST_TEMP_DIR}/azure-cli-upgrade-bin"
+	local run_dir="${TEST_TEMP_DIR}/run-azure-cli-upgrade"
+	mkdir -p "$stub_dir"
+	cat >"${stub_dir}/az" <<EOF
+#!/usr/bin/env bash
+cat "${TEST_TEMP_DIR}/azure-cli-version"
+EOF
+	cat >"${stub_dir}/sudo" <<'EOF'
+#!/usr/bin/env bash
+exit 0
+EOF
+	chmod +x "${stub_dir}/az" "${stub_dir}/sudo"
+	printf '2.78.0\n' >"${TEST_TEMP_DIR}/azure-cli-version"
+	cat >"$runner" <<EOF
+#!/usr/bin/env bash
+set -euo pipefail
+set -- --section none
+PATH="${stub_dir}:/usr/bin:/bin"
+DOTFILES_UPDATE_RUN_DIR="${run_dir}"
+source "${DOTFILES_DIR}/scripts/update/update-wsl.sh"
+run_step() {
+  local area="\$1" name="\$2"
+  if [[ "\$name" == "APT upgrade" ]]; then
+    printf '2.79.0\n' >"${TEST_TEMP_DIR}/azure-cli-version"
+  fi
+  [[ "\$name" != "Azure CLI install" ]]
+  RUN_STEP_LAST_RESULT_STATUS="OK"
+  result_ok "\$area" "\$name" "completed"
+}
+run_apt
+EOF
+	chmod +x "$runner"
+
+	run env BASH_ENV="$(make_azure_cli_isolation)" AZURE_MOCK_BIN="$stub_dir" "$runner"
+	[[ "$status" -eq 0 ]]
+	assert_file_not_contains "$run_dir/wsl-results.tsv" "Azure CLI install"
+	grep -q $'INFO\tWSL\tAzure CLI version\t2.78.0 → 2.79.0' "$run_dir/wsl-results.tsv"
+	grep -q $'Azure CLI\t2.78.0\t2.79.0\tupdated' "$run_dir/tool-snapshot.tsv"
+}
+
+@test "APT flow records Azure CLI installer failure and unavailable snapshot" {
+	local runner="${TEST_TEMP_DIR}/azure-cli-failure-runner.sh"
+	local stub_dir="${TEST_TEMP_DIR}/azure-cli-failure-bin"
+	local run_dir="${TEST_TEMP_DIR}/run-azure-cli-failure"
+	mkdir -p "$stub_dir"
+	cat >"${stub_dir}/sudo" <<'EOF'
+#!/usr/bin/env bash
+exit 0
+EOF
+	chmod +x "${stub_dir}/sudo"
+	cat >"$runner" <<EOF
+#!/usr/bin/env bash
+set -euo pipefail
+set -- --section none
+PATH="${stub_dir}:/usr/bin:/bin"
+DOTFILES_UPDATE_RUN_DIR="${run_dir}"
+source "${DOTFILES_DIR}/scripts/update/update-wsl.sh"
+run_step() {
+  local area="\$1" name="\$2"
+  if [[ "\$name" == "Azure CLI install" ]]; then
+    RUN_STEP_LAST_RESULT_STATUS="FAIL"
+    result_fail "\$area" "\$name" "exit 1"
+  else
+    RUN_STEP_LAST_RESULT_STATUS="OK"
+    result_ok "\$area" "\$name" "completed"
+  fi
+}
+run_apt
+EOF
+	chmod +x "$runner"
+
+	run env BASH_ENV="$(make_azure_cli_isolation)" AZURE_MOCK_BIN="$stub_dir" "$runner"
+	[[ "$status" -eq 0 ]]
+	grep -q $'FAIL\tWSL\tAzure CLI install\texit 1' "$run_dir/wsl-results.tsv"
+	grep -q $'INFO\tWSL\tAzure CLI version\tversion unavailable' "$run_dir/wsl-results.tsv"
+	grep -q $'Azure CLI\t\t\tunavailable' "$run_dir/tool-snapshot.tsv"
 }
 
 @test "mocked tools update records the full workstation snapshot without installs" {
