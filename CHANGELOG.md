@@ -2,14 +2,11 @@
 
 Este archivo contiene las últimas 5 releases. Para el historial completo, consulta los archivos en el directorio `releases/`.
 
-## [v0.6.0] - 2026-11-11
+## [v0.6.1] - 2026-11-16
 
 ## Changes
-### Added
-- 2026-11-11 11:38 [57420d9](https://github.com/IXATU/dotfiles/commit/57420d9) feat(update): maintain Azure CLI via official apt source (#28) (#29) (Jesús)
-
-### Documentation
-- 2026-10-28 09:54 [e74ce73](https://github.com/IXATU/dotfiles/commit/e74ce73) docs(agents): prefer shared playwright-docker for browser tests (#27) (Jesús)
+### Fixed
+- 2026-11-16 12:38 [685f4fa](https://github.com/IXATU/dotfiles/commit/685f4fa) fix(zsh): clean agent startup and reproducible PATH (#30) (jesus)
 
 
 ## [v0.3.0] - 2026-10-23
