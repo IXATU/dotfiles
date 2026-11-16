@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Backup seguro de symlinks gestionados antes de que Chezmoi cree los destinos:
 #   ~/.zshrc        -> $HOME/dotfiles/zshrc
+#   ~/.zshenv       -> $HOME/dotfiles/zshenv
 #   ~/.p10k.zsh     -> $HOME/dotfiles/powerlevel10k/p10k.zsh
 #   ~/.aliases      -> $HOME/dotfiles/aliases
 #   ~/.tmux.conf    -> $HOME/dotfiles/tmux.conf
@@ -13,7 +14,7 @@
 #   - Si es fichero regular con contenido custom no reconocido: abortar con
 #     mensaje accionable, salvo que el usuario haya pasado ZSH_RC_APPLY=1
 #     (flag histórico; cubre también ~/.tmux.conf además de los RC de zsh).
-#   - Nunca borra sin backup. Sin sudo. Solo toca los cuatro ficheros del scope.
+#   - Nunca borra sin backup. Sin sudo. Solo toca los cinco ficheros del scope.
 #
 # RCM/rcup queda fuera del flujo activo: este hook no lo invoca ni asume.
 set -euo pipefail
@@ -94,7 +95,7 @@ handle_target() {
 	cat >&2 <<EOF
 [run_before_00_backup_rc_files] ABORT: ${target} already exists with custom content.
   - Expected target: ${expected}
-  - Applies to: ~/.zshrc, ~/.p10k.zsh, ~/.aliases, ~/.tmux.conf
+  - Applies to: ~/.zshenv, ~/.zshrc, ~/.p10k.zsh, ~/.aliases, ~/.tmux.conf
   - To allow backup + replacement, re-run with:
         ZSH_RC_APPLY=1 make install-dotfiles DOTFILES_APPLY=1
   - To keep your file as-is, move/rename it manually before running apply.
@@ -106,6 +107,7 @@ EOF
 HOME_DIR="${HOME}"
 DOTFILES_DIR="${HOME_DIR}/dotfiles"
 
+handle_target "${HOME_DIR}/.zshenv" "${DOTFILES_DIR}/zshenv"
 handle_target "${HOME_DIR}/.zshrc" "${DOTFILES_DIR}/zshrc"
 handle_target "${HOME_DIR}/.p10k.zsh" "${DOTFILES_DIR}/powerlevel10k/p10k.zsh"
 handle_target "${HOME_DIR}/.aliases" "${DOTFILES_DIR}/aliases"

@@ -1,3 +1,7 @@
+# Prompt, plugins and ZLE require a real interactive terminal. Agents use
+# ~/.zshenv for PATH; even `zsh -lic` must stay silent when run through pipes.
+[[ -o interactive && -t 0 && -t 1 ]] || return 0
+
 # Enable Powerlevel10k instant prompt. Keep close to the top.
 if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]; then
   source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"

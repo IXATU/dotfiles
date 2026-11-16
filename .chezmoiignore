@@ -22,5 +22,6 @@
 !.local/share/chezmoi/bin
 !.local/share/chezmoi/bin/**
 !.zshrc
+!.zshenv
 !.p10k.zsh
 !.aliases
