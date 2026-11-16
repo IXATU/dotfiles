@@ -29,7 +29,7 @@ setup() {
 	grep -q 'gh auth switch' "${LOCAL_ZSH}"
 }
 
-@test "interactive zsh startup does not export GH_TOKEN from dotfiles modules" {
+@test "90-local startup module does not export GH_TOKEN" {
 	skip_if_command_missing "zsh"
 
 	local fake_home
@@ -45,7 +45,7 @@ setup() {
 
 	run env -u GH_TOKEN -u GITHUB_TOKEN -u GITHUB_PERSONAL_ACCESS_TOKEN \
 		HOME="${fake_home}" zsh -fc '
-		source "$HOME/dotfiles/zshrc"
+		source "$HOME/dotfiles/zsh/90-local.zsh"
 		env | grep -E "^(GH_TOKEN|GITHUB_TOKEN)=" && exit 1 || exit 0
 	'
 	rm -rf "${fake_home}"

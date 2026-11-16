@@ -50,6 +50,7 @@ Override: `DOTFILES_DIR=/ruta/al/repo dotfiles-apply`. No sustituye `chezmoi` av
 | `~/.config/ai/runtime/` | Runtime (venv) — ver `ai/README.md` |
 | `~/.local/share/chezmoi/bin/mcp-*-launcher` | `dot_local/share/chezmoi/bin/executable_mcp-*-launcher.tmpl` (`filesystem`, `git`, `gitnexus`, `postgres`) |
 | `~/.zshrc` | `symlink_dot_zshrc.tmpl` → `$HOME/dotfiles/zshrc` |
+| `~/.zshenv` | `symlink_dot_zshenv.tmpl` → `$HOME/dotfiles/zshenv` (PATH mínimo para todos los procesos zsh) |
 | `~/.p10k.zsh` | `symlink_dot_p10k.zsh.tmpl` → `$HOME/dotfiles/powerlevel10k/p10k.zsh` |
 | `~/.aliases` | `symlink_dot_aliases.tmpl` → `$HOME/dotfiles/aliases` |
 | `~/.tmux.conf` | `symlink_dot_tmux.conf.tmpl` → `$HOME/dotfiles/tmux.conf` |
@@ -60,13 +61,62 @@ Override: `DOTFILES_DIR=/ruta/al/repo dotfiles-apply`. No sustituye `chezmoi` av
 
 ### Backup seguro de symlinks gestionados (RC + tmux)
 
-El hook `.chezmoiscripts/run_before_00_backup_rc_files.sh.tmpl` se ejecuta antes de `chezmoi apply` y aplica esta política sobre `~/.zshrc`, `~/.p10k.zsh`, `~/.aliases` y `~/.tmux.conf`:
+El hook `.chezmoiscripts/run_before_00_backup_rc_files.sh.tmpl` se ejecuta antes de `chezmoi apply` y aplica esta política sobre `~/.zshenv`, `~/.zshrc`, `~/.p10k.zsh`, `~/.aliases` y `~/.tmux.conf`:
 
 - Si el target no existe o ya es un symlink correcto: no-op (idempotente).
 - Si es un symlink al destino equivocado o un fichero **trivial** (vacío, solo whitespace, o exactamente `. "$HOME/.local/bin/env"` — el stub que escribe el instalador oficial de `uv`): se mueve a `~/<name>.backup.YYYYMMDD-HHMMSS` y Chezmoi crea el symlink limpio.
 - Si es un fichero regular con **contenido custom**: el hook aborta con mensaje accionable, salvo que se pase `ZSH_RC_APPLY=1`. Con el flag, se hace backup con timestamp y se reemplaza. El nombre del flag es histórico (zsh stack); **también autoriza el reemplazo de un `~/.tmux.conf` custom**.
 
 Nunca se borra sin backup; nunca se usa `sudo`.
+
+### PATH de agentes y Desktop Commander sin TTY (#30)
+
+`~/.zshenv` configura únicamente PATH, sin salida, credenciales ni comandos
+externos. Ante un PATH heredado mínimo añade, por orden, `$HOME/.local/bin`,
+`$HOME/.npm-global/bin`, `/usr/local/bin`, `/usr/bin` y `/bin`; conserva después
+las entradas heredadas y elimina duplicados. No instala CLI ni selecciona
+versiones de Node. `uv`, `claude` y `chezmoi` se esperan en `.local/bin`,
+`codex` en `.npm-global/bin`; `gh` y `node` pueden resolver en `/usr/bin`.
+
+| Invocación sin TTY | Inicialización del repo |
+|--------------------|------------------------|
+| `zsh -c` | `.zshenv`: PATH mínimo |
+| `zsh -lc` | Igual; no se añade `.zprofile` al repo |
+| `zsh -lic` | Igual; `.zshrc` retorna antes de Instant Prompt, OMZ, ZLE, NVM y overrides locales |
+
+En una terminal interactiva con stdin/stdout TTY se mantiene el orden de
+Instant Prompt, módulos, NVM y Powerlevel10k classic con rutas completas.
+Los archivos globales de `/etc/zsh/` y un `.zprofile`/`.zlogin` local pueden
+añadir comportamiento ajeno al repo. `zsh -f` omite el `.zshenv` del usuario;
+un `ZDOTDIR` personalizado requiere gestionar allí el startup correspondiente.
+
+En DC `start_process`, elegir explícitamente `shell: "/usr/bin/zsh"` para
+comandos de agentes; no es necesario forzar `-i` para obtener PATH. Por ejemplo:
+
+```json
+{"shell":"/usr/bin/zsh","command":"for cli in uv gh codex claude node; do command -v \"$cli\"; done","timeout_ms":10000}
+```
+
+Para exigir sintaxis Bash, usar `shell: "/bin/bash"` y declarar su PATH
+explícitamente en el comando: Bash no lee `.zshenv`. La corrección se aplica
+a hijos zsh de DC; no cambia el entorno del proceso MCP padre ni de
+`systemd --user`, ni requiere reiniciar servicios. Los launchers ejecutados
+directamente deben mantener su propio contrato de entorno.
+
+Diagnóstico seguro: ejecutar cada modo con `env -i HOME="$HOME"
+PATH=/usr/bin:/bin /usr/bin/zsh -c 'command -v uv; command -v codex'`,
+sustituyendo `-c` por `-lc` y `-lic`, con stdin redirigido desde `/dev/null`
+y stdout/stderr a archivos temporales. No volcar `env` ni archivos de secretos.
+Las pruebas `tests/bats/zsh/agent_startup.bats` usan HOME aislado, CLI fixture,
+captura sin TTY y pseudo-TTY para verificar ambas ramas sin aplicar al HOME real.
+
+Tras merge y **GO humano**, revisar `chezmoi --source="$HOME/dotfiles" diff
+"$HOME/.zshenv" "$HOME/.zshrc"` y después usar
+`DOTFILES_DIR="$HOME/dotfiles" dotfiles-apply --apply "$HOME/.zshenv" "$HOME/.zshrc"`.
+Revisar primero cualquier startup custom; no activar `ZSH_RC_APPLY=1` a ciegas.
+El hook de backup evalúa los cinco RC incluso en apply acotado: comprobar
+también `.p10k.zsh`, `.aliases` y `.tmux.conf` antes del GO. Abrir nuevos hijos
+de DC y una terminal normal para validar; hasta ese apply el HOME sigue sin corregir.
 
 ---
 
