@@ -1,7 +1,10 @@
-mcp==1.26.0
+mcp==1.30.0
 requests==2.34.2
 idna==3.16
-python-multipart==0.0.29
-urllib3==2.7.0
+python-multipart==0.0.31
+urllib3==2.8.0
+# Pin transitive security fixes so runtime installs and OSV cannot select older versions.
+anyio==4.14.2
+certifi==2026.10.18
 boto3==1.43.14
 trino-mcp>=0.2.0
