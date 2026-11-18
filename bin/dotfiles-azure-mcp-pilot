@@ -1,0 +1,207 @@
+#!/usr/bin/env bash
+# Optional ChatGPT tunnel recipe; never registered in global MCP surfaces.
+set -euo pipefail
+set +x
+
+mode=preview
+mode_seen=false
+tunnel_id=''
+for arg in "$@"; do
+	case "$arg" in
+	--apply | --doctor | --status | --check | --dry-run)
+		[[ "$mode_seen" == false ]] || {
+			echo 'ERROR: choose one mode' >&2
+			exit 1
+		}
+		mode_seen=true
+		case "$arg" in
+		--apply) mode=apply ;;
+		--doctor | --status) mode=doctor ;;
+		*) mode=preview ;;
+		esac
+		;;
+	-h | --help)
+		cat <<'HELP'
+Usage: bin/dotfiles-azure-mcp-pilot [--check|--dry-run|--apply] [tunnel_ID]
+       bin/dotfiles-azure-mcp-pilot --doctor|--status
+Default: read-only preview. --apply creates missing recipe files only; never
+installs tools, writes keys, logs in, or starts services. Existing differences
+are refused. See docs/ops/azure-mcp-pilot.md for manual key activation/start.
+HELP
+		exit 0
+		;;
+	*)
+		[[ -z "$tunnel_id" && "$arg" =~ ^tunnel_[A-Za-z0-9_-]+$ ]] || {
+			echo 'ERROR: expected tunnel_ID (never pass a runtime key)' >&2
+			exit 1
+		}
+		tunnel_id=$arg
+		;;
+	esac
+done
+
+# A fixed OS PATH avoids inherited IDE paths, empty entries and systemd omissions.
+export PATH="$HOME/.local/bin:/usr/local/bin:/usr/bin:/bin"
+[[ "$HOME" =~ ^/[A-Za-z0-9_./-]+$ && "$HOME" != *'/../'* ]] || {
+	echo 'ERROR: HOME must be an absolute path using letters, digits, _, ., / or -' >&2
+	exit 1
+}
+name=ixatu-azure-mcp-pilot
+launcher="$HOME/.local/share/$name/start.sh"
+profile="$HOME/.config/tunnel-client/$name.yaml"
+unit="$HOME/.config/systemd/user/$name.service"
+keyfile="$HOME/.config/$name/runtime.env"
+
+# Refuse symlinks in all owned paths before reading or writing recipe files.
+for target in "$launcher" "$profile" "$unit" "$keyfile"; do
+	ancestor=$target
+	while [[ "$ancestor" != / ]]; do
+		[[ ! -L "$ancestor" ]] || {
+			echo 'ERROR: pilot paths must not contain symlinks' >&2
+			exit 1
+		}
+		ancestor=${ancestor%/*}
+		[[ -n "$ancestor" ]] || break
+	done
+done
+
+if [[ "$mode" == doctor || "$mode" == apply ]]; then
+	for tool in az uvx; do
+		command -v "$tool" >/dev/null || {
+			printf 'ERROR: missing %s; provision it manually in ~/.local/bin or OS PATH; retry --doctor\n' "$tool" >&2
+			exit 1
+		}
+	done
+	[[ -x "$HOME/.local/bin/tunnel-client" ]] || {
+		echo 'ERROR: missing ~/.local/bin/tunnel-client; provision manually, then retry --doctor' >&2
+		exit 1
+	}
+fi
+
+if [[ "$mode" == doctor ]]; then
+	failed=0
+	for target in "$launcher" "$profile" "$unit"; do
+		if [[ -f "$target" ]]; then
+			printf 'present: %s\n' "$target"
+		else
+			printf 'missing: %s (preview then --apply tunnel_ID)\n' "$target"
+			failed=1
+		fi
+	done
+	# Metadata only: never source, parse, or display runtime.env.
+	if [[ -f "$keyfile" && -s "$keyfile" && -O "$keyfile" && "$(stat -c %a "$keyfile")" == 600 ]]; then
+		echo 'runtime key file: present, owner-only (contents not checked)'
+	else
+		echo 'runtime key file: missing/empty or unsafe; follow manual activation, chmod 0600'
+		failed=1
+	fi
+	if command -v curl >/dev/null && curl --noproxy '*' -fsS --max-time 2 -o /dev/null http://127.0.0.1:49188/readyz 2>/dev/null; then
+		echo 'readyz: OK (does not prove Azure authentication or tool scope)'
+	else
+		echo 'readyz: unavailable; check pilot service locally (curl required)'
+		failed=1
+	fi
+	exit "$failed"
+fi
+
+if [[ -z "$tunnel_id" ]]; then
+	[[ "$mode" != apply ]] || {
+		echo 'ERROR: --apply requires a new PC09 tunnel_ID' >&2
+		exit 1
+	}
+	printf 'PREVIEW: generate %s, %s, %s with --apply tunnel_ID\n' "$launcher" "$profile" "$unit"
+	echo 'No key files or services will be changed. See --help.'
+	exit 0
+fi
+
+# Render in memory: preview makes no directories or temporary files.
+launcher_text=$(
+	cat <<'LAUNCHER'
+#!/usr/bin/env bash
+set -euo pipefail
+set +x
+export PATH="$HOME/.local/bin:/usr/local/bin:/usr/bin:/bin"
+export AZURE_TOKEN_CREDENTIALS=AzureCliCredential
+export AZURE_MCP_COLLECT_TELEMETRY=false
+export AZURE_MCP_COLLECT_TELEMETRY_MICROSOFT=false
+export AZURE_EXTENSION_USE_DYNAMIC_INSTALL=no
+export UV_NO_PROGRESS=1
+for tool in az uvx; do
+  command -v "$tool" >/dev/null || { printf 'ERROR: missing %s in pilot PATH\n' "$tool" >&2; exit 1; }
+done
+exec uvx --from msmcp-azure==3.0.0 azmcp server start --transport stdio --mode all \
+  --namespace containerapps --namespace group --read-only
+LAUNCHER
+)
+profile_text=$(
+	cat <<PROFILE
+config_version: 1
+control_plane:
+  base_url: "https://api.openai.com"
+  tunnel_id: "$tunnel_id"
+  api_key: "env:AZURE_MCP_CONTROL_PLANE_API_KEY"
+health:
+  listen_addr: "127.0.0.1:49188"
+admin_ui:
+  open_browser: false
+log:
+  level: warn
+  format: json
+mcp:
+  commands:
+    - channel: main
+      command: "$launcher"
+PROFILE
+)
+unit_text=$(
+	cat <<'UNIT'
+[Unit]
+Description=IXATU Azure MCP pilot Secure Tunnel (read-only)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=%h
+Environment="PATH=%h/.local/bin:/usr/local/bin:/usr/bin:/bin"
+EnvironmentFile=%h/.config/ixatu-azure-mcp-pilot/runtime.env
+ExecStart=%h/.local/bin/tunnel-client run --profile ixatu-azure-mcp-pilot
+Restart=on-failure
+RestartSec=10s
+UMask=0077
+NoNewPrivileges=yes
+
+[Install]
+WantedBy=default.target
+UNIT
+)
+paths=("$launcher" "$profile" "$unit")
+texts=("$launcher_text" "$profile_text" "$unit_text")
+# Preflight every file before creating any; never adopt unrelated content.
+for i in "${!paths[@]}"; do
+	target=${paths[$i]}
+	if [[ -e "$target" ]]; then
+		if [[ ! -f "$target" ]] || ! cmp -s "$target" <(printf '%s\n' "${texts[$i]}"); then
+			echo 'ERROR: existing pilot file differs; review manually, no files overwritten' >&2
+			exit 1
+		fi
+	fi
+done
+for i in "${!paths[@]}"; do
+	target=${paths[$i]}
+	if [[ "$mode" == apply ]]; then
+		umask 077
+		mkdir -p "${target%/*}"
+		if [[ ! -e "$target" ]]; then
+			(
+				set -o noclobber
+				printf '%s\n' "${texts[$i]}" >"$target"
+			)
+			[[ "$i" != 0 ]] || chmod 700 "$target"
+		fi
+		printf 'retained/created: %s\n' "$target"
+	else
+		printf '\nPREVIEW %s\n%s\n' "$target" "${texts[$i]}"
+	fi
+done
+echo 'Key activation and service start are separate manual steps; see docs/ops/azure-mcp-pilot.md.'

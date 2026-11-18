@@ -2,6 +2,9 @@
 
 Esta guía describe la integración mínima de Azure tooling en `dotfiles` para trabajar desde Windows 11 Pro + WSL2 sin mezclar configuración local con despliegues reales.
 
+Piloto opcional ChatGPT: [Azure MCP + Secure MCP Tunnel en PC09](azure-mcp-pilot.md)
+(preview, generación explícita y doctor; separado del MANIFEST global).
+
 ## Objetivo
 
 `dotfiles` prepara herramientas generales, aliases, checks y setup local. No crea recursos Azure, no guarda credenciales y no contiene nombres reales de recursos para proyectos.
