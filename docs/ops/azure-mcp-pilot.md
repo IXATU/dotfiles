@@ -2,7 +2,8 @@
 
 Receta pequeña para PC-IXATU-09, independiente de Desktop Commander. Ejecutar
 manualmente desde el checkout; no se instala ni registra en Cursor/Codex,
-Chezmoi, `dotfiles-update` o el MANIFEST global. No requiere abrir Cursor.
+Chezmoi o el MANIFEST global. `dotfiles-update` solo reporta versiones del piloto
+si está presente. No requiere abrir Cursor.
 
 ## Preparación y preview
 
@@ -85,6 +86,26 @@ reproduce `--transport stdio --mode all --namespace containerapps --namespace gr
 parar el piloto y revisar antes de usarlo.
 
 ## Diagnóstico y parada
+
+### Versiones en dotfiles-update
+
+La sección `tools` lee el pin de
+`~/.local/share/ixatu-azure-mcp-pilot/start.sh` y consulta el JSON de PyPI para
+`msmcp-azure` (con timeouts de conexión/total de 5/15 segundos). Solo considera
+versiones finales `x.y.z` con archivos no retirados; ignora beta/rc/dev.
+El snapshot incluye `Azure MCP` con el pin antes/después idéntico, incluso si
+PyPI falla o se ejecuta otra sección. `PINNED` representa configuración, no una
+comprobación de la versión cargada en un proceso vivo ni de la caché uvx.
+
+Si aparece una estable posterior, emite `ACTIVATION_PENDING`: revisar manualmente
+la compatibilidad, cambiar el pin del launcher dedicado y activar/reiniciar el
+piloto en una terminal humana separada. El updater no descarga/ejecuta uvx, no
+escribe el launcher ni modifica servicios, autenticación o túneles. `--apply`
+de la receta seguirá rechazando un launcher con un pin distinto del generado.
+Sin piloto: `SKIP`; sin versión remota válida: `WARN` y pin conservado. En mock
+no hay consulta de red. Tunnel Client conserva su reporte separado existente.
+
+### Operación local
 
 PATH fijo en systemd y launcher: `$HOME/.local/bin:/usr/local/bin:/usr/bin:/bin`.
 Evita el 401 «Azure CLI not installed» cuando `az` viene de pipx en `.local/bin`.
