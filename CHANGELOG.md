@@ -2,15 +2,11 @@
 
 Este archivo contiene las últimas 5 releases. Para el historial completo, consulta los archivos en el directorio `releases/`.
 
-## [v0.6.3] - 2026-11-18
+## [v0.6.4] - 2026-11-18
 
 ## Changes
 ### Added
-- 2026-11-18 14:21 [21cf691](https://github.com/IXATU/dotfiles/commit/21cf691) feat(update): report Azure MCP stable versions without live activation (jesus)
-- 2026-11-18 13:56 [1488253](https://github.com/IXATU/dotfiles/commit/1488253) feat(dotfiles): portable opt-in Azure MCP tunnel pilot (jesus)
-
-### Fixed
-- 2026-11-18 14:26 [8503f03](https://github.com/IXATU/dotfiles/commit/8503f03) fix(security): patch MCP runtime vulnerable dependencies (jesus)
+- 2026-11-18 15:23 [0e7f0d6](https://github.com/IXATU/dotfiles/commit/0e7f0d6) feat(update): safely autoactivate compatible DC and Azure MCP releases (jesus)
 
 
 ## [v0.3.0] - 2026-10-23
