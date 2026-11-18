@@ -1,0 +1,165 @@
+#!/usr/bin/env bash
+# Human-only activation. Updaters and agents must never invoke --apply on a live HOME.
+set -euo pipefail
+umask 077
+repo="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/.." && pwd)"
+validator="$repo/scripts/dc/validate.cjs"
+mode=dry-run
+version=
+health_url='http://127.0.0.1:49187/readyz'
+for_arg_mode=0
+while (($#)); do
+	case "$1" in
+	--help | -h)
+		cat <<'HELP'
+Usage: dotfiles-dc-activate [--status|--dry-run|--apply] [VERSION] [--health-url URL]
+Default: read-only status, or preflight/dry-run when VERSION is supplied.
+VERSION must be exact stable semver. --apply requires VERSION; default readiness endpoint is http://127.0.0.1:49187/readyz.
+Health URL must be HTTP loopback without credentials or query parameters.
+HUMAN ONLY: invoke --apply from a separate WSL terminal; disconnects the tunnel.
+Never invoke --apply from updater/agent sessions. Failed candidates remain staged.
+HELP
+		exit 0
+		;;
+	--apply | --dry-run | --status)
+		((for_arg_mode == 0)) || {
+			echo 'ERROR: conflicting modes' >&2
+			exit 1
+		}
+		mode="${1#--}"
+		for_arg_mode=1
+		;;
+	--health-url)
+		(($# >= 2)) || exit 1
+		health_url="$2"
+		shift
+		;;
+	-*)
+		echo 'ERROR: unknown option' >&2
+		exit 1
+		;;
+	*)
+		[[ -z "$version" ]] || exit 1
+		version="$1"
+		;;
+	esac
+	shift
+done
+fail() {
+	echo "ERROR: $*" >&2
+	exit 1
+}
+share="$HOME/.local/share"
+active="$share/ixatu-mcp"
+stages="$share/ixatu-mcp-staged"
+service=ixatu-wsl-mcp.service
+node "$validator" paths "$active" "$share"
+old="$(node "$validator" version "$active")"
+if [[ -z "$version" || "$mode" == status ]]; then
+	[[ "$mode" != apply ]] || fail '--apply requires VERSION'
+	printf 'ACTIVE %s; status only; no changes made\n' "$old"
+	if [[ -d "$stages" && ! -L "$stages" ]]; then
+		find "$stages" -mindepth 1 -maxdepth 1 -type d -printf 'STAGED %f\n'
+	fi
+	exit 0
+fi
+[[ "$version" =~ ^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]] || fail 'exact stable semver required'
+if [[ "$version" == "$old" ]]; then
+	echo "ACTIVE $old; already active; no changes made"
+	exit 0
+fi
+[[ "$(printf '%s\n%s\n' "$version" "$old" | sort -V | tail -n 1)" == "$version" ]] || fail 'version must be newer than active'
+stage="$stages/$version"
+node "$validator" paths "$stage" "$active"
+node "$validator" stage "$stage" "$version" "$(command -v npm)"
+[[ "$(systemctl --user show "$service" --property=LoadState --value)" == loaded ]] || fail 'service is not present'
+systemctl --user is-active --quiet "$service" || fail 'service is not active'
+node "$validator" url "$health_url"
+if [[ "$mode" != apply ]]; then
+	echo "DRY-RUN: validated STAGED $version; ACTIVE $old; no changes made"
+	exit 0
+fi
+# Lock the owned share directory inode: no lockfile/symlink opening or dry-run writes.
+exec {lock_fd}<"$share"
+flock -n -x "$lock_fd" || fail 'another activation is running'
+# Repeat preflight while holding the lock, before any service mutation.
+node "$validator" paths "$stage" "$active"
+[[ "$(node "$validator" version "$active")" == "$old" ]] || fail 'active changed during preflight'
+node "$validator" stage "$stage" "$version" "$(command -v npm)"
+systemctl --user is-active --quiet "$service" || fail 'service is not active'
+# Renames use -T and an empty reserved destination, never merge directories.
+[[ "$(stat -c %d "$active")" == "$(stat -c %d "$stage")" ]] || fail 'cross-device activation refused'
+transaction=0
+child_ready() {
+	local main pid command count=0
+	local -a pending
+	main="$(systemctl --user show "$service" --property=MainPID --value)" || return 1
+	[[ "$main" =~ ^[1-9][0-9]*$ ]] || return 1
+	pending=("$main")
+	while ((${#pending[@]} && count < 256)); do
+		pid="${pending[0]}"
+		pending=("${pending[@]:1}")
+		count=$((count + 1))
+		while read -r pid command; do
+			[[ "$pid" =~ ^[1-9][0-9]*$ ]] || continue
+			if [[ "$command" == *"$active/node_modules/@wonderwhy-er/desktop-commander/"* ]]; then return 0; fi
+			pending+=("$pid")
+		done < <(pgrep -a -P "$pid" 2>/dev/null || true)
+	done
+	return 1
+}
+ready() {
+	local expected_version="$1" deadline=$((SECONDS + 30)) http_code
+	while ((SECONDS < deadline)); do
+		if systemctl --user is-active --quiet "$service" &&
+			[[ "$(node "$validator" version "$active" 2>/dev/null)" == "$expected_version" ]] &&
+			child_ready &&
+			http_code="$(curl --disable --noproxy '*' --proto '=http' --fail --silent --output /dev/null --write-out '%{http_code}' --connect-timeout 1 --max-time 1 "$health_url")" &&
+			[[ "$http_code" == 2[0-9][0-9] ]]; then
+			return 0
+		fi
+		sleep 1
+	done
+	return 1
+}
+# shellcheck disable=SC2329
+cleanup() {
+	local rc=$?
+	trap - EXIT
+	trap '' HUP INT TERM
+	if ((transaction)); then
+		# Do not move a possibly running candidate. Keep both copies if stopping fails.
+		if systemctl --user stop "$service" >/dev/null 2>&1; then
+			if [[ -d "$backup/node_modules" ]]; then
+				if [[ -d "$active" ]]; then mv -T -- "$active" "$stage" || rc=1; fi
+				if [[ ! -e "$active" ]]; then mv -T -- "$backup" "$active" || rc=1; fi
+			fi
+		else
+			echo 'ERROR: rollback stop failed; copies retained for manual recovery' >&2
+		fi
+		if systemctl --user start "$service" >/dev/null 2>&1 && ready "$old"; then
+			echo 'ROLLBACK: previous runtime restored' >&2
+		else
+			echo 'ERROR: rollback requires manual service recovery; backup retained' >&2
+		fi
+		rc=1
+	fi
+	# Only remove our empty reservation, never a runtime or an old backup.
+	rmdir -- "$backup" 2>/dev/null || true
+	exit "$rc"
+}
+backup="$(mktemp -d "$share/ixatu-mcp-rollback-$old-XXXXXXXX")"
+trap cleanup EXIT
+trap 'exit 129' HUP
+trap 'exit 130' INT
+trap 'exit 143' TERM
+transaction=1
+systemctl --user stop "$service" >/dev/null 2>&1 || fail 'service stop failed'
+mv -T -- "$active" "$backup"
+mv -T -- "$stage" "$active"
+systemctl --user start "$service" >/dev/null 2>&1 || fail 'service start failed'
+ready "$version" || fail 'readiness timed out; rolling back'
+# Success is committed before best-effort output (e.g. a closed terminal pipe).
+transaction=0
+printf 'ACTIVE %s; rollback backup: %s\n' "$version" "${backup##*/}" || true
+exit 0

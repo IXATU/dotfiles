@@ -357,11 +357,71 @@ latest stable release respectively. A newer Desktop Commander is installed with
 its exact version, npm integrity verification, lockfile, and scripts disabled
 into `~/.local/share/ixatu-mcp-staged/<version>` only. The running MCP is never
 replaced or restarted: a `STAGED`/`ACTIVATION_PENDING` warning describes the
-manual activation needed. The snapshot continues to report the **active**
+manual activation command (`dotfiles-dc-activate <version> --apply`). The snapshot continues to report the **active**
 installed version, not the staged version. A newer Tunnel Client is reported
 as available for separately verified, manual update; the running binary is
 never overwritten by the updater. Network failures are warnings, never
 reported as successful upgrades. No credentials are needed for these checks.
+
+#### Explicit activation (human only)
+
+`dotfiles-dc-activate` is published through the existing Chezmoi symlink
+pattern. Before materialization, use `./bin/dotfiles-dc-activate` from the
+checkout. The updater never calls activation. Agents must only test with
+mocked commands and a temporary HOME; never activate the live tunnel.
+
+```bash
+dotfiles-dc-activate --status          # default: read-only active/staged listing
+dotfiles-dc-activate 0.3.4             # validate staged candidate; dry-run
+# HUMAN ONLY, from a separate WSL terminal: interrupts ChatGPT's tunnel.
+# Default health URL is http://127.0.0.1:49187/readyz
+dotfiles-dc-activate 0.3.4 --apply
+# Optional override if this computer uses a different tunnel port:
+# dotfiles-dc-activate 0.3.4 --apply --health-url http://127.0.0.1:49188/readyz
+```
+
+An exact stable version newer than active is required. Already active is a
+no-op; absent stages, prereleases, downgrades and conflicting modes fail.
+Preflight requires a loaded, active `ixatu-wsl-mcp.service`, matching package
+metadata, exact root dependency and package versions in npm lockfiles,
+matching valid sha512 SRI in the install and hidden lockfile, and Node engine
+compatibility with the invoking Node using the installed npm's semver library. This checks the
+recorded integrity metadata; npm verified archive bytes when staging. It does
+not independently authenticate an installed tree modified by its owner.
+No candidate code or install scripts run during validation; no network
+package resolution occurs.
+
+HOME and ancestors down to both runtime roots must be real, owned directories,
+without group/other write access. Candidate contents reject external/dangling
+symlinks, special files, hardlinks and writes by other users; internal npm
+symlinks are allowed. Correct unsafe permissions manually after reviewing
+ownership. Activation uses same-filesystem directory renames, an exclusive
+`flock` on the share directory and a unique
+`ixatu-mcp-rollback-<active-version>-<random>` backup, preserving older backups.
+Dry-run/status create no locks, backups or logs. The lock serializes this CLI;
+do not run the updater or modify staging concurrently with human activation.
+
+Only `--apply` stops the service, moves active to backup, moves staged to
+active, and starts the service. For up to 30 seconds it retries service
+readiness, active metadata version, a Desktop Commander process under the
+service's MainPID (including nested descendants, with the active package path
+in its command), and HTTP health. The health URL must use literal HTTP
+loopback, without credentials, queries or fragments. Curl ignores `.curlrc`, bypasses proxies, accepts only HTTP 2xx,
+does not follow redirects and discards response bodies. Use a read-only `/health`
+or `/health/control-plane` endpoint; the script never invokes MCP tools or
+prints service environment/health bodies. There is no guessed default port.
+
+Failure or HUP/INT/TERM triggers rollback: stop the candidate before moving
+it back to staging, restore the backup and start/check the previous runtime.
+The command exits nonzero even after successful rollback; the failing stage
+is retained for inspection/retry. If stopping or restoration fails, copies
+are retained and manual recovery is reported. SIGKILL, power loss and storage
+failure cannot be recovered by a shell trap: inspect the preserved backup
+from a separate terminal. Success keeps the previous runtime as a rollback
+backup; final output failure cannot reverse a successful activation.
+
+Regression tests: `make bats-dc-activate` (temporary HOME, mocked
+systemctl/curl/pgrep); also included in `make test-ci`.
 
 The Python CI quality step uses Ruff's correctness rules for the existing
 Python tree, and initially gates ty and Pyright on the winget log parser;
