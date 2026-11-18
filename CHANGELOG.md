@@ -2,12 +2,15 @@
 
 Este archivo contiene las últimas 5 releases. Para el historial completo, consulta los archivos en el directorio `releases/`.
 
-## [v0.6.2] - 2026-11-18
+## [v0.6.3] - 2026-11-18
 
 ## Changes
 ### Added
-- 2026-11-18 08:57 [7a5e7cb](https://github.com/IXATU/dotfiles/commit/7a5e7cb) feat(update): safely activate staged Desktop Commander with rollback (#33) (Jesús)
-- 2026-11-18 08:29 [a8a69a0](https://github.com/IXATU/dotfiles/commit/a8a69a0) feat(update): track and safely stage local Desktop Commander releases (#32) (Jesús)
+- 2026-11-18 14:21 [21cf691](https://github.com/IXATU/dotfiles/commit/21cf691) feat(update): report Azure MCP stable versions without live activation (jesus)
+- 2026-11-18 13:56 [1488253](https://github.com/IXATU/dotfiles/commit/1488253) feat(dotfiles): portable opt-in Azure MCP tunnel pilot (jesus)
+
+### Fixed
+- 2026-11-18 14:26 [8503f03](https://github.com/IXATU/dotfiles/commit/8503f03) fix(security): patch MCP runtime vulnerable dependencies (jesus)
 
 
 ## [v0.3.0] - 2026-10-23
