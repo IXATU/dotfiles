@@ -1,7 +1,14 @@
 #!/usr/bin/env bash
-# Report the opt-in uvx launcher pin; never execute or activate the package.
+# Opt-in Azure MCP pin, stable release discovery and verified activation.
 azure_mcp_version() {
-	local launcher="$HOME/.local/share/ixatu-azure-mcp-pilot/start.sh"
+	local launcher="$HOME/.local/share/ixatu-azure-mcp-pilot/start.sh" ancestor
+	# Version snapshots must not follow a launcher symlink into unrelated Home files.
+	ancestor="$launcher"
+	while [[ "$ancestor" != / ]]; do
+		[[ ! -L "$ancestor" ]] || return 0
+		ancestor="${ancestor%/*}"
+		[[ -n "$ancestor" ]] || break
+	done
 	[[ -r "$launcher" ]] || return 0
 	sed -nE 's@^exec ([^[:space:]]*/)?uvx[[:space:]]+--from[[:space:]]+msmcp-azure==([0-9]+\.[0-9]+\.[0-9]+)([[:space:]].*)?$@\2@p' "$launcher" 2>/dev/null || true
 }
@@ -23,7 +30,7 @@ try:
     releases = json.load(sys.stdin)["releases"]
     stable = [v for v, files in releases.items()
               if re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+", v)
-              and any(not f.get("yanked", False) for f in files)]
+              and files and all(not f.get("yanked", False) for f in files)]
     print(max(stable, key=lambda v: tuple(map(int, v.split(".")))))
 except (ValueError, KeyError, TypeError, AttributeError):
     sys.exit(1)
@@ -31,7 +38,7 @@ except (ValueError, KeyError, TypeError, AttributeError):
 }
 
 update_azure_mcp() {
-	local current latest
+	local current latest helper activation_log activation_status
 	azure_mcp_snapshot
 	if [[ ! -f "$HOME/.local/share/ixatu-azure-mcp-pilot/start.sh" ]]; then
 		result_skip "WSL" "Azure MCP" "Optional managed pilot absent; no changes made"
@@ -45,7 +52,22 @@ update_azure_mcp() {
 	elif ! latest="$(azure_mcp_latest)" || [[ ! "$latest" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
 		result_warn "WSL" "Azure MCP" "PINNED $current; latest stable unknown (PyPI unavailable); unchanged"
 	elif [[ "$latest" != "$current" && "$(printf '%s\n%s\n' "$latest" "$current" | sort -V | tail -n 1)" == "$latest" ]]; then
-		result_warn "WSL" "Azure MCP" "PINNED $current; latest stable $latest; ACTIVATION_PENDING: human review/update of dedicated launcher pin and separate pilot restart required (not performed)"
+		if [[ "${DOTFILES_MCP_AUTO_ACTIVATE:-1}" == 0 || "${current%%.*}" != "${latest%%.*}" ]]; then
+			result_warn "WSL" "Azure MCP" "PINNED $current; latest stable $latest; ACTIVATION_PENDING (disabled or incompatible)"
+		else
+			helper="${DOTFILES_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)}/scripts/update/azure-mcp-activate.py"
+			activation_log="${LOG_DIR:-$DOTFILES_UPDATE_RUN_DIR}/wsl-azure-mcp-activate.log"
+			if python3 "$helper" "$latest" >"$activation_log" 2>&1; then
+				tool_snapshot_add "Azure MCP" "$current" "$(azure_mcp_version)"
+				result_info "WSL" "Azure MCP" "INSTALLED/ACTIVATED $latest; verified; see activation log"
+			else
+				activation_status=ACTIVATION_PENDING
+				if grep -q 'ROLLBACK FAILED' "$activation_log"; then
+					activation_status='ROLLBACK FAILED: manual recovery required'
+				elif grep -q ROLLBACK "$activation_log"; then activation_status=ROLLBACK; fi
+				result_warn "WSL" "Azure MCP" "PINNED $(azure_mcp_version); $activation_status; see activation log"
+			fi
+		fi
 	else
 		result_info "WSL" "Azure MCP" "PINNED $current; latest stable $latest; unchanged"
 	fi

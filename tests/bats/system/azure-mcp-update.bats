@@ -8,12 +8,13 @@ setup() {
 	export PYPI_JSON="$BATS_TEST_TMPDIR/pypi.json"
 	export DOTFILES_UPDATE_RUN_DIR="$BATS_TEST_TMPDIR/run"
 	unset DOTFILES_UPDATE_MOCK
+	export DOTFILES_MCP_AUTO_ACTIVATE=0
 	mkdir -p "$HOME/.local/share/ixatu-azure-mcp-pilot" "$MOCK_BIN"
 	export LAUNCHER="$HOME/.local/share/ixatu-azure-mcp-pilot/start.sh"
 	printf 'exec uvx --from msmcp-azure==3.0.0 azmcp server start --transport stdio\n' >"$LAUNCHER"
 	printf '{"info":{"version":"4.0.0b1"},"releases":{"3.0.0":[{}],"4.0.0b1":[{}],"5.0.0rc1":[{}],"6.0.0.dev1":[{}],"7.0.0":[{"yanked":true}],"8.0.0":[]}}' >"$PYPI_JSON"
 	# Restricted PATH: snapshots cannot invoke any workstation CLI.
-	for cmd in bash mkdir dirname sed awk head tr sort tail date python3 cat; do
+	for cmd in bash mkdir dirname sed awk head tr sort tail date python3 cat grep; do
 		ln -s "$(command -v "$cmd")" "$MOCK_BIN/$cmd"
 	done
 	cat >"$MOCK_BIN/curl" <<'CURL'
@@ -65,7 +66,7 @@ report() {
 	[[ "$output" == *'PINNED 3.0.0; latest stable 3.0.0; unchanged'* ]]
 }
 
-@test "Azure MCP newer stable reports manual activation without changing launcher" {
+@test "Azure MCP maintenance opt-out reports pending without changing launcher" {
 	printf '{"releases":{"3.9.0":[{}],"3.10.0":[{}],"4.0.0b1":[{}]}}' >"$PYPI_JSON"
 	cp "$LAUNCHER" "$BATS_TEST_TMPDIR/before"
 	report
@@ -151,4 +152,65 @@ report() {
 			! grep -q 'Azure MCP' "$DOTFILES_UPDATE_RUN_DIR/wsl-results.tsv"
 		fi
 	done
+}
+
+activation_boundary() {
+	export DOTFILES_MCP_AUTO_ACTIVATE=1 DOTFILES_ROOT="$BATS_TEST_TMPDIR/checkout"
+	mkdir -p "$DOTFILES_ROOT/scripts/update"
+	cat >"$DOTFILES_ROOT/scripts/update/azure-mcp-activate.py" <<'PY'
+import os, pathlib, sys
+p = pathlib.Path(os.environ['LAUNCHER'])
+assert sys.argv[1] == '3.1.0'
+if os.environ.get('ACTIVATION_FAIL'):
+    print('ROLLBACK: previous launcher restored; service ready')
+    sys.exit(1)
+p.write_text(p.read_text().replace('3.0.0', sys.argv[1]))
+print('INSTALLED/ACTIVATED ' + sys.argv[1])
+PY
+	printf '{"releases":{"3.1.0":[{}]}}' >"$PYPI_JSON"
+}
+
+@test "Azure updater default activation boundary updates pin and final snapshot" {
+	activation_boundary
+	report
+	[[ "$output" == *'INSTALLED/ACTIVATED 3.1.0'* ]]
+	grep -q $'^Azure MCP\t3.0.0\t3.1.0\tupdated$' "$DOTFILES_UPDATE_RUN_DIR/snapshot.tsv"
+}
+
+@test "Azure updater rollback warns and continues with previous pin" {
+	activation_boundary
+	export ACTIVATION_FAIL=1
+	report
+	[[ "$output" == *ROLLBACK* ]]
+	[[ "$(cat "$LAUNCHER")" == *3.0.0* ]]
+}
+
+@test "Azure updater major mismatch skips activation even with automation enabled" {
+	activation_boundary
+	printf '{"releases":{"4.0.0":[{}]}}' >"$PYPI_JSON"
+	report
+	[[ "$output" == *ACTIVATION_PENDING* ]]
+	[[ "$(cat "$LAUNCHER")" == *3.0.0* ]]
+}
+
+@test "Azure partially yanked release is never an automatic candidate" {
+	printf '{"releases":{"3.0.0":[{}],"3.1.0":[{}, {"yanked":true}]}}' >"$PYPI_JSON"
+	report
+	[[ "$output" == *'latest stable 3.0.0; unchanged'* ]]
+}
+
+@test "Azure pin reader refuses launcher symlink before opening its contents" {
+	mv "$LAUNCHER" "$BATS_TEST_TMPDIR/unrelated"
+	ln -s "$BATS_TEST_TMPDIR/unrelated" "$LAUNCHER"
+	report
+	[[ "$output" == *'Launcher pin unavailable'* ]]
+	[ ! -e "$CALLS" ]
+}
+
+@test "Azure pin reader refuses symlinked runtime ancestors" {
+	mv "$HOME/.local/share/ixatu-azure-mcp-pilot" "$BATS_TEST_TMPDIR/unrelated"
+	ln -s "$BATS_TEST_TMPDIR/unrelated" "$HOME/.local/share/ixatu-azure-mcp-pilot"
+	report
+	[[ "$output" == *'Launcher pin unavailable'* ]]
+	[ ! -e "$CALLS" ]
 }

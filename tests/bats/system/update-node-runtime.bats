@@ -352,7 +352,7 @@ EOF
 EOF
 	chmod +x "${prefix}/bin/npm"
 
-	run env PATH="$shadow_bin" NODE_RUNTIME_TRACE="$trace" DOTFILES_MANAGED_NODE_BIN="$managed" bash -c "set -euo pipefail; set -- --section none; DOTFILES_UPDATE_RUN_DIR='${run_dir}'; source '${UPDATE_WSL}'; overlay=\$(node_runtime_create_overlay '${run_dir}' '${managed}'); export PATH=\"\$(node_runtime_controlled_path \"\$overlay\" '${prefix}' '${shadow_bin}')\"; unset NPM_CONFIG_PREFIX DOTFILES_NPM_PREFIX; test \"\$(user_npm_prefix)\" = '${prefix}'; node_runtime_cleanup_overlay \"\$overlay\""
+	run env HOME="${TEST_TEMP_DIR}/home" PATH="$shadow_bin" NODE_RUNTIME_TRACE="$trace" DOTFILES_MANAGED_NODE_BIN="$managed" bash -c "set -euo pipefail; set -- --section none; DOTFILES_UPDATE_RUN_DIR='${run_dir}'; source '${UPDATE_WSL}'; overlay=\$(node_runtime_create_overlay '${run_dir}' '${managed}'); export PATH=\"\$(node_runtime_controlled_path \"\$overlay\" '${prefix}' '${shadow_bin}')\"; unset NPM_CONFIG_PREFIX DOTFILES_NPM_PREFIX; test \"\$(user_npm_prefix)\" = '${prefix}'; node_runtime_cleanup_overlay \"\$overlay\""
 	[[ "$status" -eq 0 ]]
 	grep -q 'managed-node-ran:.*/npm' "$trace"
 	assert_file_not_contains "$trace" 'shadow-node-ran'

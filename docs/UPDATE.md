@@ -355,25 +355,31 @@ under `~/.local/share/ixatu-mcp`) and **Tunnel Client** (the executable under
 `~/.local/bin`) in the `Tool snapshot`. The updater checks npm and GitHub's
 latest stable release respectively. A newer Desktop Commander is installed with
 its exact version, npm integrity verification, lockfile, and scripts disabled
-into `~/.local/share/ixatu-mcp-staged/<version>` only. The running MCP is never
-replaced or restarted: a `STAGED`/`ACTIVATION_PENDING` warning describes the
-manual activation command (`dotfiles-dc-activate <version> --apply`). The snapshot continues to report the **active**
-installed version, not the staged version. A newer Tunnel Client is reported
-as available for separately verified, manual update; the running binary is
-never overwritten by the updater. Network failures are warnings, never
-reported as successful upgrades. No credentials are needed for these checks.
+into `~/.local/share/ixatu-mcp-staged/<version>`. By default it then invokes
+verified activation: DC 0.x accepts only patches within the same minor; DC 1+
+accepts minor/patch updates within the same major. Other versions remain
+`PREPARED` / `ACTIVATION_PENDING`. `DOTFILES_MCP_AUTO_ACTIVATE=0` disables automatic
+activation of both local MCPs (DC staging and version checks continue).
+The snapshot reports the active version after successful activation. Tunnel
+Client remains a separate manual, checksum-verified update; its shared binary
+is never overwritten. Network/activation failures warn and leave the global
+updater running. Activation logs live beside the existing per-run tool logs.
 
-#### Explicit activation (human only)
+#### Verified activation
 
-`dotfiles-dc-activate` is published through the existing Chezmoi symlink
-pattern. Before materialization, use `./bin/dotfiles-dc-activate` from the
-checkout. The updater never calls activation. Agents must only test with
-mocked commands and a temporary HOME; never activate the live tunnel.
+`dotfiles-dc-activate` is published through the existing Chezmoi symlink pattern;
+the updater calls the activator from its own checkout. The explicit internal
+`--updater-apply` mode enforces the conservative version policy and opt-out.
+Ordinary `--apply` retains its existing manual, verified behavior.
+Run the daily updater from an independent WSL terminal. When the caller belongs
+to `ixatu-wsl-mcp.service`, automatic DC activation stays pending to avoid killing
+the caller before its summary. No detached daemon or background job is added.
+Agents exercise mutations only with mocked commands and a temporary HOME.
 
 ```bash
 dotfiles-dc-activate --status          # default: read-only active/staged listing
 dotfiles-dc-activate 0.3.4             # validate staged candidate; dry-run
-# HUMAN ONLY, from a separate WSL terminal: interrupts ChatGPT's tunnel.
+# Manual activation from a separate WSL terminal: interrupts ChatGPT's tunnel.
 # Default health URL is http://127.0.0.1:49187/readyz
 dotfiles-dc-activate 0.3.4 --apply
 # Optional override if this computer uses a different tunnel port:
@@ -401,7 +407,7 @@ ownership. Activation uses same-filesystem directory renames, an exclusive
 Dry-run/status create no locks, backups or logs. The lock serializes this CLI;
 do not run the updater or modify staging concurrently with human activation.
 
-Only `--apply` stops the service, moves active to backup, moves staged to
+`--apply` and authorized `--updater-apply` stop the service, moves active to backup, moves staged to
 active, and starts the service. For up to 30 seconds it retries service
 readiness, active metadata version, a Desktop Commander process under the
 service's MainPID (including nested descendants, with the active package path
@@ -409,7 +415,7 @@ in its command), and HTTP health. The health URL must use literal HTTP
 loopback, without credentials, queries or fragments. Curl ignores `.curlrc`, bypasses proxies, accepts only HTTP 2xx,
 does not follow redirects and discards response bodies. Use a read-only `/health`
 or `/health/control-plane` endpoint; the script never invokes MCP tools or
-prints service environment/health bodies. There is no guessed default port.
+prints service environment/health bodies. The default is the dedicated DC port 49187; Azure uses 49188 independently.
 
 Failure or HUP/INT/TERM triggers rollback: stop the candidate before moving
 it back to staging, restore the backup and start/check the previous runtime.
@@ -426,3 +432,6 @@ systemctl/curl/pgrep); also included in `make test-ci`.
 The Python CI quality step uses Ruff's correctness rules for the existing
 Python tree, and initially gates ty and Pyright on the winget log parser;
 expanding full-repository typing requires resolving older typing diagnostics.
+
+Azure MCP uses an independent pinned-launcher transaction, including offline MCP
+catalog/schema preflight and rollback: [Azure pilot updates](ops/azure-mcp-pilot.md#versiones-en-dotfiles-update).

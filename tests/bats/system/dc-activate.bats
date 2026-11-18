@@ -42,6 +42,14 @@ if [[ -f "$DC_TEST/fail-curl" ]]; then exit 1; fi
 if [[ -f "$DC_TEST/retry" ]]; then rm "$DC_TEST/retry"; exit 1; fi
 printf 200
 MOCK
+	cat >"$BATS_TEST_TMPDIR/bin/grep" <<'MOCK'
+#!/usr/bin/env bash
+if [[ "${*: -1}" == /proc/self/cgroup ]]; then
+  [[ "${DC_CALLER_IN_SERVICE:-0}" == 1 ]]
+else
+  exec /usr/bin/grep "$@"
+fi
+MOCK
 	chmod +x "$BATS_TEST_TMPDIR/bin/"*
 }
 
@@ -77,7 +85,7 @@ assert_old() {
 @test "activation help and status never mutate or contact service" {
 	run "$CLI" --help
 	[ "$status" -eq 0 ]
-	[[ "$output" == *'HUMAN ONLY'* ]]
+	[[ "$output" == *'--updater-apply'* ]]
 	run "$CLI" --status
 	[ "$status" -eq 0 ]
 	[[ "$output" == *'ACTIVE 0.3.3'*'STAGED 0.3.4'* ]]
@@ -289,4 +297,114 @@ MOCK
 	[ "$status" -eq 0 ]
 	[[ "$output" == *DRY-RUN* ]]
 	assert_old
+}
+
+@test "updater mode activates compatible patch and is idempotent" {
+	run "$CLI" 0.3.4 --updater-apply
+	[ "$status" -eq 0 ]
+	[[ "$output" == *'ACTIVE 0.3.4'* ]]
+	run "$CLI" 0.3.4 --updater-apply
+	[ "$status" -eq 0 ]
+	[[ "$output" == *'already active'* ]]
+	[ "$(grep -c stop "$DC_TEST/systemctl")" -eq 1 ]
+}
+
+@test "updater mode refuses zero major minor and major transitions" {
+	for version in 0.4.0 1.0.0; do
+		run "$CLI" "$version" --updater-apply
+		[ "$status" -ne 0 ]
+		[[ "$output" == *'incompatible updater version'* ]]
+	done
+	[ ! -e "$DC_TEST/systemctl" ]
+	assert_old
+}
+
+@test "updater mode opt-out and mock prevent service mutation" {
+	for flag in DOTFILES_MCP_AUTO_ACTIVATE=0 DOTFILES_UPDATE_MOCK=1; do
+		run env "$flag" "$CLI" 0.3.4 --updater-apply
+		[ "$status" -ne 0 ]
+		[[ "$output" == *'disabled'* ]]
+	done
+	[ ! -e "$DC_TEST/systemctl" ]
+	assert_old
+}
+
+@test "updater mode rolls back failed restart with service isolation" {
+	touch "$DC_TEST/fail-start"
+	run "$CLI" 0.3.4 --updater-apply
+	[ "$status" -ne 0 ]
+	[[ "$output" == *ROLLBACK* ]]
+	run ! grep -Eq 'azure|49188' "$DC_TEST/systemctl" "$DC_TEST/curl"
+	assert_old
+}
+
+dc_updater() {
+	local latest="$1"
+	local semver
+	semver="$(node -e 'const fs=require("fs"),m=require("module"); console.log(require("path").dirname(m.createRequire(fs.realpathSync(process.argv[1])).resolve("semver/package.json")))' "$(command -v npm)")"
+	mkdir -p "$BATS_TEST_TMPDIR/bin/node_modules"
+	ln -s "$semver" "$BATS_TEST_TMPDIR/bin/node_modules/semver"
+	cat >"$BATS_TEST_TMPDIR/bin/npm" <<'MOCK'
+#!/usr/bin/env bash
+[[ "$1" == view ]] || { echo FORBIDDEN-package-operation >&2; exit 99; }
+printf '%s\n' "$LATEST"
+MOCK
+	chmod +x "$BATS_TEST_TMPDIR/bin/npm"
+	run env LATEST="$latest" DOTFILES_ROOT="$REPO" LOG_DIR="$DC_TEST" bash -c '
+    set -euo pipefail
+    source "$DOTFILES_ROOT/scripts/update/lib/dc_local.sh"
+    result_info() { echo "$*"; }
+    result_warn() { echo "$*"; }
+    result_skip() { echo "$*"; }
+    tool_snapshot_has() { return 0; }
+    tool_snapshot_add() { echo "snapshot $*"; }
+    update_dc_local
+  '
+	[ "$status" -eq 0 ]
+	[[ "$output" != *FORBIDDEN* ]]
+}
+
+@test "DC updater invokes verified activation and records new active snapshot" {
+	dc_updater 0.3.4
+	[[ "$output" == *'INSTALLED/ACTIVATED 0.3.4'* ]]
+	[[ "$output" == *'snapshot Desktop Commander 0.3.3 0.3.4'* ]]
+	run ! grep -q azure "$DC_TEST/systemctl"
+}
+
+@test "DC updater equal stable version never invokes services or package install" {
+	dc_updater 0.3.3
+	[[ "$output" == *unchanged* ]]
+	[ ! -e "$DC_TEST/systemctl" ]
+	assert_old
+}
+
+@test "DC updater failure warns without aborting and old runtime is ready" {
+	touch "$DC_TEST/fail-start"
+	dc_updater 0.3.4
+	[[ "$output" == *ROLLBACK* ]]
+	assert_old
+}
+
+@test "DC updater incompatible version remains staged without restart" {
+	fixture "$HOME/.local/share/ixatu-mcp-staged/0.4.0" 0.4.0
+	dc_updater 0.4.0
+	[[ "$output" == *ACTIVATION_PENDING* ]]
+	[ ! -e "$DC_TEST/systemctl" ]
+	assert_old
+}
+
+@test "DC updater inside live service leaves candidate pending without killing caller" {
+	run env DC_CALLER_IN_SERVICE=1 "$CLI" 0.3.4 --updater-apply
+	[ "$status" -ne 0 ]
+	[[ "$output" == *'caller belongs to DC service'* ]]
+	[ ! -e "$DC_TEST/systemctl" ]
+	assert_old
+}
+
+@test "DC stable major permits compatible minor updates" {
+	fixture "$ACTIVE" 1.1.0
+	fixture "$HOME/.local/share/ixatu-mcp-staged/1.2.0" 1.2.0
+	run "$CLI" 1.2.0 --updater-apply
+	[ "$status" -eq 0 ]
+	[[ "$output" == *'ACTIVE 1.2.0'* ]]
 }

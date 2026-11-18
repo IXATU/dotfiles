@@ -2,8 +2,8 @@
 
 Receta pequeña para PC-IXATU-09, independiente de Desktop Commander. Ejecutar
 manualmente desde el checkout; no se instala ni registra en Cursor/Codex,
-Chezmoi o el MANIFEST global. `dotfiles-update` solo reporta versiones del piloto
-si está presente. No requiere abrir Cursor.
+Chezmoi o el MANIFEST global. `dotfiles-update` mantiene el piloto local existente
+cuando está presente y activo (también PC08). No requiere abrir Cursor.
 
 ## Preparación y preview
 
@@ -93,17 +93,48 @@ La sección `tools` lee el pin de
 `~/.local/share/ixatu-azure-mcp-pilot/start.sh` y consulta el JSON de PyPI para
 `msmcp-azure` (con timeouts de conexión/total de 5/15 segundos). Solo considera
 versiones finales `x.y.z` con archivos no retirados; ignora beta/rc/dev.
-El snapshot incluye `Azure MCP` con el pin antes/después idéntico, incluso si
-PyPI falla o se ejecuta otra sección. `PINNED` representa configuración, no una
-comprobación de la versión cargada en un proceso vivo ni de la caché uvx.
+El snapshot incluye el pin antes/después; tras una activación verificada muestra
+la nueva versión. Con versiones iguales no ejecuta uvx ni opera servicios.
+`DOTFILES_MCP_AUTO_ACTIVATE=0` conserva solo el reporte (modo mantenimiento/CI).
+Mock no consulta red ni ejecuta paquetes o servicios.
 
-Si aparece una estable posterior, emite `ACTIVATION_PENDING`: revisar manualmente
-la compatibilidad, cambiar el pin del launcher dedicado y activar/reiniciar el
-piloto en una terminal humana separada. El updater no descarga/ejecuta uvx, no
-escribe el launcher ni modifica servicios, autenticación o túneles. `--apply`
-de la receta seguirá rechazando un launcher con un pin distinto del generado.
-Sin piloto: `SKIP`; sin versión remota válida: `WARN` y pin conservado. En mock
-no hay consulta de red. Tunnel Client conserva su reporte separado existente.
+Una estable posterior del mismo major activa por defecto con supervisión humana
+en la actualización diaria. Un major distinto queda `ACTIVATION_PENDING`.
+El helper `scripts/update/azure-mcp-activate.py`:
+
+1. Verifica propietario, modo, rutas reales sin symlinks, launcher conocido y
+   flags exactos: stdio, mode all, namespaces containerapps/group y read-only.
+   Acepta uvx en PATH o `$HOME/.local/bin/uvx` absoluto. Rechaza otros comandos,
+   scopes y flags. Adquiere `flock` exclusivo del directorio del piloto.
+2. Exige servicio activo y valida el pin actual con initialize + tools/list
+   offline. Descarga el candidato fijado con `uvx --from msmcp-azure==X.Y.Z`
+   y `azmcp --help` (180 s máximo), sin cambiar el servicio.
+3. Ejecuta el candidato desde caché (`--offline`), initialize + tools/list
+   (45 s máximo): exactamente `containerapps_list`, `group_list`,
+   `group_resource_list`, schemas de objeto válidos, sin readOnlyHint falso,
+   y schemas de entrada/salida idénticos al pin anterior. No hace tools/call.
+   Un fallo del contrato actual o candidato impide la activación.
+4. Reporta `PREPARED`, reemplaza atómicamente solo el texto de la versión,
+   conservando propietario/grupo/modo y el resto del launcher, y reinicia
+   exclusivamente `ixatu-azure-mcp-pilot.service`.
+5. Confirma servicio activo, pin del launcher y HTTP 2xx en
+   `127.0.0.1:49188/readyz` durante hasta 30 s. Cada operación systemd tiene
+   timeout de 45 s. Reporta `INSTALLED/ACTIVATED` o restaura atómicamente el
+   launcher previo, reinicia y comprueba su readiness: `ROLLBACK`.
+
+Errores parciales son WARN; el updater continúa. Los logs de activación del run
+contienen estados, sin salida del servidor, cuerpos HTTP ni entorno. Si falla
+la recuperación, reporta `ROLLBACK FAILED` y requiere recuperación manual del
+servicio dedicado. No lee ni modifica perfil, runtime.env o credenciales; no
+cambia el tunnel-client compartido, DC ni 49187. Tampoco reinicia si el caller
+pertenece al propio servicio Azure. No hay daemon adicional.
+
+La caché uv del pin anterior debe existir para comprobar el contrato offline.
+SIGKILL, pérdida de alimentación o disco no admiten rollback automático: revisar
+el pin y servicio antes de reintentar. Las pruebas reales con versiones iguales
+solo demuestran no-op; una actualización real compatible sigue pendiente de una
+release futura. `--apply` de la receta inicial seguirá rechazando launchers
+actualizados distintos del generado; no se usa para mantener instalaciones.
 
 ### Operación local
 

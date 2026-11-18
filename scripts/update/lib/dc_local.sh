@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Local IXATU MCP versions; never replace a live service runtime.
+# Local IXATU MCP staging and conservative verified activation.
 dc_local_version() {
 	local file="$HOME/.local/share/ixatu-mcp/node_modules/@wonderwhy-er/desktop-commander/package.json"
 	[[ -f "$file" ]] || return 0
@@ -29,7 +29,11 @@ dc_snapshot() {
 }
 
 update_dc_local() {
-	local installed latest tunnel_installed tunnel_latest stage tmp candidate
+	local installed latest tunnel_installed tunnel_latest stage tmp candidate activation_log activation_status
+	if [[ "${DOTFILES_UPDATE_MOCK:-0}" != 0 ]]; then
+		result_skip "WSL" "Desktop Commander" "Mock; no package or service operations"
+		return 0
+	fi
 	installed="$(dc_local_version)"
 	tunnel_installed="$(dc_tunnel_version)"
 	dc_snapshot
@@ -57,7 +61,20 @@ update_dc_local() {
 				[[ -d "$tmp" ]] && rm -rf "$tmp"
 			fi
 			if [[ -f "$candidate" ]] && [[ "$(node -p "require(process.argv[1]).version" "$candidate" 2>/dev/null)" == "$latest" ]]; then
-				result_warn "WSL" "Desktop Commander" "STAGED $latest; ACTIVE $installed; ACTIVATION_PENDING; human separate WSL terminal: dotfiles-dc-activate $latest --apply (not performed)"
+				activation_log="$LOG_DIR/wsl-dc-activate.log"
+				if [[ "${DOTFILES_MCP_AUTO_ACTIVATE:-1}" != 0 ]] &&
+					"${DOTFILES_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)}/bin/dotfiles-dc-activate" "$latest" --updater-apply >"$activation_log" 2>&1; then
+					tool_snapshot_add "Desktop Commander" "$installed" "$(dc_local_version)"
+					result_info "WSL" "Desktop Commander" "INSTALLED/ACTIVATED $latest; verified; see activation log"
+				else
+					activation_status=ACTIVATION_PENDING
+					if [[ "${DOTFILES_MCP_AUTO_ACTIVATE:-1}" != 0 && -f "$activation_log" ]]; then
+						if grep -q 'manual.*recovery' "$activation_log"; then
+							activation_status='ROLLBACK FAILED: manual recovery required'
+						elif grep -q ROLLBACK "$activation_log"; then activation_status=ROLLBACK; fi
+					fi
+					result_warn "WSL" "Desktop Commander" "PREPARED $latest; ACTIVE $(dc_local_version); $activation_status; see activation log"
+				fi
 			fi
 		else
 			result_info "WSL" "Desktop Commander" "Installed $installed; latest stable $latest; unchanged"
