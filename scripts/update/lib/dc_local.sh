@@ -57,7 +57,7 @@ update_dc_local() {
 				[[ -d "$tmp" ]] && rm -rf "$tmp"
 			fi
 			if [[ -f "$candidate" ]] && [[ "$(node -p "require(process.argv[1]).version" "$candidate" 2>/dev/null)" == "$latest" ]]; then
-				result_warn "WSL" "Desktop Commander" "STAGED $latest; ACTIVE $installed; ACTIVATION_PENDING (restart is manual, not performed)"
+				result_warn "WSL" "Desktop Commander" "STAGED $latest; ACTIVE $installed; ACTIVATION_PENDING; human separate WSL terminal: dotfiles-dc-activate $latest --apply (not performed)"
 			fi
 		else
 			result_info "WSL" "Desktop Commander" "Installed $installed; latest stable $latest; unchanged"
