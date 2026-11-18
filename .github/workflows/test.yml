@@ -24,5 +24,12 @@ jobs:
       - name: Secret scan (gitleaks)
         run: make security-gitleaks
 
+      - name: Python quality tooling
+        run: |
+          python3 -m pip install --break-system-packages ruff ty pyright
+          ruff check --select E4,E7,E9,F scripts tests/python
+          ty check scripts/update/parse-winget-log.py
+          pyright scripts/update/parse-winget-log.py
+
       - name: CI test suite
         run: make test-ci

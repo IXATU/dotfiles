@@ -22,7 +22,7 @@ import sys
 from datetime import datetime, timezone
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Dict, List, Mapping, MutableMapping, Optional, Set, Tuple
+from typing import Any, Dict, List, Mapping, Optional, Set, Tuple
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 CHEZMOI_PREAMBLE_LINE = re.compile(r"^\{\{-.*?-\}\}\s*$")

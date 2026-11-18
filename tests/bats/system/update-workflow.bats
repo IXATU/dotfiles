@@ -1478,6 +1478,7 @@ PY
 
 @test "winget parser fixtures match expected TSV" {
 	local log expected case_name expected_text
+	compgen -G "${WINGET_FIXTURES}/*.log" >/dev/null || skip "WinGet source log fixtures unavailable on this checkout"
 	for log in "${WINGET_FIXTURES}"/*.log; do
 		case_name="$(basename "$log" .log)"
 		expected="${WINGET_FIXTURES}/${case_name}.expected.tsv"
