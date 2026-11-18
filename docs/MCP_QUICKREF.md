@@ -233,3 +233,12 @@ npx/python/wrapper     DSN/credentials/env
 4. Run `make ai-mcp-validate`.
 5. Regenerate Chezmoi MCP templates when needed: `make ai-mcp-generate APPLY=1` (after governance passes).
 6. Run `make ai-mcp-governance` or `bin/validate-mcp-governance` before commit when touching MCP intent or templates.
+
+## Actualización de los MCP locales IXATU
+
+`dotfiles-update` activa DC compatible (0.x: mismo minor; 1+: mismo major) y Azure
+MCP del mismo major, con preflight y rollback. Ejecutar desde terminal WSL
+independiente. `DOTFILES_MCP_AUTO_ACTIVATE=0` desactiva ambas activaciones;
+versiones incompatibles quedan pendientes. Tunnel Client sigue siendo manual.
+Detalles: [DC](UPDATE.md#ixatu-desktop-commander-local) y
+[Azure](ops/azure-mcp-pilot.md#versiones-en-dotfiles-update).

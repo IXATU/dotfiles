@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
-# Human-only activation. Updaters and agents must never invoke --apply on a live HOME.
+# Verified activation; updater mode additionally enforces conservative compatibility.
 set -euo pipefail
 umask 077
 repo="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/.." && pwd)"
 validator="$repo/scripts/dc/validate.cjs"
+updater=0
 mode=dry-run
 version=
 health_url='http://127.0.0.1:49187/readyz'
@@ -16,10 +17,16 @@ Usage: dotfiles-dc-activate [--status|--dry-run|--apply] [VERSION] [--health-url
 Default: read-only status, or preflight/dry-run when VERSION is supplied.
 VERSION must be exact stable semver. --apply requires VERSION; default readiness endpoint is http://127.0.0.1:49187/readyz.
 Health URL must be HTTP loopback without credentials or query parameters.
-HUMAN ONLY: invoke --apply from a separate WSL terminal; disconnects the tunnel.
-Never invoke --apply from updater/agent sessions. Failed candidates remain staged.
+Manual --apply: use a separate WSL terminal; disconnects the tunnel.
+--updater-apply: authorized daily updater; compatible versions only.
+Failed candidates remain staged. Agents test only with fixtures.
 HELP
 		exit 0
+		;;
+	--updater-apply)
+		updater=1
+		set -- --apply "${@:2}"
+		continue
 		;;
 	--apply | --dry-run | --status)
 		((for_arg_mode == 0)) || {
@@ -69,6 +76,16 @@ if [[ "$version" == "$old" ]]; then
 	exit 0
 fi
 [[ "$(printf '%s\n%s\n' "$version" "$old" | sort -V | tail -n 1)" == "$version" ]] || fail 'version must be newer than active'
+if ((updater)); then
+	[[ "${DOTFILES_MCP_AUTO_ACTIVATE:-1}" != 0 && "${DOTFILES_UPDATE_MOCK:-0}" == 0 ]] || fail 'updater activation disabled'
+	IFS=. read -r old_major old_minor _ <<<"$old"
+	IFS=. read -r new_major new_minor _ <<<"$version"
+	[[ "$old_major" == "$new_major" && ("$old_major" != 0 || "$old_minor" == "$new_minor") ]] || fail 'incompatible updater version'
+	# A CLI inside this service would be killed by stop; leave it staged instead.
+	if grep -Fq '/ixatu-wsl-mcp.service' /proc/self/cgroup; then
+		fail 'caller belongs to DC service; run updater in a separate WSL terminal'
+	fi
+fi
 stage="$stages/$version"
 node "$validator" paths "$stage" "$active"
 node "$validator" stage "$stage" "$version" "$(command -v npm)"
@@ -129,7 +146,7 @@ cleanup() {
 	trap '' HUP INT TERM
 	if ((transaction)); then
 		# Do not move a possibly running candidate. Keep both copies if stopping fails.
-		if systemctl --user stop "$service" >/dev/null 2>&1; then
+		if timeout 45 systemctl --user stop "$service" >/dev/null 2>&1; then
 			if [[ -d "$backup/node_modules" ]]; then
 				if [[ -d "$active" ]]; then mv -T -- "$active" "$stage" || rc=1; fi
 				if [[ ! -e "$active" ]]; then mv -T -- "$backup" "$active" || rc=1; fi
@@ -137,7 +154,7 @@ cleanup() {
 		else
 			echo 'ERROR: rollback stop failed; copies retained for manual recovery' >&2
 		fi
-		if systemctl --user start "$service" >/dev/null 2>&1 && ready "$old"; then
+		if timeout 45 systemctl --user start "$service" >/dev/null 2>&1 && ready "$old"; then
 			echo 'ROLLBACK: previous runtime restored' >&2
 		else
 			echo 'ERROR: rollback requires manual service recovery; backup retained' >&2
@@ -154,10 +171,10 @@ trap 'exit 129' HUP
 trap 'exit 130' INT
 trap 'exit 143' TERM
 transaction=1
-systemctl --user stop "$service" >/dev/null 2>&1 || fail 'service stop failed'
+timeout 45 systemctl --user stop "$service" >/dev/null 2>&1 || fail 'service stop failed'
 mv -T -- "$active" "$backup"
 mv -T -- "$stage" "$active"
-systemctl --user start "$service" >/dev/null 2>&1 || fail 'service start failed'
+timeout 45 systemctl --user start "$service" >/dev/null 2>&1 || fail 'service start failed'
 ready "$version" || fail 'readiness timed out; rolling back'
 # Success is committed before best-effort output (e.g. a closed terminal pipe).
 transaction=0
