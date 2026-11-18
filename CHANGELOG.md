@@ -2,11 +2,12 @@
 
 Este archivo contiene las últimas 5 releases. Para el historial completo, consulta los archivos en el directorio `releases/`.
 
-## [v0.6.1] - 2026-11-16
+## [v0.6.2] - 2026-11-18
 
 ## Changes
-### Fixed
-- 2026-11-16 12:38 [685f4fa](https://github.com/IXATU/dotfiles/commit/685f4fa) fix(zsh): clean agent startup and reproducible PATH (#30) (jesus)
+### Added
+- 2026-11-18 08:57 [7a5e7cb](https://github.com/IXATU/dotfiles/commit/7a5e7cb) feat(update): safely activate staged Desktop Commander with rollback (#33) (Jesús)
+- 2026-11-18 08:29 [a8a69a0](https://github.com/IXATU/dotfiles/commit/a8a69a0) feat(update): track and safely stage local Desktop Commander releases (#32) (Jesús)
 
 
 ## [v0.3.0] - 2026-10-23
