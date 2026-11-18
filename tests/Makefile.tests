@@ -463,6 +463,7 @@ bats-system: bats-zsh
 	@$(call run_bats,$(BATS_DIR)/system/excalidraw-docker.bats)
 	@$(call run_bats,$(BATS_DIR)/system/dry-run-guard.bats)
 	@$(call run_bats,$(BATS_DIR)/system/azure-tools.bats)
+	@$(call run_bats,$(BATS_DIR)/system/azure-mcp-pilot.bats)
 	@$(call run_bats,$(BATS_DIR)/system/ai-cursor-check.bats)
 	@$(call run_bats,$(BATS_DIR)/system/secrets-check.bats)
 	@$(call run_bats,$(BATS_DIR)/system/mcp-manifest.bats)
@@ -532,6 +533,7 @@ test-ci: test-lint test-bats-ci test-chezmoi
 	@echo "$(GREEN)==>$(NC) CI tests completed"
 
 test-bats-ci: bats-dc-activate bats-helpers bats-filesystem bats-chezmoi-mcp-launchers bats-mcp-launcher-contract bats-git bats-governance bats-chezmoi bats-skills bats-git-flow bats-gitnexus bats-git-hooks bats-docs
+	@$(call run_bats,$(BATS_DIR)/system/azure-mcp-pilot.bats)
 
 # ============================================
 # Combined tests
