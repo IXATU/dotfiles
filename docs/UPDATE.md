@@ -347,3 +347,22 @@ chezmoi --source="$HOME/dotfiles" apply ~/.cursor/mcp.json ~/.codex/config.toml 
 La secuencia anterior publica solo las superficies MCP globales gestionadas por Chezmoi. Para materializar otros cambios de dotfiles no relacionados con MCPs, revisa el diff de Chezmoi antes de aplicar un `chezmoi apply` general.
 
 Un checkout histórico en `~/mcp-servers/excalidraw-mcp` queda obsoleto. No se borra automáticamente; puedes retirarlo manualmente cuando hayas validado la migración Docker.
+
+### IXATU Desktop Commander local
+
+`dotfiles-update` includes **Desktop Commander** (the actual local installation
+under `~/.local/share/ixatu-mcp`) and **Tunnel Client** (the executable under
+`~/.local/bin`) in the `Tool snapshot`. The updater checks npm and GitHub's
+latest stable release respectively. A newer Desktop Commander is installed with
+its exact version, npm integrity verification, lockfile, and scripts disabled
+into `~/.local/share/ixatu-mcp-staged/<version>` only. The running MCP is never
+replaced or restarted: a `STAGED`/`ACTIVATION_PENDING` warning describes the
+manual activation needed. The snapshot continues to report the **active**
+installed version, not the staged version. A newer Tunnel Client is reported
+as available for separately verified, manual update; the running binary is
+never overwritten by the updater. Network failures are warnings, never
+reported as successful upgrades. No credentials are needed for these checks.
+
+The Python CI quality step uses Ruff's correctness rules for the existing
+Python tree, and initially gates ty and Pyright on the winget log parser;
+expanding full-repository typing requires resolving older typing diagnostics.

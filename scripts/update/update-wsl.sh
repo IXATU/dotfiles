@@ -11,6 +11,8 @@ source "${SCRIPT_DIR}/lib/node_runtime.sh"
 source "${SCRIPT_DIR}/lib/results.sh"
 # shellcheck source=scripts/update/lib/logging.sh
 source "${SCRIPT_DIR}/lib/logging.sh"
+# shellcheck source=scripts/update/lib/dc_local.sh
+source "${SCRIPT_DIR}/lib/dc_local.sh"
 
 SECTION="all"
 if [[ "${1:-}" == "--section" ]]; then
@@ -543,6 +545,7 @@ capture_workstation_snapshot() {
 	snapshot_current_tool "OpenCode" opencode --version
 	snapshot_current_tool "Claude Code CLI" claude --version
 	snapshot_current_tool "Cursor Agent CLI" agent --version
+	dc_snapshot
 }
 
 ingest_agent_tools_results() {
@@ -771,6 +774,7 @@ run_services() {
 
 want_section apt && run_apt
 want_section tools && run_tools
+want_section tools && ! is_truthy "${DOTFILES_UPDATE_MOCK:-}" && update_dc_local
 want_section tools && run_opencode
 want_section tools && run_cursor_agent
 want_section tools && run_ai_workspace
