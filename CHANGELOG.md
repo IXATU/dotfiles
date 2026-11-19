@@ -2,11 +2,11 @@
 
 Este archivo contiene las últimas 5 releases. Para el historial completo, consulta los archivos en el directorio `releases/`.
 
-## [v0.6.4] - 2026-11-18
+## [v0.6.5] - 2026-11-19
 
 ## Changes
-### Added
-- 2026-11-18 15:23 [0e7f0d6](https://github.com/IXATU/dotfiles/commit/0e7f0d6) feat(update): safely autoactivate compatible DC and Azure MCP releases (jesus)
+### Fixed
+- 2026-11-19 08:25 [168412c](https://github.com/IXATU/dotfiles/commit/168412c) fix(update): validate real DC npm payload and avoid apt-daily overlap (jesus)
 
 
 ## [v0.3.0] - 2026-10-23
