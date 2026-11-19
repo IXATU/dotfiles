@@ -39,8 +39,11 @@ try {
       const semver = createRequire(fs.realpathSync(npm))('semver');
       const manifest = read(path.join(root, 'package.json'));
       check(manifest.dependencies[name] === expected);
-      const main = path.resolve(root, key, pkg.main);
-      check(main.startsWith(path.join(root, key) + '/') && fs.statSync(main).isFile());
+      const executable = pkg.bin === undefined ? pkg.main : pkg.bin?.['desktop-commander'];
+      check(typeof executable === 'string' && executable.length > 0 && !path.isAbsolute(executable));
+      const main = path.resolve(root, key, executable);
+      const packagePrefix = path.join(root, key) + '/';
+      check(main.startsWith(packagePrefix) && fs.realpathSync(main).startsWith(packagePrefix) && fs.statSync(main).isFile());
       const lock = read(path.join(root, 'package-lock.json'));
       const hidden = read(path.join(root, 'node_modules/.package-lock.json'));
       const entry = lock.packages[key];
@@ -52,7 +55,9 @@ try {
       check(hidden.packages[key].version === expected && hidden.packages[key].integrity === entry.integrity);
       if (pkg._integrity) check(pkg._integrity === entry.integrity);
       check(typeof pkg.engines?.node === 'string' && semver.satisfies(process.version, pkg.engines.node));
-      for (const dependency of Object.values(lock.packages)) {
+      for (const [relative, dependency] of Object.entries(lock.packages)) {
+        // Cross-platform optional entries can exist in npm lockfiles without being installed.
+        if (dependency.optional && relative && !fs.existsSync(path.join(root, relative))) continue;
         if (dependency.engines?.node) check(semver.satisfies(process.version, dependency.engines.node));
       }
       const walk = dir => {

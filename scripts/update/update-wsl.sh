@@ -169,7 +169,25 @@ run_apt() {
 		record_version_transition "WSL" "Azure CLI" "$azure_cli_before" "$azure_cli_before"
 		return 0
 	fi
-	run_step "WSL" "APT update" "${LOG_DIR}/wsl-apt-update.log" sudo apt-get update -y
+	local apt_service apt_state automatic_update=""
+	if command -v systemctl >/dev/null 2>&1; then
+		for apt_service in apt-daily.service apt-daily-upgrade.service; do
+			if apt_state="$(systemctl show "$apt_service" --property=ActiveState --value 2>/dev/null)"; then
+				case "$apt_state" in
+				active | activating | reloading)
+					automatic_update="$apt_service is $apt_state; automatic APT maintenance in progress"
+					break
+					;;
+				esac
+			fi
+		done
+	fi
+	if [[ -n "$automatic_update" ]]; then
+		skip "APT update: $automatic_update"
+		result_skip "WSL" "APT update" "$automatic_update"
+	else
+		run_step "WSL" "APT update" "${LOG_DIR}/wsl-apt-update.log" sudo apt-get update -y
+	fi
 	run_step "WSL" "APT upgrade" "${LOG_DIR}/wsl-apt-upgrade.log" sudo apt-get upgrade -y
 	run_step "WSL" "APT autoremove" "${LOG_DIR}/wsl-apt-autoremove.log" sudo apt-get autoremove -y
 	if ! command -v az >/dev/null 2>&1; then
