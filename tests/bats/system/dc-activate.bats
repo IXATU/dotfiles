@@ -408,3 +408,78 @@ MOCK
 	[ "$status" -eq 0 ]
 	[[ "$output" == *'ACTIVE 1.2.0'* ]]
 }
+
+# Exercise validation directly: candidate code and service operations must not run.
+validate_executable() {
+	local executable="$1"
+	node - "$STAGE" "$executable" <<'JS'
+const fs = require('fs');
+const [root, executable] = process.argv.slice(2);
+const file = root + '/node_modules/@wonderwhy-er/desktop-commander/package.json';
+const pkg = JSON.parse(fs.readFileSync(file));
+// A valid main must not hide an invalid bin declaration.
+pkg.bin = {'desktop-commander': executable};
+if (executable === 'dist/index.js') delete pkg.main;
+fs.writeFileSync(file, JSON.stringify(pkg));
+JS
+	run node "$REPO/scripts/dc/validate.cjs" stage "$STAGE" 0.3.4 "$(command -v npm)"
+}
+
+@test "DC validator accepts bin-only package without executing candidate code" {
+	printf 'throw new Error("candidate executed");\n' >"$STAGE/node_modules/@wonderwhy-er/desktop-commander/dist/index.js"
+	validate_executable dist/index.js
+	[ "$status" -eq 0 ]
+	[ ! -e "$DC_TEST/systemctl" ]
+}
+
+@test "DC validator refuses unsafe or absent bin even with valid main fallback" {
+	for executable in '../../../package.json' /etc/passwd dist/missing.js ''; do
+		validate_executable "$executable"
+		[ "$status" -ne 0 ]
+	done
+	[ ! -e "$DC_TEST/systemctl" ]
+}
+
+@test "DC validator refuses bin symlink outside package and missing executable metadata" {
+	local package="$STAGE/node_modules/@wonderwhy-er/desktop-commander"
+	ln -s "$STAGE/package.json" "$package/dist/escape.js"
+	validate_executable dist/escape.js
+	[ "$status" -ne 0 ]
+	node - "$package/package.json" <<'JS'
+const fs = require('fs');
+const file = process.argv[2], pkg = JSON.parse(fs.readFileSync(file));
+delete pkg.bin;
+delete pkg.main;
+fs.writeFileSync(file, JSON.stringify(pkg));
+JS
+	run node "$REPO/scripts/dc/validate.cjs" stage "$STAGE" 0.3.4 "$(command -v npm)"
+	[ "$status" -ne 0 ]
+	[ ! -e "$DC_TEST/systemctl" ]
+}
+
+@test "DC validator ignores absent optional Windows engines, but rejects them if installed" {
+	# npm lockfiles include platform-specific optional entries absent from Linux WSL.
+	node - "$STAGE" <<'JS'
+const fs = require('fs');
+const root = process.argv[2];
+const path = root + '/package-lock.json';
+const lock = JSON.parse(fs.readFileSync(path));
+lock.packages['node_modules/@img/sharp-win32-ia32'] = {
+  version: '0.35.5', optional: true, os: ['win32'], cpu: ['ia32'],
+  engines: {node: '^20.9.0'}
+};
+fs.writeFileSync(path, JSON.stringify(lock));
+JS
+	run node "$REPO/scripts/dc/validate.cjs" stage "$STAGE" 0.3.4 "$(command -v npm)"
+	[ "$status" -eq 0 ]
+	mkdir -p "$STAGE/node_modules/@img/sharp-win32-ia32"
+	run node "$REPO/scripts/dc/validate.cjs" stage "$STAGE" 0.3.4 "$(command -v npm)"
+	[ "$status" -ne 0 ]
+}
+
+@test "DC updater corrects writable owned staging parent before activating" {
+	chmod 775 "$HOME/.local/share/ixatu-mcp-staged"
+	dc_updater 0.3.4
+	[[ "$output" == *'INSTALLED/ACTIVATED 0.3.4'* ]]
+	[ "$(stat -c %a "$HOME/.local/share/ixatu-mcp-staged")" -eq 700 ]
+}

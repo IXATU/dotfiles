@@ -2397,3 +2397,88 @@ EOF
 	run grep -Eq '^ups:' "${DOTFILES_DIR}/Makefile" "${DOTFILES_DIR}"/*.mk
 	[[ "${status}" -ne 0 ]]
 }
+
+# Only allow fake sudo/systemctl/az and basic shell utilities in this runner.
+run_apt_preflight() {
+	local daily="$1" upgrade="${2:-inactive}" mock="${3:-0}" apt_exit="${4:-0}"
+	local stub_dir="${TEST_TEMP_DIR}/apt-bin" runner="${TEST_TEMP_DIR}/apt-runner"
+	mkdir -p "$stub_dir"
+	for cmd in bash mkdir dirname date tee tr head sed grep cat perl; do
+		ln -sf "$(command -v "$cmd")" "$stub_dir/$cmd"
+	done
+	cat >"$stub_dir/systemctl" <<'MOCK'
+#!/usr/bin/env bash
+printf '%s\n' "$*" >>"$APT_TEST_DIR/systemctl.log"
+[[ "$1" == show && "$3" == --property=ActiveState && "$4" == --value ]] || exit 99
+state="$DAILY_STATE"
+[[ "$2" != apt-daily-upgrade.service ]] || state="$UPGRADE_STATE"
+[[ "$state" != unavailable ]] || exit 1
+printf '%s\n' "$state"
+MOCK
+	[[ "$daily" != missing ]] || rm "$stub_dir/systemctl"
+	cat >"$stub_dir/sudo" <<'MOCK'
+#!/usr/bin/env bash
+printf '%s\n' "$*" >>"$APT_TEST_DIR/sudo.log"
+[[ "$1" == apt-get ]] || exit 99
+[[ "$2" != update ]] || exit "$APT_UPDATE_EXIT"
+exit 0
+MOCK
+	cat >"$stub_dir/az" <<'MOCK'
+#!/usr/bin/env bash
+printf '2.79.0\n'
+MOCK
+	chmod +x "$stub_dir/sudo" "$stub_dir/az"
+	[[ ! -f "$stub_dir/systemctl" ]] || chmod +x "$stub_dir/systemctl"
+	cat >"$runner" <<'MOCK'
+#!/usr/bin/env bash
+set -euo pipefail
+set -- --section none
+source "$APT_REPO/scripts/update/update-wsl.sh"
+run_apt
+MOCK
+	run env PATH="$stub_dir" APT_REPO="$DOTFILES_DIR" APT_TEST_DIR="$TEST_TEMP_DIR" \
+		DAILY_STATE="$daily" UPGRADE_STATE="$upgrade" APT_UPDATE_EXIT="$apt_exit" \
+		DOTFILES_UPDATE_MOCK="$mock" DOTFILES_UPDATE_RUN_DIR="$TEST_TEMP_DIR/apt-run" bash "$runner"
+	[ "$status" -eq 0 ]
+}
+
+@test "APT preflight skips duplicate update for active activating or reloading automatic services" {
+	for service in daily upgrade; do
+		for state in active activating reloading; do
+			rm -f "$TEST_TEMP_DIR/sudo.log" "$TEST_TEMP_DIR/systemctl.log"
+			if [[ "$service" == daily ]]; then run_apt_preflight "$state"; else run_apt_preflight inactive "$state"; fi
+			grep -q $'SKIP\tWSL\tAPT update\t.*apt-daily' "$TEST_TEMP_DIR/apt-run/wsl-results.tsv"
+			grep -q "$state" "$TEST_TEMP_DIR/apt-run/wsl-results.tsv"
+			! grep -q 'apt-get update' "$TEST_TEMP_DIR/sudo.log"
+			grep -qx 'apt-get upgrade -y' "$TEST_TEMP_DIR/sudo.log"
+			grep -qx 'apt-get autoremove -y' "$TEST_TEMP_DIR/sudo.log"
+			[ "$(wc -l <"$TEST_TEMP_DIR/sudo.log")" -eq 2 ]
+			grep -q $'Azure CLI\t2.79.0\t2.79.0\tunchanged' "$TEST_TEMP_DIR/apt-run/tool-snapshot.tsv"
+			! grep -Eq 'stop|start|disable|kill' "$TEST_TEMP_DIR/systemctl.log"
+		done
+	done
+}
+
+@test "APT preflight keeps normal update when services inactive unavailable or systemctl absent" {
+	for state in inactive failed unavailable missing; do
+		rm -f "$TEST_TEMP_DIR/sudo.log"
+		run_apt_preflight "$state"
+		grep -qx 'apt-get update -y' "$TEST_TEMP_DIR/sudo.log"
+		grep -q $'OK\tWSL\tAPT update\t' "$TEST_TEMP_DIR/apt-run/wsl-results.tsv"
+	done
+}
+
+@test "APT preflight preserves unrelated update errors and continues upgrade and autoremove" {
+	run_apt_preflight inactive inactive 0 100
+	grep -q $'FAIL\tWSL\tAPT update\texit 100;' "$TEST_TEMP_DIR/apt-run/wsl-results.tsv"
+	grep -qx 'apt-get upgrade -y' "$TEST_TEMP_DIR/sudo.log"
+	grep -qx 'apt-get autoremove -y' "$TEST_TEMP_DIR/sudo.log"
+}
+
+@test "APT mock bypasses preflight and sudo and preserves Azure CLI snapshot" {
+	run_apt_preflight activating active 1
+	[ ! -e "$TEST_TEMP_DIR/systemctl.log" ]
+	[ ! -e "$TEST_TEMP_DIR/sudo.log" ]
+	grep -q $'OK\tWSL\tAPT\tmocked' "$TEST_TEMP_DIR/apt-run/wsl-results.tsv"
+	grep -q $'Azure CLI\t2.79.0\t2.79.0\tunchanged' "$TEST_TEMP_DIR/apt-run/tool-snapshot.tsv"
+}
