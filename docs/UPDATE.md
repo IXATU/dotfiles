@@ -285,7 +285,47 @@ La workstation mantiene estas capacidades globales sin imponerlas a los proyecto
 
 Para previsualizar Serena/Taplo sin instalar: `make install-serena DRY_RUN=1` y `make install-taplo DRY_RUN=1`. Los repos siguen prefiriendo sus versiones fijadas (`uv run ...`, scripts npm o lockfiles); CI no debe depender de estas versiones globales.
 
-El resumen final de `dotfiles-update` conserva transiciones Before/After para lo mantenido y completa el estado post-mantenimiento de Python, Node/npm/pnpm/uv, Ruff, Pyright, ty, Taplo, ripgrep, ast-grep, GitNexus, Serena, actionlint, yamllint, gitleaks, osv-scanner, Codex y OpenCode. Una herramienta ausente aparece como `unavailable` y no interrumpe la captura.
+El resumen final de `dotfiles-update` conserva transiciones Before/After para lo mantenido y completa el estado post-mantenimiento de Python, Node/npm/pnpm/uv, Ruff, Pyright, ty, Taplo, ripgrep, ast-grep, GitNexus, Serena, actionlint, yamllint, gitleaks, osv-scanner, Codex, OpenCode y Supabase CLI. Una herramienta ausente aparece como `unavailable` y no interrumpe la captura.
+
+## Supabase CLI estable (Linux/WSL)
+
+El bloque `tools` de `make update-wsl` (también `make update-tools` y el flujo
+habitual `dotfiles-update`) instala o actualiza `~/.local/bin/supabase` mediante
+`scripts/install-supabase-cli.sh`, independientemente de Node/npm. El `Tool
+snapshot` muestra `Supabase CLI` con Before/After e installed/updated/unchanged;
+si falta, aparece unavailable. Un fallo se registra como incidencia con log
+`wsl-supabase-cli.log`, conserva el binario anterior y permite continuar el flujo.
+
+El instalador resuelve el tag en la API oficial
+[`releases/latest`](https://api.github.com/repos/supabase/cli/releases/latest)
+en cada ejecución. Exige `draft=false`, `prerelease=false`, tag `vX.Y.Z` y assets
+oficiales únicos. Descarga `supabase_X.Y.Z_linux_amd64.tar.gz` o
+`supabase_X.Y.Z_linux_arm64.tar.gz` y `checksums.txt` de la misma release por HTTPS.
+No acepta checksum ausente, duplicado o inválido ni continúa si falla la red.
+Comprueba SHA256, extrae solo el binario a staging privado en el filesystem de
+destino, comprueba `--version` y `--help` y publica con rename atómico. Si la
+versión gestionada ya coincide, no descarga el tarball ni reescribe el binario.
+Los symlinks existentes se sustituyen sin escribir en su destino.
+
+Comandos humanos: `make install-supabase-cli` para converger a stable,
+`make install-supabase-cli DRY_RUN=1` para previsualizar sin red ni escrituras.
+Requiere curl, jq, sha256sum, tar y timeout (tooling Linux existente).
+`SUPABASE_CLI_TARGET_DIR` permite aislar el destino en pruebas y también lo usa
+el snapshot; no se edita PATH ni configuración del shell. La ruta gestionada se
+sondea explícitamente, por lo que otra instalación anterior en PATH debe revisarse
+manualmente con `command -v supabase`.
+
+Verificado el 2026-11-25: [latest apunta a v3.4.0](https://github.com/supabase/cli/releases/latest),
+con [tarballs versionados y checksums.txt](https://github.com/supabase/cli/releases/expanded_assets/v3.4.0).
+La versión no está fijada en código. CLI v3 introduce cambios de comandos y
+configuración: consultar la [migración oficial](https://supabase.com/docs/guides/local-development/cli/migrating-to-v3)
+antes de usarlo en proyectos existentes.
+
+Este paso solo mantiene el ejecutable: no usa npm global, no instala otro gestor,
+no hace login/link/start/db push, no cambia recursos cloud ni arranca Docker.
+La [referencia oficial](https://supabase.com/docs/reference/cli/introduction) y
+`supabase --help` describen los comandos; cualquier operación de proyecto se
+realiza aparte, con autorización propia.
 
 ## Excalidraw MCP
 
