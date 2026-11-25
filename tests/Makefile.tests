@@ -89,6 +89,7 @@ help:
 	@echo "  make install-serena             HUMAN: converge Serena to pinned uv tool version"
 	@echo "  make install-herdr              HUMAN: converge direct Herdr stable runtime and detected integrations"
 	@echo "  make install-taplo              HUMAN: install checksum-verified Taplo binary"
+	@echo "  make install-supabase-cli       HUMAN: converge official stable CLI; DRY_RUN=1 for preview"
 	@echo "  make configure-claude-serena    HUMAN: add missing Serena user MCP to Claude"
 	@echo "  make configure-claude-gitnexus  HUMAN: add missing GitNexus user MCP to Claude"
 	@echo "  make install-mattpocock-skills   HUMAN unless DRY_RUN=1; external skills catalog"
@@ -448,6 +449,7 @@ bats-system: bats-zsh
 	@$(call run_bats,$(BATS_DIR)/system/install-herdr.bats)
 	@$(call run_bats,$(BATS_DIR)/system/install-claude-code.bats)
 	@$(call run_bats,$(BATS_DIR)/system/install-taplo.bats)
+	@$(call run_bats,$(BATS_DIR)/system/install-supabase-cli.bats)
 	@$(call run_bats,$(BATS_DIR)/system/configure-claude-serena.bats)
 	@$(call run_bats,$(BATS_DIR)/system/configure-claude-gitnexus.bats)
 	@$(call run_bats,$(BATS_DIR)/system/install-sops.bats)
@@ -534,6 +536,7 @@ test-ci: test-lint test-bats-ci test-chezmoi
 	@echo "$(GREEN)==>$(NC) CI tests completed"
 
 test-bats-ci: bats-dc-activate bats-helpers bats-filesystem bats-chezmoi-mcp-launchers bats-mcp-launcher-contract bats-git bats-governance bats-chezmoi bats-skills bats-git-flow bats-gitnexus bats-git-hooks bats-docs
+	@$(call run_bats,$(BATS_DIR)/system/install-supabase-cli.bats)
 	@$(call run_bats,$(BATS_DIR)/system/azure-mcp-pilot.bats)
 	@$(call run_bats,$(BATS_DIR)/system/azure-mcp-update.bats $(BATS_DIR)/system/mcp-auto-activate.bats)
 

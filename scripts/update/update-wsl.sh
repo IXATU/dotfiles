@@ -563,6 +563,7 @@ capture_workstation_snapshot() {
 	snapshot_current_tool "osv-scanner" osv-scanner --version
 	snapshot_current_tool "Codex CLI" codex --version
 	snapshot_current_tool "OpenCode" opencode --version
+	snapshot_current_tool "Supabase CLI" "${SUPABASE_CLI_TARGET_DIR:-$HOME/.local/bin}/supabase" --version
 	snapshot_current_tool "Claude Code CLI" claude --version
 	snapshot_current_tool "Cursor Agent CLI" agent --version
 	dc_snapshot
@@ -688,6 +689,17 @@ run_cursor_agent() {
 	run_versioned_step run_step "WSL" "Cursor Agent CLI" "${LOG_DIR}/wsl-cursor-agent.log" agent --version -- "${DOTFILES_ROOT}/scripts/install-cursor-agent.sh"
 }
 
+run_supabase_cli() {
+	section "Supabase CLI"
+	if is_truthy "${DOTFILES_UPDATE_MOCK:-}"; then
+		result_ok "WSL" "Supabase CLI" "mocked"
+		return 0
+	fi
+	run_versioned_step run_step "WSL" "Supabase CLI" "${LOG_DIR}/wsl-supabase-cli.log" \
+		"${SUPABASE_CLI_TARGET_DIR:-$HOME/.local/bin}/supabase" --version -- \
+		"${DOTFILES_ROOT}/scripts/install-supabase-cli.sh"
+}
+
 run_opencode() {
 	section "OpenCode"
 	if is_truthy "${DOTFILES_UPDATE_MOCK:-}"; then
@@ -797,6 +809,7 @@ want_section apt && run_apt
 want_section tools && run_tools
 want_section tools && ! is_truthy "${DOTFILES_UPDATE_MOCK:-}" && update_dc_local
 want_section tools && update_azure_mcp
+want_section tools && run_supabase_cli
 want_section tools && run_opencode
 want_section tools && run_cursor_agent
 want_section tools && run_ai_workspace

@@ -102,6 +102,17 @@ gestor y el target se detendrá sin sobrescribirlo.
 > `make install-fonts`. Si los iconos se ven mal en Windows Terminal o VS Code,
 > selecciona `MesloLGS NF` como fuente en la aplicación host.
 
+### Supabase CLI (opt-in)
+
+`make install-supabase-cli DRY_RUN=1` muestra el plan sin red ni escrituras.
+`make install-supabase-cli` instala la última release estable oficial en
+`~/.local/bin/supabase`, con tarball Linux amd64/arm64 y SHA256 upstream obligatorio.
+No requiere Node/npm ni Docker. El instalador es idempotente y conserva el binario
+anterior ante fallos antes de publicar atómicamente el candidato verificado.
+El mantenimiento habitual WSL también lo actualiza y muestra en `Tool snapshot`.
+Ver [contrato, requisitos y fuentes oficiales](UPDATE.md#supabase-cli-estable-linuxwsl).
+No inicia sesión, enlaza proyectos, arranca servicios ni modifica bases de datos.
+
 ### Hooks Git locales (opt-in)
 
 `make install-git-hooks` configura únicamente este checkout con

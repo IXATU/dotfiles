@@ -27,7 +27,7 @@ export DOTFILES_APPLY
 # Optional passthrough to the declarative APT installer (same as deps-install).
 DEPS_INSTALL_ARGS ?=
 
-.PHONY: install-check install-apt install-external install-dotfiles install-verify install install-zsh-stack install-fonts install-uv install-serena install-herdr install-taplo configure-claude-serena configure-claude-gitnexus install-sops install-chezmoi install-node-stack install-docker-desktop-helper install-azure-cli install-agent-tools install-mattpocock-skills install-mcp-github install-git-hooks set-default-shell-zsh secrets-check ai-cursor-check chezmoi-drift-report mcp-launcher-contract-check gitnexus-status ai-mcp-validate ai-mcp-render ai-mcp-drift ai-mcp-governance ai-mcp-generate
+.PHONY: install-check install-apt install-external install-dotfiles install-verify install install-zsh-stack install-fonts install-uv install-serena install-herdr install-taplo configure-claude-serena configure-claude-gitnexus install-sops install-chezmoi install-node-stack install-docker-desktop-helper install-azure-cli install-supabase-cli install-agent-tools install-mattpocock-skills install-mcp-github install-git-hooks set-default-shell-zsh secrets-check ai-cursor-check chezmoi-drift-report mcp-launcher-contract-check gitnexus-status ai-mcp-validate ai-mcp-render ai-mcp-drift ai-mcp-governance ai-mcp-generate
 
 install-check:
 	@bash $(DOTFILES_DIR)/scripts/install-check.sh
@@ -95,6 +95,10 @@ install-ai-workspace: install-claude-code
 # no Rust/Cargo toolchain is required.
 install-taplo:
 	@bash $(DOTFILES_DIR)/scripts/install-taplo.sh $(if $(filter 1 true yes on,$(DRY_RUN)),--dry-run,)
+
+# Official stable standalone binary; independent of Node/npm and Docker.
+install-supabase-cli:
+	@bash $(DOTFILES_DIR)/scripts/install-supabase-cli.sh
 
 # Add only the Serena user MCP through Claude's supported CLI. Existing Serena
 # registrations and every unrelated Claude MCP are preserved.

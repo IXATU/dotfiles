@@ -2298,11 +2298,12 @@ EOF
 	run env DOTFILES_UPDATE_MOCK=1 DOTFILES_UPDATE_RUN_DIR="$run_dir" \
 		"${DOTFILES_DIR}/scripts/update/update-wsl.sh" --section tools
 	[[ "$status" -eq 0 ]]
-	for tool in Python Node.js npm pnpm uv Ruff Pyright ty Taplo ripgrep "ast-grep CLI" "GitNexus CLI" Serena actionlint yamllint gitleaks osv-scanner "Codex CLI" OpenCode; do
+	for tool in Python Node.js npm pnpm uv Ruff Pyright ty Taplo ripgrep "ast-grep CLI" "GitNexus CLI" Serena actionlint yamllint gitleaks osv-scanner "Codex CLI" OpenCode "Supabase CLI"; do
 		grep -q "^${tool}"$'\t' "$run_dir/tool-snapshot.tsv"
 	done
 	[[ ! -e "$run_dir/logs/wsl-serena.log" ]]
 	[[ ! -e "$run_dir/logs/wsl-taplo.log" ]]
+	[[ ! -e "$run_dir/logs/wsl-supabase-cli.log" ]]
 }
 
 @test "development tool version normalization removes command prefixes" {
